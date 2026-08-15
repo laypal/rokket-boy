@@ -1,0 +1,17 @@
+.env
+.env.*
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+graphify-out/
+
+dist/
+playwright-report/
+test-results/
+
+# OpenCode local logs (observability plugin)
+.opencode/logs/
+
+# Playwright MCP browser artefacts (screenshots/snapshots from QA sessions)
+.playwright-mcp/

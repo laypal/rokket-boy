@@ -1,0 +1,31 @@
+# Single source of truth for the public/private tier split (HRD.17).
+# `git archive HEAD` reads export-ignore from these attributes, so the
+# archive output IS the public mirror tree — see scripts/mirror/publish.mjs,
+# which shells out to `git archive` rather than keeping a second path list.
+# Working trees also honour these attributes for `git check-attr`, which is
+# how tests/public-export.test.ts verifies uncommitted edits before a commit.
+ABOUT.md export-ignore
+VOICE.md export-ignore
+AGENTS.md export-ignore
+CLAUDE.md export-ignore
+DEPLOYMENT.md export-ignore
+opencode.json export-ignore
+OPENCODE-*.md export-ignore
+.aiwg/** export-ignore
+.carl/** export-ignore
+.claude/** export-ignore
+.opencode/** export-ignore
+.paul/** export-ignore
+# Working-notes tier (Lyall, 2026-08-15): the card decks, design specs and the
+# expansion plan are internal planning docs — ROADMAP.md is the public view.
+docs/tasks/** export-ignore
+docs/superpowers/** export-ignore
+team-rokket-expansion-plan.md export-ignore
+# ...and the personal-voice docs (Lyall, same day): the blog-ready project docs,
+# the narrative changelog and the failed-approaches log read as a diary.
+project-documentation/** export-ignore
+docs/CHANGELOG.md export-ignore
+ERRORS.md export-ignore
+STACK.md export-ignore
+.github/workflows/mirror.yml export-ignore
+scripts/mirror/scrub-list.private.txt export-ignore

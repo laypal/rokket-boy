@@ -1,0 +1,47 @@
+# HRD.6 — CI is a gate, not a pipeline: Coolify's push-to-main webhook does
+# the deploying; this only decides red/green.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    # main only — PRs get the unit gate; the full browser run guards releases
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      # pin to the installed @playwright/test version — a drifted container
+      # ships mismatched browsers and fails at launch
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e
+        env:
+          HOME: /root
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results
+          path: test-results/

@@ -1,0 +1,51 @@
+// MT. MÖÖN — upper cavern (CH2.2). Entrance from Gamez Corner's east wall
+// (the 'o' cave mouth at corner (19,7)) lands just inside at (1,5); the same
+// door tile (0,5) is the trigger back out. Stairs '>' at (18,9) descend to
+// MOON DEPTHS. `~` rubble is the CH2.1 wild-encounter tile; `R` boulders are
+// blocking cover, not walkable. Music is the 'cave' track (CH2.5).
+import type { MapDef } from '../../types';
+import { moon1Scripts } from '../dialog/moon1';
+import { makeMap } from './make';
+
+export const moon1Map: MapDef = makeMap({
+  id: 'moon1',
+  name: 'MT. MOON',
+  pal: 'moon',
+  music: 'cave',
+  rows: [
+    '####################',
+    '# ~      R     ~~  #',
+    '# ~~~     R  ~     #',
+    '#~ ~    #  R   ~ R #',
+    '# ~     #   R ~~ R #',
+    'o                 R#',
+    '#    ~   R  ## ~~  #',
+    '#  ~   R   ~  ~~R  #',
+    '# R  ~   ~~   ~ R  #',
+    '# ~~   R    ~  R  >#',
+    '#   ~~   R   ~ RR  #',
+    '####################',
+  ],
+  // Myowth (5,1) sits off the entrance-to-stairs line so the SWIPE tutorial
+  // is optional flavor, not a chokepoint. The cart vendor (2,6) likewise —
+  // adjacent to the entrance route, never on it (CH2.4).
+  npcs: [
+    { id: 'myowth', char: 'myowth', x: 5, y: 1, dir: 'down' },
+    { id: 'vendor', char: 'grunt', pal: 'gold', x: 2, y: 6, dir: 'down' },
+  ],
+  signs: {},
+  items: {},
+  warps: {
+    '0,5': ['corner', 18, 7, 'left'],
+    '18,9': ['moon2', 2, 2, 'down'],
+  },
+  scripts: moon1Scripts,
+  // CH2.3 frozen table (task card 20-ch2-mt-moon.md) — do not retune here.
+  encounters: {
+    rate: 0.12,
+    entries: [
+      { species: 'ratikatt', weight: 3, lv: [3, 5] },
+      { species: 'zubatt', weight: 2, lv: [3, 5] },
+    ],
+  },
+});
