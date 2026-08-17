@@ -186,8 +186,9 @@ test('PARTY screen: use a SODA on the injured starter', async ({ page }) => {
 
   await press(page, 'ArrowDown'); // -> PARTY
   await press(page, 'z'); // enter the party list
-  await press(page, 'z'); // open the selected mon's (party[0]) detail
-  await press(page, 'z'); // open the heal-item list ([SODA])
+  // MNU.3: A now opens the dex-style detail page (no heal action there) —
+  // LEFT opens the heal-item list straight from the list instead.
+  await press(page, 'ArrowLeft'); // open the heal-item list ([SODA])
   await press(page, 'z'); // use SODA on the selected mon
 
   const after = await page.evaluate(() => {

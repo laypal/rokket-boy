@@ -454,6 +454,9 @@ describe('DRAIN heals the attacker (QOL.5)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     SPECIES.test_whiffer = {
       ...SPECIES.test_drainer,
@@ -616,6 +619,9 @@ describe('level-up move replacement', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     // lv7 foe → 98 xp → 125+98 = 223 ≥ 216 → L6 → zap offered (knows 4)
     ENCOUNTERS.test_learn = {
@@ -767,6 +773,9 @@ describe('QOL.11 float damage state (seeded)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_float = {
       foe: { species: 'test_floater', lv: 5 },
@@ -845,6 +854,9 @@ describe('UX2.3 super-effective float emphasis', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_ux23 = {
       foe: { species: 'test_uxfloater', lv: 5 },
@@ -948,6 +960,9 @@ describe('QOL.4 hp-tween state (seeded)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     SPECIES.test_whiffer2 = {
       ...SPECIES.test_drainer2,
@@ -1279,6 +1294,9 @@ describe('overkill damage floors hp at exactly 0', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     SPECIES.test_squishy = {
       id: 'test_squishy',
@@ -1293,6 +1311,9 @@ describe('overkill damage floors hp at exactly 0', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_overkill = { foe: { species: 'test_squishy', lv: 5 }, winText: [], onWin: [], onLose: [], onFlee: [] };
     setBattleRng(mulberry32(1));
@@ -1368,6 +1389,9 @@ describe('maybeEvolve degrades cleanly on an unregistered evolvesTo target (batt
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_typo_evolve = { foe: { species: 'voltorbb', lv: 7 }, winText: [], onWin: [], onLose: [], onFlee: [] };
     setBattleRng(mulberry32(13));
@@ -1438,6 +1462,9 @@ describe('evolve + move-replace offer in the same win', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     // lv7 foe → 98 xp → 125+98=223 ≥ 216(L6) — same recipe as "level-up move
     // replacement" above, now paired with an evolvesTo at the same level.
@@ -1541,6 +1568,9 @@ describe('damage() extremes (def, lv boundaries)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     SPECIES.test_attacker = {
       id: 'test_attacker',
@@ -1555,6 +1585,9 @@ describe('damage() extremes (def, lv boundaries)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_zerodef_enc = { foe: { species: 'test_zerodef', lv: 5 }, winText: [], onWin: [], onLose: [], onFlee: [] };
     setBattleRng(mulberry32(1));
@@ -1589,6 +1622,9 @@ describe('damage() extremes (def, lv boundaries)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     SPECIES.test_zerodef_foe = {
       id: 'test_zerodef_foe',
@@ -1603,6 +1639,9 @@ describe('damage() extremes (def, lv boundaries)', () => {
       back: SPECIES.koffink.back,
       pal: SPECIES.koffink.pal,
       catchRate: 0.5,
+      heightM: 0.5,
+      weightKg: 1.0,
+      dex: ['TEST.'],
     };
     ENCOUNTERS.test_zerodef_enc2 = { foe: { species: 'test_zerodef_foe', lv: 5 }, winText: [], onWin: [], onLose: [], onFlee: [] };
     setBattleRng(mulberry32(2));

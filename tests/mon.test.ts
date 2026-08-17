@@ -27,6 +27,9 @@ function makeSpecies(over: Partial<MonSpecies> = {}): MonSpecies {
     back: rows,
     pal: ['#000', '#555', '#aaa', '#fff'],
     catchRate: 0.45,
+    heightM: 0.5,
+    weightKg: 1.0,
+    dex: ['TEST.'],
     ...over,
   };
 }

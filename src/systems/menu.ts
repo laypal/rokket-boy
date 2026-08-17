@@ -15,6 +15,7 @@ import { writeSave, sessionOnlyWarning } from './save';
 import type { Palette } from '../data/palettes';
 import { listInput, flash, tickFlash } from './ui/listScreen';
 import { isRankLadderOpen, openRankLadder, rankLadderUpdate, rankLadderDraw } from './rankLadder';
+import { detailPage, monDetailDraw, pageIndex } from './monDetail';
 
 export function openMenu(): void {
   Audio2.sfx('confirm');
@@ -310,9 +311,12 @@ export function menuDraw(pal: Palette): void {
   }
 }
 
-// ── PARTY sub-screen (plan §4.3): per-mon hp/lv/moves + heal-item use ─────────
+// ── PARTY sub-screen (plan §4.3): per-mon hp/lv/moves + heal-item use.
+// MNU.3: the old A→'mon' readout is gone — A now opens a full dex-style
+// 'detail' page (monDetail.ts owns its layout) and heal moved to LEFT on
+// the list, straight into 'item' (no more list -> mon -> item hop). ─────────
 interface PartyNav {
-  mode: 'list' | 'mon' | 'item';
+  mode: 'list' | 'detail' | 'item';
   monSel: number;
   itemSel: number;
   msg: string | null;
@@ -321,6 +325,13 @@ interface PartyNav {
   moveSrc: number | null; // QOL.8 — party slot picked up for a reorder swap, list mode only
 }
 let pn: PartyNav | null = null;
+
+// MNU.3: list-mode footer cap — the PACK_ROW_CAP derivation applied to the
+// party window (2,8,156,100) with the footer at x=8 (was 12: the new
+// 'A:VIEW <HEAL >MOVE' hint is 18 glyphs, one more than x=12 allows).
+const PARTY_WIN = { x: 2, w: 156 };
+const PARTY_FOOTER_X = 8;
+export const PARTY_FOOTER_CAP = Math.floor((PARTY_WIN.x + PARTY_WIN.w - 4 - PARTY_FOOTER_X) / 8);
 
 /** QOL.8: in-place party slot swap — pure, no-op when i===j or either index
  *  is out of range. Party array order IS battle send-out priority (meIdx
@@ -375,11 +386,17 @@ function partyUpdate(): void {
       if (p.moveSrc === null) { p.moveSrc = p.monSel; Audio2.sfx('confirm'); }
       else tryPartyMove(p);
     }
+    // MNU.3: LEFT opens the heal-item picker straight from the list (used
+    // to be A from the old 'mon' readout) — no heal items just flashes.
+    if (Input.hit('left')) {
+      if (healItems().length === 0) flash(p, 'NO HEAL ITEMS.');
+      else { p.mode = 'item'; p.itemSel = 0; Audio2.sfx('confirm'); }
+    }
     if (Input.hit('a')) {
-      // A only swaps while a pick-up is active; with no pick-up it keeps
-      // opening the detail view exactly as before this card.
+      // A only swaps while a pick-up is active; with no pick-up it opens
+      // the MNU.3 dex-style detail page.
       if (p.moveSrc !== null) tryPartyMove(p);
-      else { Audio2.sfx('confirm'); p.mode = 'mon'; }
+      else { Audio2.sfx('confirm'); p.mode = 'detail'; }
     }
     if (Input.hit('b') || Input.hit('start')) {
       if (p.moveSrc !== null) { p.moveSrc = null; Audio2.sfx('cancel'); return; } // cancel pick-up, stay on screen
@@ -387,11 +404,12 @@ function partyUpdate(): void {
     }
     return;
   }
-  if (p.mode === 'mon') {
-    if (Input.hit('a')) {
-      if (healItems().length === 0) flash(p, 'NO HEAL ITEMS.');
-      else { Audio2.sfx('confirm'); p.mode = 'item'; p.itemSel = 0; }
-    }
+  if (p.mode === 'detail') {
+    // MNU.3: LEFT/RIGHT page through the party (p.monSel doubles as the
+    // page index — decision 3, backing out lands the cursor on the paged-to
+    // mon); A does nothing here.
+    if (Input.hit('right')) { p.monSel = pageIndex(p.monSel, 1, G.party.length); Audio2.sfx('beep'); }
+    if (Input.hit('left')) { p.monSel = pageIndex(p.monSel, -1, G.party.length); Audio2.sfx('beep'); }
     if (Input.hit('b') || Input.hit('start')) { Audio2.sfx('cancel'); p.mode = 'list'; }
     return;
   }
@@ -400,7 +418,7 @@ function partyUpdate(): void {
   const n = Math.max(1, items.length);
   p.itemSel = listInput(p.itemSel, n);
   if (Input.hit('a') && items.length) useHealOnMon(p, items[Math.min(p.itemSel, items.length - 1)].id);
-  if (Input.hit('b') || Input.hit('start')) { Audio2.sfx('cancel'); p.mode = 'mon'; }
+  if (Input.hit('b') || Input.hit('start')) { Audio2.sfx('cancel'); p.mode = 'list'; }
 }
 
 function useHealOnMon(p: PartyNav, id: string): void {
@@ -415,7 +433,7 @@ function useHealOnMon(p: PartyNav, id: string): void {
   const healed = applyHeal(mon, sp, itemDef(id));
   flash(p, monLabel(mon) + ' +' + healed + ' HP', true);
   p.heal = { row: p.monSel, amt: healed, t: 40 }; // QOL.4 — list-mode row flash
-  p.mode = 'mon';
+  p.mode = 'list'; // MNU.3: item mode now hangs off the list directly
 }
 
 function partyDraw(pal: Palette): void {
@@ -446,29 +464,24 @@ function partyDraw(pal: Palette): void {
       rect(101, y + 9, 50, 2, pal[3]);
       rect(101, y + 9, Math.round(50 * xpProgress(mon)), 2, pal[0]);
     });
-    // QOL.8: list-mode footer — a flashP message (e.g. 'MOVED!') wins, else
-    // the pick-up state names who's being moved, else the static hint.
+    // QOL.8/MNU.3: list-mode footer — a flashP message (e.g. 'MOVED!' or the
+    // 'NO HEAL ITEMS.' refusal) wins, else the pick-up state names who's
+    // being moved, else the static A:VIEW/LEFT:HEAL/RIGHT:MOVE hint.
     const footer =
       p.msgT > 0 && p.msg
         ? p.msg
         : p.moveSrc !== null
-          ? ('MOVING: ' + monLabel(G.party[p.moveSrc])).slice(0, 17)
-          : 'A:VIEW >:MOVE';
-    text(footer, 12, 100, pal[0]);
+          ? ('MOVING: ' + monLabel(G.party[p.moveSrc])).slice(0, PARTY_FOOTER_CAP)
+          : 'A:VIEW <HEAL >MOVE';
+    text(footer, PARTY_FOOTER_X, 100, pal[0]);
     return;
   }
   const mon = G.party[p.monSel];
   const sp = SPECIES[mon.species];
-  if (p.mode === 'mon') {
-    drawWindow(4, 8, 120, 110, pal);
-    text(monLabel(mon), 12, 14, pal[0]);
-    text('L' + mon.lv, 96, 14, pal[0]);
-    text('HP ' + mon.hp + '/' + maxHp(sp, mon.lv), 12, 30, pal[0]);
-    text('MOVES', 12, 48, pal[0]);
-    mon.moves.forEach((id, i) =>
-      text(MOVES[id].name, 16 + (i % 2) * 56, 62 + Math.floor(i / 2) * 12, pal[0]),
-    );
-    text(p.msgT > 0 && p.msg ? p.msg : 'A:ITEM B:BACK', 12, 100, pal[0]);
+  if (p.mode === 'detail') {
+    // MNU.3: full dex-style page — layout lives in monDetail.ts, this just
+    // builds the DetailPage from live state and hands it off.
+    monDetailDraw(detailPage(mon, sp, (id) => MOVES[id].name, p.monSel, G.party.length), sp, pal);
     return;
   }
   // mode 'item'

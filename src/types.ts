@@ -168,6 +168,12 @@ export interface MonSpecies {
   back: SpriteRows;  // 24×20 battle sprite
   pal: string[];
   catchRate: number; // 0..1 base SWIPE chance (plan §4.4)
+  /** MNU.3 dex page flavour. heightM/weightKg print as `HT 0.6M` /
+   *  `WT 12.5KG` (toFixed(1)); dex is 1–2 lines, each ≤ DEX_LINE_CAP,
+   *  drawn in the detail screen's two-line help bar. All linted. */
+  heightM: number;   // 0.1 ≤ h ≤ 99.9
+  weightKg: number;  // 0.1 ≤ w ≤ 999.9
+  dex: string[];     // 1..2 lines, ≤ 18 glyphs each (uppercase, ASCII)
 }
 
 export interface MonInstance {

@@ -32,6 +32,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: KOFFINK_BACK,
     pal: OBJ_PAL.koffink,
     catchRate: 0.45,
+    heightM: 0.6,
+    weightKg: 1.0,
+    dex: ['LEAKS GAS WHEN', 'NERVOUS. ALWAYS.'],
   },
   voltorbb: {
     id: 'voltorbb',
@@ -51,6 +54,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: VOLTORBB, // placeholder until the VOLTORBB back sprite card
     pal: OBJ_PAL.voltorbb,
     catchRate: 0.35,
+    heightM: 0.5,
+    weightKg: 10.4,
+    dex: ['LOOKS LIKE A BALL.', 'DO NOT THROW IT.'],
   },
   // SPR.A — NORMAL rat line and POISON bat line, both needed by CH2.
   ratikatt: {
@@ -71,6 +77,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: RATIKATT_BACK,
     pal: OBJ_PAL.ratikatt,
     catchRate: 0.5,
+    heightM: 0.3,
+    weightKg: 3.5,
+    dex: ['CHEWS THROUGH', 'ANYTHING. WALLETS.'],
   },
   ratikate: {
     id: 'ratikate',
@@ -90,6 +99,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: RATIKATE_BACK,
     pal: OBJ_PAL.ratikatt,
     catchRate: 0.25,
+    heightM: 0.7,
+    weightKg: 18.5,
+    dex: ['THE TEETH GROW', 'FASTER THAN RENT.'],
   },
   zubatt: {
     id: 'zubatt',
@@ -109,6 +121,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: ZUBATT_BACK,
     pal: OBJ_PAL.zubatt,
     catchRate: 0.45,
+    heightM: 0.8,
+    weightKg: 7.5,
+    dex: ['NO EYES. STILL', 'FINDS YOUR NECK.'],
   },
   golbatt: {
     id: 'golbatt',
@@ -128,6 +143,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: GOLBATT_BACK,
     pal: OBJ_PAL.zubatt,
     catchRate: 0.2,
+    heightM: 1.6,
+    weightKg: 55.0,
+    dex: ['DRINKS ITS WEIGHT', 'IN ONE SITTING.'],
   },
   // SPR.B — GROUND boulder line and POISON serpent line, both needed by CH2.
   geodood: {
@@ -147,6 +165,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: GEODOOD_BACK,
     pal: OBJ_PAL.geodood,
     catchRate: 0.4,
+    heightM: 0.4,
+    weightKg: 20.0,
+    dex: ['A ROCK WITH ARMS.', "DON'T KICK IT."],
   },
   gravlr: {
     id: 'gravlr',
@@ -165,6 +186,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: GRAVLR_BACK,
     pal: OBJ_PAL.geodood,
     catchRate: 0.2,
+    heightM: 1.0,
+    weightKg: 105.0,
+    dex: ['ROLLS DOWNHILL.', 'BRAKES OPTIONAL.'],
   },
   ekanzz: {
     id: 'ekanzz',
@@ -184,6 +208,9 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: EKANZZ_BACK,
     pal: OBJ_PAL.ekanzz,
     catchRate: 0.45,
+    heightM: 2.0,
+    weightKg: 6.9,
+    dex: ['ALL MUSCLE. HIDES', 'IN GRUNT SLEEVES.'],
   },
   arbok: {
     id: 'arbok',
@@ -203,5 +230,8 @@ export const SPECIES: Record<string, MonSpecies> = {
     back: ARBOK_BACK,
     pal: OBJ_PAL.ekanzz,
     catchRate: 0.2,
+    heightM: 3.5,
+    weightKg: 65.0,
+    dex: ['THE HOOD PATTERN', 'SCARES DEBTORS.'],
   },
 };

@@ -4,7 +4,8 @@ import { describe, it, expect } from 'vitest';
 import { MOVES } from '../src/data/moves';
 import { SPECIES } from '../src/data/mons';
 import { TYPE_IDS } from '../src/data/typeChart';
-import { movesAtLevel, LEVEL_CAP } from '../src/systems/mon';
+import { movesAtLevel, LEVEL_CAP, makeMon } from '../src/systems/mon';
+import { detailPage, DEX_LINE_CAP, DETAIL_COL_CAP } from '../src/systems/monDetail';
 
 describe('move registry', () => {
   it('has at least the Ch.1 seed moves', () => {
@@ -101,5 +102,39 @@ describe('species registry', () => {
     expect(SPECIES.zubatt.evolvesTo).toEqual({ id: 'golbatt', lv: 18 });
     expect(SPECIES.geodood.evolvesTo).toEqual({ id: 'gravlr', lv: 18 });
     expect(SPECIES.ekanzz.evolvesTo).toEqual({ id: 'arbok', lv: 21 });
+  });
+
+  // MNU.3 — the dex page's flavour block. Same ASCII-printable rule the
+  // content lints use elsewhere (charCode 32..126).
+  it('MNU.3: every species has a valid heightM/weightKg/dex block', () => {
+    const printable = (s: string): boolean => [...s].every((c) => {
+      const code = c.charCodeAt(0);
+      return code >= 32 && code <= 126;
+    });
+    for (const [key, sp] of Object.entries(SPECIES)) {
+      expect(sp.heightM, `${key} heightM`).toBeGreaterThanOrEqual(0.1);
+      expect(sp.heightM, `${key} heightM`).toBeLessThanOrEqual(99.9);
+      expect(sp.weightKg, `${key} weightKg`).toBeGreaterThanOrEqual(0.1);
+      expect(sp.weightKg, `${key} weightKg`).toBeLessThanOrEqual(999.9);
+      expect(sp.dex.length, `${key} dex has 1-2 lines`).toBeGreaterThanOrEqual(1);
+      expect(sp.dex.length, `${key} dex has 1-2 lines`).toBeLessThanOrEqual(2);
+      for (const line of sp.dex) {
+        expect(line.length, `${key} dex line "${line}" fits DEX_LINE_CAP`).toBeLessThanOrEqual(DEX_LINE_CAP);
+        expect(printable(line), `${key} dex line "${line}" is ASCII-printable`).toBe(true);
+      }
+      expect(sp.type.join('/').length, `${key} type line fits DETAIL_COL_CAP`).toBeLessThanOrEqual(DETAIL_COL_CAP);
+    }
+  });
+
+  it('MNU.3: every DetailPage field for a fresh lv-5 mon fits its cap', () => {
+    for (const [key, sp] of Object.entries(SPECIES)) {
+      const mon = makeMon(sp, 5);
+      const page = detailPage(mon, sp, (id) => MOVES[id].name, 0, 1);
+      for (const f of [page.label, page.lv, page.type, page.hp, page.ht, page.wt, page.atk, page.def, page.spd, page.pager]) {
+        expect(f.length, `${key}: "${f}"`).toBeLessThanOrEqual(10);
+      }
+      for (const l of page.dex) expect(l.length, `${key}: "${l}"`).toBeLessThanOrEqual(18);
+      for (const m of page.moves) expect(m.length, `${key} move "${m}"`).toBeLessThanOrEqual(10);
+    }
   });
 });

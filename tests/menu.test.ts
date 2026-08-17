@@ -13,6 +13,8 @@ vi.mock('../src/engine/renderer', () => ({
   drawWindow: vi.fn(),
   rect: vi.fn(), // MNU.1 — partyDraw's xp mini-bars
   text: vi.fn(),
+  ctx: { drawImage: vi.fn() }, // MNU.3 — monDetail.ts's front-sprite draw
+  decode: vi.fn(() => ({})), // MNU.3 — same
   W: 160,
   H: 144,
 }));
@@ -317,8 +319,9 @@ describe('QOL.8 PARTY reorder (input harness)', () => {
     tap('a'); // no pick-up active -> detail view
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
-    // detail mode draws the mon name at (12,14) — list mode draws it at (16,30+)
-    expect(text).toHaveBeenCalledWith('FIRST', 12, 14, BG_PAL.green[0]);
+    // MNU.3: detail mode draws the mon's label in monDetail.ts's right
+    // column at (72,8) — list mode draws it at (16,30+).
+    expect(text).toHaveBeenCalledWith('FIRST', 72, 8, BG_PAL.green[0]);
   });
 });
 
@@ -347,13 +350,12 @@ describe('QOL.4 PARTY heal flash', () => {
   it('useHealOnMon records pn.heal and list-mode partyDraw shows the +amt flash beside the hp line', () => {
     tap('down'); // PACK -> PARTY
     tap('a'); // open PARTY (mode 'list')
-    tap('a'); // select mon 0 (mode 'mon')
-    tap('a'); // open the heal-item list (mode 'item')
+    tap('left'); // MNU.3: LEFT opens the heal-item list straight from the list (mode 'item')
     const preHp = G.party[0].hp;
-    tap('a'); // use SODA -> useHealOnMon, sets pn.heal {row:0, amt, t:40}, mode back to 'mon'
+    tap('a'); // use SODA -> useHealOnMon, sets pn.heal {row:0, amt, t:40}, mode back to 'list'
     const healAmt = G.party[0].hp - preHp;
     expect(healAmt).toBeGreaterThan(0);
-    tap('b'); // back to 'list' — this is where the flash renders (t now 39, still >0)
+    frame(); // one settle frame (no input) — pn.heal.t now 39, still >0, flash still active
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
     // hp text sits at y+8 for row 0 (y=30); '+amt' rides the same line at x=72.
@@ -369,8 +371,7 @@ describe('QOL.4 PARTY heal flash', () => {
     G.party[0].hp = 0;
     tap('down');
     tap('a'); // PARTY list
-    tap('a'); // mon
-    tap('a'); // item list
+    tap('left'); // MNU.3: item list
     tap('a'); // try SODA on the fainted mon — must refuse
     expect(G.party[0].hp).toBe(0); // still out cold
     expect(quest.items).toContain('SODA'); // not consumed
@@ -380,14 +381,108 @@ describe('QOL.4 PARTY heal flash', () => {
     G.party[0].hp = maxHp(SPECIES.koffink, 5); // full — SODA refuses
     tap('down');
     tap('a'); // PARTY list
-    tap('a'); // mon
-    tap('a'); // item list
+    tap('left'); // MNU.3: item list
     tap('a'); // refused — flashP('HP IS FULL!'), pn.heal stays null, mode stays 'item'
-    tap('b'); // item -> mon (the refusal early-returns before the mode='mon' line)
-    tap('b'); // mon -> list
+    tap('b'); // item -> list (MNU.3: B from item goes straight to list)
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
     expect(text).toHaveBeenCalledWith('KOFFINK', 16, 30, BG_PAL.green[0]); // resting color, no blink
     expect(text).not.toHaveBeenCalledWith(expect.stringMatching(/^\+/), expect.anything(), expect.anything(), expect.anything());
+  });
+});
+
+// ── MNU.3: dex-style PARTY detail screen (BDD) — the old A→'mon' readout is
+// gone (mode 'mon' deleted); A opens 'detail' (monDetail.ts's layout), LEFT
+// on the list opens the heal-item picker directly. ────────────────────────
+describe('MNU.3 PARTY detail screen (BDD)', () => {
+  function frame(): void {
+    menuUpdate();
+    keys.pressed.clear();
+  }
+  function tap(k: string): void {
+    keys.pressed.add(k);
+    frame();
+  }
+
+  beforeEach(() => {
+    resetQuest();
+    // Given a party of 3, three different species.
+    G.party = [makeMon(SPECIES.koffink, 5), makeMon(SPECIES.voltorbb, 4), makeMon(SPECIES.ratikatt, 6)];
+    keys.down.clear();
+    keys.pressed.clear();
+    openMenu();
+    tap('down'); // PACK -> PARTY
+    tap('a'); // open PARTY (mode 'list', monSel 0)
+  });
+
+  it('cursor to row 1, A opens the detail page on that mon (label + pager)', () => {
+    tap('down'); // monSel -> 1 (VOLTORBB)
+    tap('a'); // -> detail
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('VOLTORBB', 72, 8, BG_PAL.green[0]);
+    expect(text).toHaveBeenCalledWith('<2/3>', 8, 106, BG_PAL.green[0]);
+  });
+
+  it('RIGHT twice from row 1 wraps around to the index-0 mon', () => {
+    tap('down'); // monSel -> 1
+    tap('a'); // detail, page 1
+    tap('right'); // page -> 2 (RATIKATT)
+    tap('right'); // page -> 0 (KOFFINK) — wraps
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('KOFFINK', 72, 8, BG_PAL.green[0]);
+    expect(text).toHaveBeenCalledWith('<1/3>', 8, 106, BG_PAL.green[0]);
+  });
+
+  it('B from detail returns to the list, landed on the paged-to mon (decision 3)', () => {
+    tap('down'); // monSel -> 1
+    tap('a'); // detail
+    tap('right'); // page -> 2
+    tap('right'); // page -> 0
+    tap('b'); // -> list, monSel stays 0
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('PARTY', 12, 14, BG_PAL.green[0]); // list-mode marker
+    expect(text).toHaveBeenCalledWith('>', 8, 30, BG_PAL.green[0]); // cursor on row 0
+  });
+
+  it('LEFT on the list with no heal items flashes NO HEAL ITEMS.', () => {
+    tap('left');
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('NO HEAL ITEMS.', 8, 100, BG_PAL.green[0]);
+  });
+
+  it('LEFT on the list with a heal item opens the item picker ("USE ON …")', () => {
+    quest.items.push('SODA');
+    tap('left');
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('USE ON KOFFINK', 12, 14, BG_PAL.green[0]);
+  });
+
+  it('B from item mode returns to list mode, not the deleted mon mode', () => {
+    quest.items.push('SODA');
+    tap('left'); // item mode
+    tap('b'); // -> list
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('PARTY', 12, 14, BG_PAL.green[0]); // list-mode marker
+  });
+
+  it('the deleted mon-mode readout ("A:ITEM B:BACK") is never drawn, in detail or item mode', () => {
+    tap('down'); // monSel -> 1
+    tap('a'); // -> detail
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).not.toHaveBeenCalledWith('A:ITEM B:BACK', expect.anything(), expect.anything(), expect.anything());
+
+    tap('b'); // detail -> list
+    quest.items.push('SODA');
+    tap('left'); // -> item mode
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).not.toHaveBeenCalledWith('A:ITEM B:BACK', expect.anything(), expect.anything(), expect.anything());
   });
 });
