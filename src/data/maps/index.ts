@@ -6,6 +6,8 @@ import { moon1Map } from './moon1';
 import { moon2Map } from './moon2';
 import { moonDigMap } from './moonDig';
 import { hqDrillMap } from './hqDrill';
+import { outskirtsMap } from './outskirts';
+import { bridgeMap } from './bridge';
 
 export const MAPS: Record<MapId, MapDef> = {
   hq: hqMap,
@@ -15,4 +17,6 @@ export const MAPS: Record<MapId, MapDef> = {
   moon2: moon2Map,
   moonDig: moonDigMap,
   hqDrill: hqDrillMap,
+  outskirts: outskirtsMap,
+  bridge: bridgeMap,
 };

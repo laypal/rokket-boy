@@ -71,4 +71,104 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     onLose: [{ say: [['GUARD: Sloppy!', 'Watch my gaze', 'next time.']] }],
     onFlee: [{ say: [['GUARD: Running', 'IS sneaking...', 'ish. Go on.']] }],
   },
+  // ── CH3 Nugget Span ─────────────────────────────────────────────────────
+  // Rokket's fake "PRIZE BRIDGE": five marks paid entry, the player is the
+  // house. Each mark's script fires { battle: id } behind { notFlag } (the
+  // other worker's bridge/outskirts scripts); the mark's onWin sets ITS OWN
+  // flag and pays a fixed, un-rank-scaled coin sum (addCoins is raw by
+  // contract — RNK.0's steal perk is SWIPE-only, jobs perk is hand-in only).
+  // onLose/onFlee are [] on purpose: a whiteout or flee cannot pay, and the
+  // flag guard (not the payout step) is what stops a re-run from paying
+  // twice. Marks are earnest contestants who thought it was a real prize
+  // bridge — sly, self-aware, never cruel (plan §5.4 tone bible).
+  span_camper: {
+    trainer: 'CAMPER',
+    foe: { species: 'ratikatt', lv: 7 },
+    winText: ['CAMPER: Whoa!', "Didn't think", 'the house wins.'],
+    onWin: [
+      { setFlag: 'spanCamper' },
+      { addCoins: 40 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 40 COINS!'] },
+      { say: [['The camper packs', 'up, muttering', 'about the odds.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  span_picnicker: {
+    trainer: 'PICNICKER',
+    foe: { species: 'zubatt', lv: 8 },
+    winText: ['PICNICKER: Oh!', 'Well fought.', 'Take the pot.'],
+    onWin: [
+      { setFlag: 'spanPicnicker' },
+      { addCoins: 50 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 50 COINS!'] },
+      { say: [['She folds up her', 'basket, still', 'smiling, though.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  span_hiker: {
+    trainer: 'HIKER',
+    foe: { species: 'geodood', lv: 9 },
+    winText: ['HIKER: Ha! Beat', 'by a rookie.', "Fair's fair."],
+    onWin: [
+      { setFlag: 'spanHiker' },
+      { addCoins: 60 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 60 COINS!'] },
+      { say: [['The hiker shrugs', 'off the loss and', 'trudges onward.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  span_youngster: {
+    trainer: 'YOUNGSTER',
+    foe: { species: 'ekanzz', lv: 10 },
+    winText: ['YOUNGSTER: No', 'way! I trained', 'for weeks!'],
+    onWin: [
+      { setFlag: 'spanYoungster' },
+      { addCoins: 80 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 80 COINS!'] },
+      { say: [['The youngster', 'storms off mad,', 'kicking planks.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  span_lass: {
+    trainer: 'LASS',
+    foe: { species: 'voltorbb', lv: 11 },
+    winText: ['LASS: Hmph! You', 'got lucky, is', 'all. Take it.'],
+    onWin: [
+      { setFlag: 'spanLass' },
+      { addCoins: 100 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 100 COINS!'] },
+      { say: [['The lass flounces', 'off the bridge,', 'nose in the air.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  // AGENT KIRA runs the span and, once all five marks are beaten, tests the
+  // player's loyalty herself. Winning promotes on the spot — she is the
+  // recruiter, so rankUp fires here directly (no report-to-boss step this
+  // chapter, unlike CH2.4's hand-in). rankUp BEFORE endScreen (the 1e rule);
+  // the encounter carries no addCoins of its own — rankUp pays the OPERATIVE
+  // reward from rankRewards.ts.
+  span_kira: {
+    trainer: 'AGENT KIRA',
+    foe: { species: 'arbok', lv: 12 },
+    winText: ['KIRA: ...Good.', 'That was the', 'test. You pass.'],
+    onWin: [
+      { setFlag: 'ch3Done' },
+      { say: [['KIRA: The boss', 'wants loyalty', 'that bites back.'], ['Welcome up a', 'rung, OPERATIVE.', "Don't waste it."]] },
+      { music: 'victory' },
+      { rankUp: true },
+      { endScreen: true },
+    ],
+    onLose: [],
+    onFlee: [{ say: [['KIRA: Cold feet?', 'The span will', "wait. I won't."]] }],
+  },
 };

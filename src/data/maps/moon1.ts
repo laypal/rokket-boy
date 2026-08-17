@@ -17,7 +17,7 @@ export const moon1Map: MapDef = makeMap({
     '# ~      R     ~~  #',
     '# ~~~     R  ~     #',
     '#~ ~    #  R   ~ R #',
-    '# ~     #   R ~~ R #',
+    '# ~     #   R ~~ R o',
     'o                 R#',
     '#    ~   R  ## ~~  #',
     '#  ~   R   ~  ~~R  #',
@@ -38,6 +38,9 @@ export const moon1Map: MapDef = makeMap({
   warps: {
     '0,5': ['corner', 18, 7, 'left'],
     '18,9': ['moon2', 2, 2, 'down'],
+    // CH3.2 — east door to CERULEUN EDGE; off the ch2.6 e2e route (which
+    // only ever touches x=18/19 in transit on other rows), so untouched
+    '19,4': ['outskirts', 1, 6, 'right'],
   },
   scripts: moon1Scripts,
   // CH2.3 frozen table (task card 20-ch2-mt-moon.md) — do not retune here.

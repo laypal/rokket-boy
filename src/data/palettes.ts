@@ -12,6 +12,7 @@ export const BG_PAL: Record<string, Palette> = {
   vault:  ['#100a04', '#4e3a12', '#a8842e', '#f0e2b0'],   // vault — gold
   night:  ['#080810', '#22224a', '#5555a0', '#b8b8e8'],   // intro sky
   moon:   ['#050810', '#16294e', '#3e6496', '#a8c4e0'],   // Mt. Möön caves — dark blue
+  span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8'],   // NUGGET SPAN — daylight river teal (CH3.2)
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -39,6 +40,7 @@ export const OBJ_PAL: Record<string, Palette> = {
   zubatt:  ['#140c1c', '#5c3878', '#8868a8', '#ded0f0'], // SPR.A — ZUBATT/GOLBATT line, cave purple
   geodood: ['#1c1408', '#6e5438', '#a8886a', '#e0c8a8'], // SPR.B — GEODOOD/GRAVLR line, rocky grey-brown
   ekanzz:  ['#140a1c', '#3a6e2c', '#6e3a8e', '#c8e0a8'], // SPR.B — EKANZZ/ARBÖK line, venom green-violet
+  kira:    ['#0c0c14', '#8a3fa0', '#e8b088', '#f0f0f8'], // CH3.2 — AGENT KIRA, violet/plum accent
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────

@@ -5,7 +5,7 @@ import type { SpriteRows } from './data/sprites';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -27,6 +27,14 @@ export interface Flags {
   // SIDE.5 HQ training drills — reward paid once, drills stay repeatable
   drillBattleDone: boolean;  // Jessika's sparring match won at least once
   drillStealthDone: boolean; // Myowth's stealth course goal reached once
+  // CH3 (Nugget Span) — one flag per mark on the bridge (beaten = paid out
+  // + gone) and the chapter end (KIRA beaten = OPERATIVE). No save bump.
+  spanCamper: boolean;
+  spanPicnicker: boolean;
+  spanHiker: boolean;
+  spanYoungster: boolean;
+  spanLass: boolean;
+  ch3Done: boolean;
 }
 export type FlagName = keyof Flags;
 

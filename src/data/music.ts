@@ -100,6 +100,23 @@ export const TRACKS: Record<string, Track> = {
           E2 =  =  =  =  =  =  =  =  =  =  =  =  =  =  =`,
     dr: `k...h........... ................ k............... ....k...h.......`,
   },
+  // NUGGET SPAN — bright, marching con-job energy (CH3.2)
+  bridge: {
+    bpm: 126,
+    p1: `C4 -  E4 -  G4 -  C5 -  G4 -  E4 -  D4 -  C4 -
+         D4 -  F4 -  A4 -  D5 -  A4 -  F4 -  E4 -  D4 -
+         E4 -  G4 -  C5 -  E5 -  C5 -  G4 -  F4 -  E4 -
+         C4 =  =  =  =  =  -  -  G4 =  =  =  =  =  -  -`,
+    p2: `-  -  C3 =  -  -  C3 =  -  -  G3 =  -  -  -  -
+         -  -  D3 =  -  -  D3 =  -  -  A3 =  -  -  -  -
+         -  -  E3 =  -  -  E3 =  -  -  G3 =  -  -  -  -
+         C3 =  =  =  =  =  -  -  G3 =  =  =  =  =  -  -`,
+    tri: `C2 -  C2 -  C2 -  C2 -  C2 -  C2 -  G1 -  G1 -
+          D2 -  D2 -  D2 -  D2 -  D2 -  D2 -  A1 -  A1 -
+          E2 -  E2 -  E2 -  E2 -  E2 -  E2 -  G1 -  G1 -
+          C2 -  C2 -  C2 -  G1 -  C2 -  C2 -  C2 -  G1 -`,
+    dr: `k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.h.h.h.`,
+  },
   // Dig site — same drone family as cave, a little more movement (CH2 AUD.3)
   cave2: {
     bpm: 92,

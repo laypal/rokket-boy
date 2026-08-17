@@ -22,6 +22,7 @@ import { worldHooks } from './systems/world';
 import { setEncounterRng } from './systems/encounter';
 import { mulberry32 } from './engine/rng';
 import { ITEMS } from './data/items';
+import type { WarpDef } from './types';
 
 // HRD.3: field error capture from the very first frame — the loop guard
 // records loop throws; this catches everything outside it.
@@ -145,6 +146,10 @@ if (import.meta.env.DEV) {
       quest.flags.missionDone = true;
     },
     enterDrill: () => runScript([{ warp: ['hqDrill', 5, 8, 'up'] }], worldHooks),
+    // CH3.4: fade-warp through the REAL warp hook (interpreter + worldHooks)
+    // so chapter specs can seed a mid-campaign position instead of walking
+    // three maps.
+    warp: (w: WarpDef) => runScript([{ warp: w }], worldHooks),
   };
 }
 

@@ -310,6 +310,39 @@ export const MYOWTH_B = S(
 '...00.0000.00...',
 '......0..0......');
 
+// KIRA — bridge boss (CH3.2): a blunt-cut bob with a thin braid tucked
+// behind one ear, distinct from jessika's flowing side sweep. 'd'/'s' carry
+// the straight-cut fringe; 'u' carries the braid texture across the back.
+HEADS.kira = {
+  d: S(
+  '....01111110....',
+  '...0111111110...',
+  '..011111111110..',
+  '..010000000010..',
+  '..110222222011..',
+  '..110202202011..',
+  '..110222222011..',
+  '...0022222200...'),
+  u: S(
+  '....01111110....',
+  '...0111111110...',
+  '..011111111110..',
+  '..011111111110..',
+  '..011101110111..',
+  '..011111111110..',
+  '..001111111100..',
+  '...0011111100...'),
+  s: S(
+  '....0111110.....',
+  '..0111111110....',
+  '..1111111110....',
+  '..1101111110....',
+  '..1022221110....',
+  '..1020222110....',
+  '..1022222100....',
+  '...0222200......'),
+};
+
 // ── Battle sprites (drawn at 2× in battle scene) ────────────────────────
 // Koffink — back view, 24×20
 export const KOFFINK_BACK = S(
@@ -846,6 +879,37 @@ export const PORTRAITS: Record<string, { rows: SpriteRows; pal: string[] }> = {
     '........................'),
     pal: OBJ_PAL.brad,
   },
+  // AGENT KIRA (CH3.2) — same 24×24 template as BRAD's, forehead notches
+  // smoothed out (no bandana ties, she doesn't wear one) so the shared
+  // silhouette reads as its own character once the violet/plum pal lands.
+  'AGENT KIRA': {
+    rows: S(
+    '........................',
+    '.......0111111110.......',
+    '......011111111110......',
+    '.....01111111111110.....',
+    '.....01111111111110.....',
+    '.....00011111111000.....',
+    '.....00222222222200.....',
+    '.....02222222222220.....',
+    '.....02222222222220.....',
+    '.....02222222222220.....',
+    '.....02222000022220.....',
+    '.....00222222222200.....',
+    '......002222222200......',
+    '.......0000220000.......',
+    '......000002200000......',
+    '....00000000000000000...',
+    '...0000000000000000000..',
+    '...0030000000000003000..',
+    '...0030001111000003000..',
+    '...0000011111100000000..',
+    '...0000011111100000000..',
+    '...0000001111000000000..',
+    '...0000000000000000000..',
+    '........................'),
+    pal: OBJ_PAL.kira,
+  },
 };
 
 // ── Character registry + composition ─────────────────────────────────────
@@ -856,6 +920,7 @@ export const CHARSETS: Record<string, Charset> = {
   giovanni:{ head: HEADS.giovanni,body: BODY_SUIT, pal: OBJ_PAL.giovanni },
   guard:   { head: HEADS.guard,   body: BODY_SUIT, pal: OBJ_PAL.guard },
   brad:    { head: HEADS.brad,    body: BODY_DARK, pal: OBJ_PAL.brad },
+  kira:    { head: HEADS.kira,    body: BODY_DARK, pal: OBJ_PAL.kira },
 };
 
 // ── RNK.5: worn gear overlays ────────────────────────────────────────────

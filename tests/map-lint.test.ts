@@ -10,7 +10,7 @@ import { TILES, WALKABLE } from '../src/data/tiles';
 
 const CAVE_MAX_W = 28;
 const CAVE_MAX_H = 20;
-const CAVE_IDS = ['moon1', 'moon2', 'moonDig'];
+const CAVE_IDS = ['moon1', 'moon2', 'moonDig', 'outskirts', 'bridge'];
 
 describe('map lints', () => {
   it('every map grid is rectangular: row count matches h, every row length matches w', () => {
@@ -59,7 +59,7 @@ describe('map lints', () => {
     }
   });
 
-  it('cave maps (moon1/moon2/moonDig) stay within the 28x20 build cap', () => {
+  it('cave maps + CH3.2 span maps stay within the 28x20 build cap', () => {
     for (const id of CAVE_IDS) {
       const map = MAPS[id as keyof typeof MAPS];
       expect(map.w, `${id} width`).toBeLessThanOrEqual(CAVE_MAX_W);

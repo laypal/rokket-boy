@@ -31,6 +31,12 @@ function freshFlags(): Flags {
     jobsIntroSeen: false,
     drillBattleDone: false,
     drillStealthDone: false,
+    spanCamper: false,
+    spanPicnicker: false,
+    spanHiker: false,
+    spanYoungster: false,
+    spanLass: false,
+    ch3Done: false,
   };
 }
 
@@ -130,6 +136,16 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'RAID MT. MOON', done: { flag: 'fossilsTaken' } },
       { objective: 'BEAT BRAD', done: { flag: 'bradBeaten' } },
       { objective: 'REPORT TO BOSS', done: { flag: 'ch2Done' } },
+    ],
+  },
+  // CH3: the five marks fall in lane order, so the last one's flag is the
+  // gauntlet's "done"; KIRA's win sets ch3Done AND promotes on the spot
+  // (she is the recruiter — no separate report-to-boss step this chapter).
+  {
+    id: 'ch3',
+    steps: [
+      { objective: 'WORK THE SPAN', done: { flag: 'spanLass' } },
+      { objective: 'BEAT KIRA', done: { flag: 'ch3Done' } },
     ],
   },
 ];

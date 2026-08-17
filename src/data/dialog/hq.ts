@@ -2,71 +2,81 @@
 import type { ScriptStep } from '../../types';
 
 export const hqScripts: Record<string, ScriptStep[]> = {
-  // CH2.4: outermost branches first — ch2 afterglow, then the fossil
-  // hand-in (rankUp BEFORE endScreen: endScreen does not suspend, the 1e
-  // rule), then the CH2 briefing replacing the old "rest up" line, then
-  // the untouched ch1 chain.
+  // CH2.4/CH3.3: outermost branches first — ch3Done afterglow, then the
+  // ch3 briefing (replacing the old ch2Done afterglow line, the same way
+  // CH2.4 replaced ch1's "rest up" slot), then the untouched ch2/ch1 chain.
+  // KIRA runs the span and promotes the player herself (span_kira's onWin),
+  // so there is no CH3 hand-in branch here — just the briefing and the
+  // afterglow that bookend it.
   'npc:giovanni': [
     {
-      if: { flag: 'ch2Done' },
+      if: { flag: 'ch3Done' },
       then: [
-        { say: [['GIOVANNI: The', 'fossils fetched', 'a fine price.'], ['Enjoy the rank,', 'AGENT. It cost', 'me nothing.']] },
+        { say: [['GIOVANNI: KIRA', 'says you passed.', 'Do not gloat.'], ['OPERATIVE suits', 'you. For now.']] },
       ],
       else: [
         {
-          if: { flag: 'bradBeaten' },
+          if: { flag: 'ch2Done' },
           then: [
-            {
-              say: [
-                ['GIOVANNI: The', 'pair of fossils.', 'Intact. Good.'],
-                ['And you dented', "BRAD's ego on", 'the way. Better.'],
-              ],
-            },
-            { setFlag: 'ch2Done' },
-            { music: 'victory' },
-            { rankUp: true },
-            { endScreen: true },
+            { say: [['GIOVANNI: AGENT.', 'A new racket.', 'The NUGGET SPAN.'], ['East of MT. MOON.', 'We run a "prize', 'bridge" there.'], ['Five marks paid', 'to cross. Beat', 'them. Keep it.'], ['AGENT KIRA runs', 'the span. Do as', 'she says.']] },
           ],
           else: [
             {
-              if: { flag: 'missionDone' },
+              if: { flag: 'bradBeaten' },
               then: [
                 {
                   say: [
-                    ['GIOVANNI: New', 'job. A dig site', 'in MT. MOON.'],
-                    ['Cave mouth is', 'east of the', 'GAMEZ CORNER.'],
-                    ['Scientists dug', 'up a PAIR of', 'fossils. Fetch.'],
+                    ['GIOVANNI: The', 'pair of fossils.', 'Intact. Good.'],
+                    ['And you dented', "BRAD's ego on", 'the way. Better.'],
                   ],
                 },
+                { setFlag: 'ch2Done' },
+                { music: 'victory' },
+                { rankUp: true },
+                { endScreen: true },
               ],
               else: [
-        {
-          if: { flag: 'lootTaken' },
-          then: [
-            { say: [['GIOVANNI:', 'Well? Hand it', 'over already!']] },
-            { setFlag: 'missionDone' },
-            { music: 'victory' },
-            { endScreen: true },
-          ],
-          else: [
-            {
-              if: { flag: 'briefed' },
-              then: [{ say: [['GIOVANNI:', 'The vault, grunt.', 'Why are you here?']] }],
-              else: [
-                { setFlag: 'briefed' },
                 {
-                  say: [
-                    ['GIOVANNI:', 'So. The new', 'grunt.'],
-                    ['Listen well. The', 'GAMEZ CORNER', 'upstairs hides'],
-                    ['our old vault.', 'A CASE OF COINS', 'was left inside.'],
-                    ['A guard blocks', 'the way. Deal', 'with him.'],
-                    ['Find the switch.', 'Take the case.', 'Do NOT fail me.'],
+                  if: { flag: 'missionDone' },
+                  then: [
+                    {
+                      say: [
+                        ['GIOVANNI: New', 'job. A dig site', 'in MT. MOON.'],
+                        ['Cave mouth is', 'east of the', 'GAMEZ CORNER.'],
+                        ['Scientists dug', 'up a PAIR of', 'fossils. Fetch.'],
+                      ],
+                    },
+                  ],
+                  else: [
+                    {
+                      if: { flag: 'lootTaken' },
+                      then: [
+                        { say: [['GIOVANNI:', 'Well? Hand it', 'over already!']] },
+                        { setFlag: 'missionDone' },
+                        { music: 'victory' },
+                        { endScreen: true },
+                      ],
+                      else: [
+                        {
+                          if: { flag: 'briefed' },
+                          then: [{ say: [['GIOVANNI:', 'The vault, grunt.', 'Why are you here?']] }],
+                          else: [
+                            { setFlag: 'briefed' },
+                            {
+                              say: [
+                                ['GIOVANNI:', 'So. The new', 'grunt.'],
+                                ['Listen well. The', 'GAMEZ CORNER', 'upstairs hides'],
+                                ['our old vault.', 'A CASE OF COINS', 'was left inside.'],
+                                ['A guard blocks', 'the way. Deal', 'with him.'],
+                                ['Find the switch.', 'Take the case.', 'Do NOT fail me.'],
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
-              ],
-            },
-          ],
-        },
               ],
             },
           ],

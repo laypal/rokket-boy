@@ -469,6 +469,12 @@ describe('repairItemBalls', () => {
     jobsIntroSeen: false,
     drillBattleDone: false,
     drillStealthDone: false,
+    spanCamper: false,
+    spanPicnicker: false,
+    spanHiker: false,
+    spanYoungster: false,
+    spanLass: false,
+    ch3Done: false,
     ...over,
   });
 

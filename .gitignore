@@ -15,3 +15,6 @@ test-results/
 
 # Playwright MCP browser artefacts (screenshots/snapshots from QA sessions)
 .playwright-mcp/
+
+# Claude Code worktrees (parallel subagent trees)
+.claude/worktrees/

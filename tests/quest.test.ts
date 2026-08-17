@@ -122,6 +122,20 @@ describe('chapter state machine (§4.7)', () => {
     quest.flags.bradBeaten = true;
     expect(currentObjective()).toBe('REPORT TO BOSS');
     quest.flags.ch2Done = true;
+    // CH3 is authored now: the tease only shows once every chapter is met
+    expect(currentObjective()).toBe('WORK THE SPAN');
+  });
+
+  it('ch3 walks its two steps (spanLass gates the gauntlet, ch3Done ends it), then the tease', () => {
+    for (const f of ['briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone', 'fossilsTaken', 'bradBeaten', 'ch2Done'] as const)
+      quest.flags[f] = true;
+    expect(currentObjective()).toBe('WORK THE SPAN');
+    // marks 1–4 alone do not advance the objective — only the last one does
+    quest.flags.spanCamper = quest.flags.spanPicnicker = quest.flags.spanHiker = quest.flags.spanYoungster = true;
+    expect(currentObjective()).toBe('WORK THE SPAN');
+    quest.flags.spanLass = true;
+    expect(currentObjective()).toBe('BEAT KIRA');
+    quest.flags.ch3Done = true;
     expect(currentObjective()).toBe('AWAIT ORDERS.');
   });
 
