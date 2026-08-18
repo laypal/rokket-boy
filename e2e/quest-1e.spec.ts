@@ -7,6 +7,7 @@
 // conventions — A='z', B='x', START='Enter', D-pad=Arrow* (src/engine/
 // input.ts KEYMAP).
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 // Matches smoke.spec.ts / save-1d.spec.ts / inventory-1c.spec.ts's global
 // Window.__debug augmentation exactly — TS requires identical merged member
@@ -46,23 +47,6 @@ async function press(page: Page, key: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts /
-// save-1d.spec.ts): title -> START -> intro -> A x3 -> world, landing in
-// ROKKET HQ.
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 // Open the pause menu and move the cursor onto STATUS. Pause-menu order
 // (src/systems/menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/SAVE(3)/
 // SOUND(4)/HELP(5)/CLOSE(6) — openMenu() always resets sel to 0, so 2 Downs
@@ -76,7 +60,7 @@ async function openStatus(page: Page): Promise<void> {
 }
 
 test('rankUp shows the rank card and promotes to AGENT', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   const rankBefore = await page.evaluate(() => (window.__debug as unknown as DebugFull).quest.rank);
   expect(rankBefore).toBe('GRUNT');
@@ -103,7 +87,7 @@ test('rankUp shows the rank card and promotes to AGENT', async ({ page }) => {
 });
 
 test('STATUS shows the current chapter objective', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await openStatus(page);
   expect(await page.evaluate(() => window.__debug.G.state)).toBe('menu');

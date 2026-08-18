@@ -1,5 +1,6 @@
 // Boot / Title / Intro / End screens.
 import { G } from '../state';
+import type { MapId } from '../types';
 import { T } from '../data/tiles';
 import { BG_PAL } from '../data/palettes';
 import { EGG_TOTAL } from '../data/eggs';
@@ -9,7 +10,8 @@ import { Audio2 } from '../engine/audio';
 import { CHAR_FRAMES } from '../engine/charFrames';
 import { quest } from './quest';
 import { hasSave, readSave, applySave } from './save';
-import { performWarp } from './world';
+import { performWarp, landAt, worldDraw } from './world';
+import { MAPS } from '../data/maps';
 
 let powered = false;
 export function markPowered(): void {
@@ -42,6 +44,8 @@ let titleSel: number | null = null;
 function startIntro(): void {
   G.state = 'intro';
   G.introPage = 0;
+  G.introT = 0;
+  G.cutscene = null;
   Audio2.stop();
 }
 
@@ -147,28 +151,131 @@ export function titleUpdate(): void {
   }
 }
 
-const INTRO = [
-  ['IN THE SHADOWS', 'OF KANTOO...', '', 'AN ORGANISATION', 'RISES AGAIN.'],
-  ['YOU ARE ITS', 'NEWEST GRUNT.', '', 'TONIGHT IS YOUR', 'FIRST JOB.'],
-  ['DO NOT MESS', 'THIS UP.', '', '      -- G.'],
+// ── ONB.8 cold open ──────────────────────────────────────────────────────
+// Eight cards over real map backdrops. `cam` is the camera TARGET in pixels
+// (cameraFor clamps it): two numbers hold still, four pan from the first
+// pair to the second across the card's dwell. Frame counts are frozen in
+// docs/superpowers/specs/2026-08-18-cold-open-intro-design.md — 990 frames
+// is the 16.5s the design signed off.
+//
+// `hold` opens a beat: the card shows its backdrop for HOLD_FRAMES before
+// the words appear, so you see where you are before you are asked to read.
+// The design budgeted 54 frames for beat transitions; this is where they go,
+// and the three holds are already inside the frame counts below.
+//
+// `showPlayer`: the player sprite stands at (9,7) on every map, which is a
+// stray figure in a cave and the actual recruit in HQ. Only HQ shows it.
+export const HOLD_FRAMES = 18;
+
+export interface IntroCard {
+  map: MapId;
+  cam: [number, number] | [number, number, number, number];
+  lines: string[];
+  frames: number;
+  /** first card of a beat: hold the backdrop before the words land */
+  hold?: boolean;
+  /** draw the player sprite (HQ only — see above) */
+  showPlayer?: boolean;
+}
+
+export const INTRO_CARDS: IntroCard[] = [
+  // beat 1 — the world
+  { map: 'moon1',  cam: [144, 80],          frames: 114, hold: true,
+    lines: ['THIS IS KANTOO.', 'IT RUNS ON MONS.'] },
+  { map: 'corner', cam: [144, 80],          frames: 132,
+    lines: ['EVERYONE CATCHES', 'THEM, TRAINS THEM', 'AND FIGHTS THEM.'] },
+  { map: 'bridge', cam: [96, 160],          frames: 144,
+    lines: ['WIN ENOUGH FIGHTS', 'AND YOU GET A', 'BADGE.', '', 'YOU WANTED PAY.'] },
+  // beat 2 — the tower. 2a holds at street level (any target y ≥ 400 pins
+  // the camera to the map bottom: door on screen y 112, sign above it);
+  // 2b and 2c are one climb at a constant 168px per card, ending with the
+  // camera at the top so the roof and the lit window sit under the band.
+  { map: 'tower',  cam: [80, 400],          frames: 114, hold: true,
+    lines: ['SO YOU SIGNED ON', 'WITH ROKKET CORP.'] },
+  { map: 'tower',  cam: [80, 400, 80, 232], frames: 132,
+    lines: ['STEADY WORK.', 'GOOD DENTAL.', 'AWFUL PEOPLE.'] },
+  { map: 'tower',  cam: [80, 232, 80, 64],  frames: 132,
+    lines: ['TWELVE FLOORS.', 'THE BOSS TAKES', 'THE TOP ONE.'] },
+  // beat 3 — HQ. Target y 96 (camY 32) puts Giovanni (7,3) at screen y
+  // 12..28, right above the band, and the player (9,7) at 76..92, right
+  // below a three-line one.
+  { map: 'hq',     cam: [144, 96],          frames: 102, hold: true, showPlayer: true,
+    lines: ['YOU GET THE', 'GROUND FLOOR.'] },
+  { map: 'hq',     cam: [144, 96],          frames: 120, showPlayer: true,
+    lines: ['DO NOT MESS', 'THIS UP.', '     -- G.'] },
 ];
+
 export function introUpdate(): void {
-  fill('#000');
-  const pg = INTRO[G.introPage];
-  pg.forEach((l, i) => textC(l, 34 + i * 14, '#b8b8e8'));
-  if ((G.frame >> 4) & 1) textC('- A -', 122, '#5555a0');
-  if (Input.hit('a') || Input.hit('start')) {
-    Audio2.sfx('beep');
-    G.introPage++;
-    if (G.introPage >= INTRO.length) {
-      startFade(() => {
-        G.state = 'world';
-        G.mapNameT = 90;
-        Audio2.play('hq');
-      });
-      G.state = 'worldwait';
-    }
+  const card = INTRO_CARDS[G.introPage];
+  // Point the world renderer at the backdrop without warping to it: no fade,
+  // no music change, no enter scripts. Scenery, not a destination.
+  G.map = MAPS[card.map];
+
+  // camera: hold, or pan from the first pair to the second across the dwell
+  const t = card.frames > 1 ? G.introT / (card.frames - 1) : 1;
+  const [x0, y0] = card.cam;
+  const x1 = card.cam.length === 4 ? card.cam[2] : x0;
+  const y1 = card.cam.length === 4 ? card.cam[3] : y0;
+  G.cutscene = {
+    camX: x0 + (x1 - x0) * t,
+    camY: y0 + (y1 - y0) * t,
+    hidePlayer: !card.showPlayer,
+  };
+  worldDraw();
+
+  // The words need a floor to sit on: over a lit cave or a magenta casino,
+  // pale text alone is unreadable. A solid night-palette band is the GB
+  // answer, and it is the same band on every card so the eye stops moving.
+  // A beat's opening card holds its backdrop bare for HOLD_FRAMES first.
+  const night = BG_PAL.night;
+  const holding = card.hold === true && G.introT < HOLD_FRAMES;
+  if (!holding) {
+    const bandH = card.lines.length * 14 + 6; // 6px above the first line and below the last
+    rect(0, 28, W, bandH, night[0]);
+    card.lines.forEach((l, i) => textC(l, 34 + i * 14, night[3]));
   }
+  if ((G.frame >> 4) & 1) textC('- A -', 122, night[2]);
+  textC('START TO SKIP', 134, night[2]);
+
+  // ONB.8: START leaves the whole cinematic, A advances one card. Both are
+  // live from the first frame — Input.hit() is edge-triggered and
+  // Input.endFrame() clears the pressed set every frame, so a START still
+  // held from the title screen cannot leak in here.
+  if (Input.hit('start')) {
+    Audio2.sfx('beep');
+    endIntro();
+    return;
+  }
+  if (Input.hit('a')) {
+    Audio2.sfx('beep');
+    nextCard();
+    return;
+  }
+  G.introT++;
+  if (G.introT >= card.frames) nextCard();
+}
+
+function nextCard(): void {
+  G.introPage++;
+  G.introT = 0;
+  if (G.introPage >= INTRO_CARDS.length) endIntro();
+}
+
+/** Hand over to the game: the same fade the old intro used, then landAt does
+ *  map, player, music and queues HQ's enter script — which is how Giovanni
+ *  gets his opening line (src/data/dialog/hq.ts, behind `introSeen`). Not
+ *  performWarp: that autosaves and fires
+ *  the SESSION-ONLY toast, and neither belongs at the end of a cinematic. */
+function endIntro(): void {
+  G.introT = 0;
+  // Keep the cutscene camera up through the fade-out: `worldwait` still
+  // draws the world, and dropping it here would snap the view to the
+  // player for nine frames on whatever backdrop the skip landed on.
+  startFade(() => {
+    G.cutscene = null;
+    landAt(['hq', 9, 7, 'down']);
+  });
+  G.state = 'worldwait';
 }
 
 export function endUpdate(): void {

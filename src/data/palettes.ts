@@ -28,6 +28,7 @@ export const BG_PAL: Record<string, Palette> = {
   night:  ['#080810', '#22224a', '#5555a0', '#b8b8e8', ALERT],   // intro sky
   moon:   ['#050810', '#16294e', '#3e6496', '#a8c4e0', ALERT],   // Mt. Möön caves — dark blue
   span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8', ALERT],   // NUGGET SPAN — daylight river teal (CH3.2)
+  tower:  ['#080810', '#22304a', '#46608a', '#e8d24a', ALERT],   // ONB.8 — Rokket Corp at night; shade 3 is a lit window
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent

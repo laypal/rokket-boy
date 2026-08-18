@@ -8,6 +8,7 @@
 // seconds, and no assertion reads rendered pixels (the countdown/`!` overlay
 // are draw-only, left to manual playtest per the 1f.6 card).
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
@@ -32,21 +33,6 @@ interface DebugFull {
   quest: { coins: number };
   setHeat: (n: number) => void;
   advanceTime: (s: number) => void;
-}
-
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts / quest-1e.spec.ts).
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
 }
 
 // One tile: press, wait for the move to start, release before it finishes —
@@ -76,7 +62,7 @@ async function walk(
 }
 
 test('setHeat(3) arms the lockdown and warp escape clears it', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => (window.__debug as unknown as DebugFull).setHeat(3));
 
@@ -102,7 +88,7 @@ test('setHeat(3) arms the lockdown and warp escape clears it', async ({ page }) 
 });
 
 test('expired lockdown whites out to HQ with the 10% coin cut', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     (window.__debug as unknown as DebugFull).quest.coins = 100;

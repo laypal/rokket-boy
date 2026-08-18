@@ -21,6 +21,8 @@ export const moon1Scripts: Record<string, ScriptStep[]> = {
     { say: [['GRUNT: Balls,', 'sodas. Cave', 'prices, sorry.']] },
     { shop: 'moonCart' },
   ],
+  // ONB.8: the wild zubatt from beat 1a isn't mute if a player pokes it.
+  'npc:introzubatt': [{ say: [['ZUBATT: SKREE.']] }],
   // SIDE.3 map secret — a dead-end wall nub at (12,6), faced from the open
   // floor at (11,6). Off chapter2.spec.ts's walked set entirely (row y=5,
   // column x=17 y5-9, the (18,9) stairs never touch row 6).

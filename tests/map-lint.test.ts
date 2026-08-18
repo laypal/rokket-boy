@@ -43,6 +43,7 @@ describe('map lints', () => {
 
   it('every map has at least one warp (no orphan maps)', () => {
     for (const map of Object.values(MAPS)) {
+      if (map.id === 'tower') continue; // ONB.8 backdrop — nothing walks it
       expect(Object.keys(map.warps).length, `${map.id} has no warps`).toBeGreaterThan(0);
     }
   });
@@ -64,6 +65,18 @@ describe('map lints', () => {
       const map = MAPS[id as keyof typeof MAPS];
       expect(map.w, `${id} width`).toBeLessThanOrEqual(CAVE_MAX_W);
       expect(map.h, `${id} height`).toBeLessThanOrEqual(CAVE_MAX_H);
+    }
+  });
+});
+
+// ONB.8: the tower is scenery. If something ever warps there the player can
+// walk around inside a backdrop that has no collision design and no way out.
+describe('tower is a backdrop', () => {
+  it('no map warps to it', () => {
+    for (const map of Object.values(MAPS)) {
+      for (const [from, w] of Object.entries(map.warps)) {
+        expect(w[0], `${map.id} (${from}) warps to the tower backdrop`).not.toBe('tower');
+      }
     }
   });
 });

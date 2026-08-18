@@ -4,6 +4,7 @@
 // through __debug (never pixels). State asserts only — the exact seeded
 // board (card 0's value) is pinned in the unit suite, not here.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 // Matches the shared global Window.__debug augmentation (see
 // inventory-1c.spec.ts's comment on merged declaration types).
@@ -28,22 +29,8 @@ async function press(page: Page, key: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 test('PICKPOCKET: deal a hand, flip a card, bag the haul, leave', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     (window.__debug as unknown as DebugFull).quest.coins = 100;

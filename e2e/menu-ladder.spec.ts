@@ -19,6 +19,7 @@
 // Row content (tags/footer per rung) is unit-tested in tests/rankLadder.
 // test.ts via mocked text() calls, which pixel-free e2e cannot check anyway.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
@@ -46,21 +47,6 @@ async function press(page: Page, key: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts / quest-1e.spec.ts).
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 // Open the pause menu and land on the STATUS sub-screen, statusNav.sel reset
 // to 0 (the RANK row) — same helper/order as quest-1e.spec.ts's openStatus.
 async function openStatus(page: Page): Promise<void> {
@@ -76,7 +62,7 @@ async function menuSub(page: Page): Promise<string | null> {
 }
 
 test('A on the RANK row opens the ladder; B returns to STATUS, not the world', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
   await openStatus(page);
   expect(await page.evaluate(() => window.__debug.G.state)).toBe('menu');
   expect(await menuSub(page)).toBe('status');
@@ -102,7 +88,7 @@ test('A on the RANK row opens the ladder; B returns to STATUS, not the world', a
 });
 
 test('A on a different STATUS row does not open the ladder (sel !== 0)', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
   await openStatus(page); // sel 0 = RANK row
   await press(page, 'ArrowDown'); // RANK -> JOB, sel 1
   await press(page, 'z'); // A on JOB row -> no-op (unchanged pre-RNK.2 behaviour)
@@ -116,7 +102,7 @@ test('A on a different STATUS row does not open the ladder (sel !== 0)', async (
 });
 
 test('the ladder still opens cleanly after a real rankUp() promotion', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   // Promote via the real script-interpreter path (same __debug.rankUp()
   // precedent as quest-1e.spec.ts), dismiss the rank card, then re-open

@@ -8,6 +8,7 @@
 // inspects menu text, entry names, or menu structure. A bad-RNG loss
 // whitesouts back to HQ, so the fight is retried up to 3 times.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
@@ -109,18 +110,8 @@ async function waitForMap(page: Page, id: string, timeout = 8_000): Promise<void
 test('Chapter 1: HQ briefing, guard fight, poster switch, vault heist, hand-in', async ({ page }) => {
   test.setTimeout(180_000); // up to 3 retry-tolerant battle attempts, generously budgeted
 
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-
-  // ── boot → title → intro → world (ROKKET HQ) — same as smoke.spec ───────
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
+  // ── boot → title → skip the cold open → world (ROKKET HQ) ───────────────
+  await bootToWorld(page);
 
   // ── HQ briefing: walk to Giovanni (7,3), talk from (7,4) facing up ───────
   await walk(page, 'ArrowLeft', 2, 7, 7);

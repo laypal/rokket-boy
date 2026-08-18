@@ -17,6 +17,7 @@
 //       landed by HRD.4 (e2e-prod/prod-smoke.spec.ts:37); verified, not
 //       duplicated here.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld, startNewGame } from './boot';
 
 interface MonInstanceLike {
   species: string;
@@ -62,22 +63,6 @@ async function state(page: Page): Promise<string> {
   return page.evaluate(() => window.__debug.G.state);
 }
 
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts / save-1d.spec.ts):
-// title -> START -> intro -> A x3 -> world, landing in ROKKET HQ.
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 // One tile (chapter1.spec.ts's tapDir, duplicated here — see that file's
 // comment for why the key is released before the tile finishes).
 async function tapDir(page: Page, key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight', timeout = 2_000): Promise<void> {
@@ -110,7 +95,7 @@ async function mashBattle(page: Page, maxMs: number): Promise<void> {
 // ── (a) battle-loss whiteout, asserted directly ────────────────────────────
 test('battle loss: fainting with no mons left whitesouts back to HQ', async ({ page }) => {
   test.setTimeout(60_000);
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   // Force the loss deterministically instead of relying on a fair fight:
   // the party's one mon is pinned to 1 hp (any connecting foe hit faints
@@ -149,7 +134,7 @@ test('battle loss: fainting with no mons left whitesouts back to HQ', async ({ p
 // ── (b) evolution cinematic, end-to-end in a real browser ──────────────────
 test('evolution cinematic renders end-to-end via the 4095-xp recipe', async ({ page }) => {
   test.setTimeout(60_000);
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   // The UX2.5 threshold recipe (tests/battle.test.ts:1019): a ratikatt at
   // xp 4095 is one win short of lv 16, where SPECIES.ratikatt.evolvesTo
@@ -208,7 +193,7 @@ test('storage denied: SAVE: SESSION ONLY toast appears and the game stays playab
     };
   });
 
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   // Any warp autosaves (src/systems/world.ts:227); the south doors out of
   // HQ are the same auto-warp chapter1.spec.ts uses. corner's enter script
@@ -240,7 +225,7 @@ test('storage denied: SAVE: SESSION ONLY toast appears and the game stays playab
 
 // ── (e) reload mid-battle / mid-dialog lands somewhere sane ────────────────
 test('reload mid-battle lands back at a playable title screen', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => (window.__debug as unknown as DebugFull).startBattle('guard_voltorbb'));
   await page.waitForFunction(() => window.__debug.G.state === 'battle', undefined, { timeout: 5_000 });
@@ -251,17 +236,13 @@ test('reload mid-battle lands back at a playable title screen', async ({ page })
 
   // no autosave happens mid-battle (only on warp), so there's no save to
   // offer CONTINUE on — prove the game is fully playable from here anyway.
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
+  // This is a post-reload page, not a fresh boot, so startNewGame (not
+  // bootToWorld, which does its own goto('/')) picks up from title.
+  await startNewGame(page);
 });
 
 test('reload mid-dialog lands back at a playable title screen', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   // walk to Giovanni (7,4) and open the briefing dialog without finishing it
   // (chapter1.spec.ts's proven HQ path)
@@ -274,11 +255,7 @@ test('reload mid-dialog lands back at a playable title screen', async ({ page })
   await expect(page.locator('#screen')).toBeVisible();
   await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
 
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
+  // Post-reload page already on title — see the reload mid-battle test above
+  // for why this calls startNewGame directly instead of bootToWorld.
+  await startNewGame(page);
 });

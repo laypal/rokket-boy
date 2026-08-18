@@ -8,6 +8,7 @@ import { moonDigMap } from './moonDig';
 import { hqDrillMap } from './hqDrill';
 import { outskirtsMap } from './outskirts';
 import { bridgeMap } from './bridge';
+import { towerMap } from './tower';
 
 export const MAPS: Record<MapId, MapDef> = {
   hq: hqMap,
@@ -19,4 +20,5 @@ export const MAPS: Record<MapId, MapDef> = {
   hqDrill: hqDrillMap,
   outskirts: outskirtsMap,
   bridge: bridgeMap,
+  tower: towerMap,
 };

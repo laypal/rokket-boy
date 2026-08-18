@@ -5,7 +5,7 @@ import type { SpriteRows } from './data/sprites';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -36,6 +36,10 @@ export interface Flags {
   spanYoungster: boolean;
   spanLass: boolean;
   ch3Done: boolean;
+  // ONB.8: Giovanni's opening line has been delivered. Flag additions carry
+  // no save-shape bump — old saves read a missing key as false, so a save
+  // made before this card hears the line once on its next HQ entry.
+  introSeen: boolean;
 }
 export type FlagName = keyof Flags;
 

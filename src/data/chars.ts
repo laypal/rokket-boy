@@ -310,6 +310,45 @@ export const MYOWTH_B = S(
 '...00.0000.00...',
 '......0..0......');
 
+// ONB.8 — ZUBATT on the overworld, 16×16, two frames of wingbeat. Decoded
+// with OBJ_PAL.zubatt: 0 outline, 1 body, 2 wing membrane, 3 the eyeless
+// face notch. Frame A has the wings up, B down.
+export const ZUBATT_OW_A = S(
+'................',
+'................',
+'..0..........0..',
+'..020......020..',
+'..0220....0220..',
+'..02220..02220..',
+'..022200002220..',
+'...0221111220...',
+'...0211331120...',
+'....01111110....',
+'....01033010....',
+'.....011110.....',
+'......0110......',
+'......0..0......',
+'................',
+'................');
+
+export const ZUBATT_OW_B = S(
+'................',
+'................',
+'................',
+'..0..........0..',
+'..020......020..',
+'..022200002220..',
+'...0221111220...',
+'...0211331120...',
+'....01111110....',
+'....01033010....',
+'.....011110.....',
+'..020.0110.020..',
+'..0220....0220..',
+'..0..........0..',
+'................',
+'................');
+
 // KIRA — bridge boss (CH3.2): a blunt-cut bob with a thin braid tucked
 // behind one ear, distinct from jessika's flowing side sweep. 'd'/'s' carry
 // the straight-cut fringe; 'u' carries the braid texture across the back.

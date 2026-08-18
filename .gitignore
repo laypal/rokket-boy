@@ -18,3 +18,6 @@ test-results/
 
 # Claude Code worktrees (parallel subagent trees)
 .claude/worktrees/
+
+# superpowers brainstorm companion (mockups + screenshots, session-scoped)
+.superpowers/

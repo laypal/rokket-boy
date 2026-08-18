@@ -32,6 +32,9 @@ export const moon1Map: MapDef = makeMap({
   npcs: [
     { id: 'myowth', char: 'myowth', x: 5, y: 1, dir: 'down' },
     { id: 'vendor', char: 'grunt', pal: 'gold', x: 2, y: 6, dir: 'down' },
+    // ONB.8: something alive in beat 1a. Off the chapter2 e2e walked set and
+    // off the entrance-to-stairs line, so it is scenery in play too.
+    { id: 'introzubatt', char: 'zubatt', x: 12, y: 2, dir: 'down' },
   ],
   signs: {},
   // SIDE.6: a SODA on the plain-floor cell (14,3) — clear of chapter2.spec.ts's

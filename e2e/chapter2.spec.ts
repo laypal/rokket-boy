@@ -20,6 +20,7 @@
 // for warp landings. CH2.7 replaced the talk-to-BRAD leg with the ambush
 // cascade (chest interact -> npcRun cutscene -> forced battle).
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 // Matches chapter1.spec.ts / smoke.spec.ts / quest-1e.spec.ts's global
 // Window.__debug augmentation exactly — TS requires identical merged member
@@ -113,18 +114,8 @@ async function waitForMap(page: Page, id: string, timeout = 8_000): Promise<void
 test('Chapter 2: MT. MOON raid, BRAD boss fight, fossil hand-in', async ({ page }) => {
   test.setTimeout(150_000);
 
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-
-  // ── boot → title → intro → world (ROKKET HQ) — same as smoke.spec ───────
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
+  // ── boot → title → skip the cold open → world (ROKKET HQ) ───────────────
+  await bootToWorld(page);
 
   // ── seed a completed CH1 (02-dos-and-donts.md: seed via __debug instead
   //    of replaying — chapter1.spec.ts is the standing regression for the

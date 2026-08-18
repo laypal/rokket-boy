@@ -6,6 +6,7 @@
 // instead of walking the player there — HQ's held-key tile-chain navigation
 // (see chapter1.spec.ts's tapDir comment) is fragile and irrelevant here.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 // Matches smoke.spec.ts / chapter1.spec.ts's global Window.__debug
 // augmentation exactly — TS requires identical merged member types for a
@@ -68,29 +69,13 @@ async function press(page: Page, key: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts): title ->
-// START -> intro -> A x3 -> world, landing in ROKKET HQ.
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 test('boots to title, plays the intro, lands in ROKKET HQ', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
   expect(await state(page)).toBe('world');
 });
 
 test('SHOP: buy a ROKKET BALL then sell it back', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     (window.__debug as unknown as DebugFull).quest.coins = 1000;
@@ -128,7 +113,7 @@ test('SHOP: buy a ROKKET BALL then sell it back', async ({ page }) => {
 });
 
 test('MON LOCKER: withdraw a box mon into the party, then deposit it back', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     (window.__debug as unknown as DebugFull).G.box.push({
@@ -172,7 +157,7 @@ test('MON LOCKER: withdraw a box mon into the party, then deposit it back', asyn
 });
 
 test('PARTY screen: use a SODA on the injured starter', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     const d = window.__debug as unknown as DebugFull;

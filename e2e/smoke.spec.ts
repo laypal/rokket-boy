@@ -1,6 +1,7 @@
-// Phase 0 smoke: boot → title → intro → HQ visible (plan §3.4).
+// Phase 0 smoke: boot → title → skip the cold open (ONB.8) → HQ visible (plan §3.4).
 // Uses the dev-only window.__debug hook; production builds don't expose it.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
@@ -16,23 +17,8 @@ async function state(page: Page): Promise<string> {
   return page.evaluate(() => window.__debug.G.state);
 }
 
-test('boots to title, plays the intro, lands in ROKKET HQ', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-
-  // boot rolls into title after ~90 frames
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-
-  // START → intro
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-
-  // three intro pages, A each
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
+test('boots to title, skips the intro, lands in ROKKET HQ', async ({ page }) => {
+  await bootToWorld(page);
 
   const g = await page.evaluate(() => ({
     map: window.__debug.G.map.id,

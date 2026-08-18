@@ -74,9 +74,15 @@ export interface GameState {
   /** §4.7 rank card: set by the rankUp script hook, drawn by scenes.ts;
    *  after() resumes the suspended script on dismiss. */
   rankCard: { rank: string; after: () => void } | null;
+  /** ONB.8: set while a cinematic is driving the view. `camX`/`camY` are the
+   *  camera TARGET in pixels (cameraFor clamps them); `hidePlayer` drops the
+   *  player sprite out of the draw. Transient — never saved. */
+  cutscene: { camX: number; camY: number; hidePlayer: boolean } | null;
   bootT: number;
   titleT: number;
   introPage: number;
+  /** ONB.8: frames spent on the current intro card. */
+  introT: number;
   konami: string[];
   endT: number;
   mapNameT: number;
@@ -99,9 +105,11 @@ export const G: GameState = {
   playSeconds: 0,
   heatState: {},
   rankCard: null,
+  cutscene: null,
   bootT: 0,
   titleT: 0,
   introPage: 0,
+  introT: 0,
   konami: [],
   endT: 0,
   mapNameT: 0,

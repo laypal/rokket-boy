@@ -39,6 +39,7 @@ function freshFlags(): Flags {
     spanYoungster: false,
     spanLass: false,
     ch3Done: false,
+    introSeen: false,
   };
 }
 

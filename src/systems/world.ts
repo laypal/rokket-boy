@@ -8,8 +8,9 @@ import { TILES, WALKABLE } from '../data/tiles';
 import { BG_PAL, OBJ_PAL } from '../data/palettes';
 import { CHARSETS } from '../data/chars';
 import { mirrorRows, stack, type SpriteRows } from '../data/sprites';
-import { ctx, decode, fill, clamp, drawWindow, text, W, H, TILE } from '../engine/renderer';
+import { ctx, decode, fill, drawWindow, text, W, H, TILE } from '../engine/renderer';
 import { startFade } from '../engine/renderer';
+import { cameraFor } from './camera';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
 import { CHAR_FRAMES, ensurePlayerFrames } from '../engine/charFrames';
@@ -28,6 +29,12 @@ import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
 import { makeMon, maxHp } from './mon';
 import { SPECIES } from '../data/mons';
+
+/** ONB.8: NPC `char` values that are mons rather than people. They have a
+ *  single two-frame idle instead of a head/body charset, so the draw takes a
+ *  different branch. A set, because the second entry is where a chain of
+ *  name checks starts to rot. */
+export const MON_WALKERS = new Set(['myowth', 'zubatt']);
 
 // ── Map helpers (pure over an explicit map — unit-testable) ──────────────
 export function tileAt(map: MapDef, x: number, y: number): string {
@@ -206,8 +213,29 @@ function addRustle(x: number, y: number): void {
 let pendingCaught: string[][] | null = null;
 
 // ── Warps ────────────────────────────────────────────────────────────────
-export function performWarp(w: WarpDef, after?: () => void): void {
+/** The landing half of a warp: map, player, state, name plate, music and the
+ *  map's enter script queued. No fade, no autosave, no door sfx —
+ *  performWarp wraps this inside its fade; the cold open (ONB.8) calls it
+ *  bare from its own fade so a fresh game does not autosave over the save
+ *  NEW GAME is documented to keep, and the SESSION-ONLY toast still fires
+ *  on the first real warp. */
+export function landAt(w: WarpDef): void {
   const [mapId, x, y, dir] = w;
+  G.map = MAPS[mapId];
+  const p = G.player;
+  p.x = x;
+  p.y = y;
+  p.dir = dir;
+  p.moving = false;
+  p.prog = 0;
+  G.state = 'world';
+  G.mapNameT = 90;
+  Audio2.play(G.map.music);
+  if (G.map.scripts.enter) pendingEnter = G.map.scripts.enter;
+}
+
+export function performWarp(w: WarpDef, after?: () => void): void {
+  const [mapId] = w;
   // §4.8 warp escape: leaving a map clears its HEAT + guard runtime, BEFORE
   // the fade so the autosave inside it never carries departed heat.
   delete G.heatState[G.map.id];
@@ -216,17 +244,7 @@ export function performWarp(w: WarpDef, after?: () => void): void {
   G.state = 'worldwait';
   rustles = []; // CH2.9: tile coords are per-map — never carry across a warp
   startFade(() => {
-    G.map = MAPS[mapId];
-    const p = G.player;
-    p.x = x;
-    p.y = y;
-    p.dir = dir;
-    p.moving = false;
-    p.prog = 0;
-    G.state = 'world';
-    G.mapNameT = 90;
-    Audio2.play(G.map.music);
-    if (G.map.scripts.enter) pendingEnter = G.map.scripts.enter;
+    landAt(w);
     writeSave(); // §4.6 autosave on warp (position/map are final here)
     after?.();
     // once-only §0.4 fallback warning; if a script dialog is already up we
@@ -613,18 +631,12 @@ export function worldDraw(): void {
   const pal = BG_PAL[map.pal];
   const p = G.player;
   fill(pal[0]);
-  // camera (pixel space), centered on player, clamped; centered if map small
+  // camera (pixel space): the player, unless a cutscene is aiming it (ONB.8)
   const [dx, dy] = p.moving ? DIRV[p.dir] : [0, 0];
   const ppx = p.x * TILE + dx * p.prog;
   const ppy = p.y * TILE + dy * p.prog;
-  let camX = ppx - (W - TILE) / 2;
-  let camY = ppy - (H - TILE) / 2;
-  const maxX = map.w * TILE - W;
-  const maxY = map.h * TILE - H;
-  camX = maxX <= 0 ? maxX / 2 : clamp(camX, 0, maxX);
-  camY = maxY <= 0 ? maxY / 2 : clamp(camY, 0, maxY);
-  camX = Math.round(camX);
-  camY = Math.round(camY);
+  const cut = G.cutscene;
+  const [camX, camY] = cameraFor(map, cut ? cut.camX : ppx, cut ? cut.camY : ppy);
   // tiles
   const x0 = Math.max(0, Math.floor(camX / TILE));
   const y0 = Math.max(0, Math.floor(camY / TILE));
@@ -654,7 +666,7 @@ export function worldDraw(): void {
       draw: () => {
         const dir = n.faceDir || n.dir;
         let img: HTMLCanvasElement;
-        if (n.char === 'myowth') img = CHAR_FRAMES.myowth.down[(G.frame >> 5) & 1];
+        if (MON_WALKERS.has(n.char)) img = CHAR_FRAMES[n.char].down[(G.frame >> 5) & 1];
         else if (n.pal) {
           const cs = CHARSETS[n.char];
           img = decode(
@@ -674,16 +686,18 @@ export function worldDraw(): void {
       },
     });
   }
-  ents.push({
-    y: ppy,
-    draw: () => {
-      let f = 0;
-      if (p.moving) f = p.prog < 8 ? (p.step ? 1 : 2) : 0;
-      // RNK.5a: the player wears owned gear — no-op rebuild guard inside
-      ensurePlayerFrames(quest.items);
-      ctx.drawImage(CHAR_FRAMES.player[p.dir][f], Math.round(ppx) - camX, Math.round(ppy) - camY - 4);
-    },
-  });
+  if (!cut?.hidePlayer) {
+    ents.push({
+      y: ppy,
+      draw: () => {
+        let f = 0;
+        if (p.moving) f = p.prog < 8 ? (p.step ? 1 : 2) : 0;
+        // RNK.5a: the player wears owned gear — no-op rebuild guard inside
+        ensurePlayerFrames(quest.items);
+        ctx.drawImage(CHAR_FRAMES.player[p.dir][f], Math.round(ppx) - camX, Math.round(ppy) - camY - 4);
+      },
+    });
+  }
   ents.sort((a, b) => a.y - b.y).forEach((e) => e.draw());
   // CH2.7 ambush `!` — same blink idiom as the guard flag below
   if (npcRunState && ((G.frame >> 3) & 1) === 1) {

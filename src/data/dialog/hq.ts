@@ -267,6 +267,19 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   'tile:X': [{ say: [['Crates of...', 'you would rather', 'not know.']] }],
   'tile:P': [{ say: [['A plastic plant.', 'Even the plants', 'here are fake.']] }],
   enter: [
+    // ONB.8: the cold open ends on G.'s written note; this is him saying the
+    // next line out loud. Gated so it fires once and never greets a player
+    // who has walked back in from the Gamez Corner. Runs before the
+    // lootTaken check below; on a fresh game introSeen is set long before
+    // lootTaken can be. Only a pre-ONB.8 save carrying the loot hears both,
+    // in order, once.
+    {
+      if: { notFlag: 'introSeen' },
+      then: [
+        { setFlag: 'introSeen' },
+        { say: [['GIOVANNI:', 'TONIGHT IS YOUR', 'FIRST JOB.']] },
+      ],
+    },
     {
       if: { flag: 'lootTaken' },
       then: [

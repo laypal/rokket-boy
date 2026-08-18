@@ -8,6 +8,7 @@
 // localStorage leakage), so any test needing a pre-existing save creates it
 // inline before reloading.
 import { test, expect, type Page } from '@playwright/test';
+import { bootToWorld } from './boot';
 
 // Matches smoke.spec.ts / inventory-1c.spec.ts / chapter1.spec.ts's global
 // Window.__debug augmentation exactly — TS requires identical merged member
@@ -61,23 +62,6 @@ async function press(page: Page, key: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-// Boot helper (plan §3.4 sequence, factored per smoke.spec.ts /
-// inventory-1c.spec.ts): title -> START -> intro -> A x3 -> world, landing
-// in ROKKET HQ.
-async function bootToHQ(page: Page): Promise<void> {
-  await page.goto('/');
-  await expect(page.locator('#screen')).toBeVisible();
-  await page.waitForFunction(() => window.__debug?.G.state === 'title', undefined, { timeout: 10_000 });
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__debug.G.state === 'intro', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('z');
-    await page.waitForTimeout(300);
-  }
-  await page.waitForFunction(() => window.__debug.G.state === 'world', undefined, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__debug.G.map.id === 'hq', undefined, { timeout: 5_000 });
-}
-
 // Open the pause menu and select SAVE. Pause-menu order (src/systems/
 // menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/SAVE(3)/SOUND(4)/HELP(5)/
 // CLOSE(6) — 3 Downs from the default PACK cursor lands on SAVE. Selecting
@@ -104,7 +88,7 @@ async function readSaveFromStorage(page: Page): Promise<SaveV1Like | null> {
 }
 
 test('manual SAVE writes a current-version save', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     const d = window.__debug as unknown as DebugFull;
@@ -123,7 +107,7 @@ test('manual SAVE writes a current-version save', async ({ page }) => {
 });
 
 test('reload + CONTINUE restores the game', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await page.evaluate(() => {
     const d = window.__debug as unknown as DebugFull;
@@ -169,7 +153,7 @@ test('reload + CONTINUE restores the game', async ({ page }) => {
 });
 
 test('NEW GAME keeps the save and plays the intro', async ({ page }) => {
-  await bootToHQ(page);
+  await bootToWorld(page);
 
   await saveViaMenu(page);
   await closeMenu(page);
