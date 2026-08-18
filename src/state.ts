@@ -19,6 +19,7 @@ export type StateName =
   | 'locker'
   | 'shop'
   | 'jobs'
+  | 'cardflip'  // SIDE.2: the DEALER's PICKPOCKET table (jobs-class modal)
   | 'end'
   | 'rankcard';
 

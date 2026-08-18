@@ -7,6 +7,7 @@ import { Audio2 } from '../engine/audio';
 import { DUR, EASE, lerp, msToFrames, tween } from '../engine/easing';
 import { quest, currentObjective, formatPlayTime } from './quest';
 import { SPECIES } from '../data/mons';
+import { EGG_TOTAL } from '../data/eggs';
 import { MOVES } from '../data/moves';
 import { maxHp, dexCount, xpProgress } from './mon';
 import { itemDef, applyHeal, usableOutOfBattle, packCounts } from './inventory';
@@ -289,7 +290,7 @@ export function menuDraw(pal: Palette): void {
     text(currentObjective(), 14, 32, pal[0]);
     text('COINS: ' + quest.coins, 14, 44, pal[0]);
     text('DEX: ' + dexCount([...G.party, ...G.box], SPECIES) + '/' + Object.keys(SPECIES).length, 14, 56, pal[0]);
-    text('EGGS: ' + quest.eggs.size + '/4', 14, 68, pal[0]);
+    text('EGGS: ' + quest.eggs.size + '/' + EGG_TOTAL, 14, 68, pal[0]);
     text('TIME: ' + formatPlayTime(G.playSeconds), 14, 80, pal[0]);
     text('PARTY: ' + G.party.length + '/4', 14, 92, pal[0]);
     drawWindow(PACK_HELP.x, PACK_HELP.y, PACK_HELP.w, PACK_HELP.h, pal);

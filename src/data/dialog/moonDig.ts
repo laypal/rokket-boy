@@ -24,7 +24,25 @@ export const moonDigScripts: Record<string, ScriptStep[]> = {
         { say: [['BRAD: HEY!', 'Those are MY', 'fossils!'], ['Hand them over', 'or lose them!']] },
         { battle: 'brad_ratikatt' },
       ],
-      else: [{ say: [['Just dust now.', 'You already took', 'the fossils.']] }],
+      // SIDE.3 map secret (emptychest): the chest cell (8,4) already owns an
+      // `at:8,4` script that shadows any `tile:%` key at this coordinate (the
+      // interact() dispatcher checks `at:` before `tile:`, and this map has
+      // no OTHER '%' tile), so the egg is nested here instead — same trigger
+      // in practice ("interact with the emptied chest"), just not a
+      // top-level `tile:%` entry. Re-checking the empty chest twice: once to
+      // find it, forever after to hear the old dust line.
+      else: [
+        {
+          if: { notEgg: 'emptychest' },
+          then: [
+            { addEgg: 'emptychest' },
+            { sfx: 'item' },
+            { say: [['Empty. You check', 'again. Hopeful,', 'pathetic, even.']] },
+            { sysMsg: ['EGG FOUND!'] },
+          ],
+          else: [{ say: [['Just dust now.', 'You already took', 'the fossils.']] }],
+        },
+      ],
     },
   ],
   // CH2.4/2.7 — BRAD guards the chest's south face. Before the fossils are

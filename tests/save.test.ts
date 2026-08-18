@@ -11,7 +11,7 @@ import {
   type SaveStorage,
   type SaveV1,
   type SaveV2,
-  type SaveV3,
+  type SaveV4,
   type HeatSaveEntry,
   setSaveStorage,
   sessionOnlyWarning,
@@ -75,7 +75,7 @@ describe('snapshot', () => {
     G.player.y = 4;
     G.playSeconds = 61.98;
     const s = snapshot();
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(4);
     expect(s.heat).toEqual({});
     expect(s.flags.briefed).toBe(true);
     expect(s.coins).toBe(123);
@@ -180,10 +180,10 @@ describe('migrate', () => {
   });
 
   it('rejects unknown versions (no downgrade guessing)', () => {
-    // v2 is now valid — the fixture moves to v3, preserving the test's
-    // intent (no downgrade guessing / no future-version guessing).
-    const v4 = { ...snapshot(), version: 4 };
-    expect(migrate(v4)).toBeNull();
+    // v2/v3/v4 are valid — the fixture moves one past the latest chain,
+    // preserving the test's intent (no downgrade / future-version guessing).
+    const v5 = { ...snapshot(), version: 5 };
+    expect(migrate(v5)).toBeNull();
   });
 
   it('rejects structural garbage', () => {
@@ -214,7 +214,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     };
     const out = migrate(v1);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(3);
+    expect(out!.version).toBe(4);
     expect(out!.heat).toEqual({});
     expect(out!.flags.briefed).toBe(true);
     expect(out!.party).toEqual(v1.party);
@@ -238,7 +238,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     const v2 = { ...snapshot(), heat, version: 2 } as unknown as SaveV2;
     const out = migrate(v2);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(3); // migrate always lands on the latest chain
+    expect(out!.version).toBe(4); // migrate always lands on the latest chain
     expect(out!.heat).toEqual(heat);
 
     // write/read round-trip through fakeStorage, driving the real V2 blob
@@ -257,7 +257,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     expect(garbageHeat).not.toBeNull();
     expect(garbageHeat!.heat).toEqual({});
 
-    const missingHeat = { ...base } as Partial<SaveV3>;
+    const missingHeat = { ...base } as Partial<SaveV4>;
     delete missingHeat.heat;
     const out = migrate(missingHeat);
     expect(out).not.toBeNull();
@@ -267,7 +267,7 @@ describe('migrate — V2 chain (1f.2)', () => {
   it('rejects structural garbage and future versions', () => {
     expect(migrate(null)).toBeNull();
     expect(migrate({})).toBeNull();
-    expect(migrate({ ...snapshot(), version: 4 })).toBeNull();
+    expect(migrate({ ...snapshot(), version: 5 })).toBeNull();
   });
 });
 
@@ -279,7 +279,7 @@ describe('migrate — V3 chain (SIDE.1 job board)', () => {
     delete v2.job;
     const out = migrate(v2);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(3);
+    expect(out!.version).toBe(4);
     expect(out!.job).toBeNull();
   });
 
@@ -455,29 +455,7 @@ describe('repairItemBalls', () => {
       scripts: {},
     };
   }
-  const flags = (over: Partial<Flags>): Flags => ({
-    briefed: false,
-    guardBeaten: false,
-    switchFound: false,
-    lootTaken: false,
-    missionDone: false,
-    gotSmoke: false,
-    fossilsTaken: false,
-    gotEkanzz: false,
-    bradBeaten: false,
-    ch2Done: false,
-    jobsIntroSeen: false,
-    drillBattleDone: false,
-    drillStealthDone: false,
-    spanCamper: false,
-    spanPicnicker: false,
-    spanHiker: false,
-    spanYoungster: false,
-    spanLass: false,
-    ch3Done: false,
-    ...over,
-  });
-
+  // SIDE.6: taken-ness is the pickup id in the persisted Set, not a flag.
   it('blanks a taken item ball, leaves an untaken one', () => {
     const map = miniMap(
       [
@@ -485,23 +463,70 @@ describe('repairItemBalls', () => {
         ['b', ' '],
       ],
       {
-        '1,0': { name: 'SMOKE BALL', flag: 'gotSmoke' },
-        '0,1': { name: 'OTHER', flag: 'briefed' },
+        '1,0': { id: 'mini_smoke', item: 'SMOKE BALL' },
+        '0,1': { id: 'mini_other', item: 'SODA' },
       },
     );
-    repairItemBalls({ mini: map }, flags({ gotSmoke: true }));
+    repairItemBalls({ mini: map }, new Set(['mini_smoke']));
     expect(map.grid[0][1]).toBe(' '); // taken → blanked
     expect(map.grid[1][0]).toBe('b'); // not taken → untouched
   });
 
-  it('applySave repairs the real HQ SMOKE BALL tile', () => {
+  it('applySave repairs the real HQ SMOKE BALL tile from pickups', () => {
     const s = snapshot();
-    s.flags = { ...s.flags, gotSmoke: true };
+    s.pickups = ['hq_smoke'];
     expect(MAPS.hq.grid[9][5]).toBe('b'); // pristine module data
     applySave(s);
     expect(MAPS.hq.grid[9][5]).toBe(' ');
+    expect(quest.pickups.has('hq_smoke')).toBe(true);
     // restore module-level map data for other tests in this file
     MAPS.hq.grid[9][5] = 'b';
+  });
+});
+
+describe('migrate — V4 chain (SIDE.6 pickups)', () => {
+  it('upgrades a V3 blob (no pickups field) to V4 with pickups: []', () => {
+    const v3 = { ...snapshot(), version: 3 as const } as Record<string, unknown>;
+    delete v3.pickups;
+    const out = migrate(v3);
+    expect(out).not.toBeNull();
+    expect(out!.version).toBe(4);
+    expect(out!.pickups).toEqual([]);
+  });
+
+  it('derives hq_smoke from the retired gotSmoke flag so a live save does not re-spawn the ball', () => {
+    const v3 = { ...snapshot(), version: 3 as const } as Record<string, unknown>;
+    delete v3.pickups;
+    v3.flags = { ...(v3.flags as Flags), gotSmoke: true };
+    const out = migrate(v3);
+    expect(out!.pickups).toEqual(['hq_smoke']);
+    // an explicit pickups array wins over the legacy flag (a v4 blob never re-derives)
+    const v4 = { ...snapshot(), pickups: ['moon1_soda'] } as Record<string, unknown>;
+    v4.flags = { ...(v4.flags as Flags), gotSmoke: true };
+    expect(migrate(v4)!.pickups).toEqual(['moon1_soda']);
+  });
+
+  it('round-trips a two-id pickup set through write/read/apply', () => {
+    quest.pickups.add('hq_smoke');
+    quest.pickups.add('moon1_soda');
+    writeSave();
+    resetQuest();
+    expect(quest.pickups.size).toBe(0);
+    const loaded = readSave();
+    expect(loaded).not.toBeNull();
+    applySave(loaded!);
+    expect([...quest.pickups].sort()).toEqual(['hq_smoke', 'moon1_soda']);
+    MAPS.hq.grid[9][5] = 'b'; // applySave blanked the real HQ ball — restore module data
+  });
+
+  it('lenient on garbage pickups — non-array → [], non-string entries dropped', () => {
+    for (const bad of ['yes', 7, { a: 1 }, null]) {
+      const out = migrate({ ...snapshot(), pickups: bad });
+      expect(out).not.toBeNull();
+      expect(out!.pickups).toEqual([]);
+    }
+    const mixed = migrate({ ...snapshot(), pickups: ['ok', 3, null, 'fine'] });
+    expect(mixed!.pickups).toEqual(['ok', 'fine']);
   });
 });
 
@@ -596,7 +621,7 @@ describe('migrate — deep validation + clamping (HRD.2)', () => {
     const job: JobContract = { kind: 'fetch', slot: 0, item: 'SODA', need: 2, payout: 170, base: 0 };
     const out = migrate({ ...base(), version: 1, heat: { corner: entry }, job });
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(3);
+    expect(out!.version).toBe(4);
     expect(out!.heat).toEqual({ corner: entry });
     expect(out!.job).toEqual(job);
   });

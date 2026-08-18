@@ -59,6 +59,14 @@ export type SaveV3 = Omit<SaveV2, 'version'> & {
   job: JobContract | null;
 };
 
+/** V4 (SIDE.6): taken item-ball ids (`quest.pickups`), the eggs shape
+ *  line-for-line. The v≤3 chain derives `hq_smoke` from the retired
+ *  `gotSmoke` flag so a live save doesn't re-spawn the HQ SMOKE BALL. */
+export type SaveV4 = Omit<SaveV3, 'version'> & {
+  version: 4;
+  pickups: string[];
+};
+
 export interface SaveStorage {
   read(): string | null;
   write(data: string): void;
@@ -116,7 +124,7 @@ export function sessionOnlyWarning(): boolean {
   return true;
 }
 
-export function snapshot(): SaveV3 {
+export function snapshot(): SaveV4 {
   // §4.8 (1f.4): serialize each populated map's HEAT runtime. `guardPositions`
   // is NOT emitted here — it needs moving guards (1f.6); the field stays
   // optional. Empty G.heatState → {}, so calm saves are byte-identical to 1f.2.
@@ -127,7 +135,7 @@ export function snapshot(): SaveV3 {
     heat[id] = { stage: h.stage, decayAt: h.decayAt, lockdownAt: h.lockdownAt };
   }
   return {
-    version: 3,
+    version: 4,
     flags: { ...quest.flags },
     party: G.party.map((m) => ({ ...m, moves: [...m.moves] })),
     box: G.box.map((m) => ({ ...m, moves: [...m.moves] })),
@@ -142,6 +150,7 @@ export function snapshot(): SaveV3 {
     vars: { ...quest.vars },
     heat,
     job: quest.job ? { ...quest.job } : null,
+    pickups: [...quest.pickups],
   };
 }
 
@@ -172,7 +181,7 @@ export function writeSave(): void {
   }
 }
 
-export function readSave(): SaveV3 | null {
+export function readSave(): SaveV4 | null {
   try {
     const raw = store().read();
     if (!raw) return null;
@@ -234,8 +243,9 @@ function migrateMon(raw: unknown): MonInstance | null {
  *  return null (→ fresh game). v1 validates as before then upgrades with an
  *  empty heat map; v2 validates the same shared fields and is lenient on
  *  `heat` (missing/non-object → {}); v3 (SIDE.1) is lenient the same way on
- *  `job` — additive fields never invalidate a save (§4.6, 1f.2). Future
- *  version bumps chain vN→vN+1 here, with a unit test per step.
+ *  `job`; v4 (SIDE.6) on `pickups`, deriving the one pre-v4 item ball from
+ *  its retired flag — additive fields never invalidate a save (§4.6, 1f.2).
+ *  Future version bumps chain vN→vN+1 here, with a unit test per step.
  *
  *  HRD.2 hardening — repair-over-reject: a tampered or corrupt blob either
  *  repairs-and-loads or lands on NEW GAME, never a crash. Required numerics
@@ -244,10 +254,10 @@ function migrateMon(raw: unknown): MonInstance | null {
  *  repair to their default. Party/box elements are validated individually
  *  (invalid ones dropped); an empty repaired party rejects the save. flags
  *  must be a plain object; vars/heat repair to {} when they aren't. */
-export function migrate(raw: unknown): SaveV3 | null {
+export function migrate(raw: unknown): SaveV4 | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const s = raw as Partial<SaveV1> & Partial<SaveV2> & Partial<SaveV3>;
-  if (s.version !== 1 && s.version !== 2 && s.version !== 3) return null;
+  const s = raw as Partial<SaveV1> & Partial<SaveV2> & Partial<SaveV3> & Partial<SaveV4>;
+  if (s.version !== 1 && s.version !== 2 && s.version !== 3 && s.version !== 4) return null;
   if (!Array.isArray(s.party) || s.party.length < 1) return null;
   if (typeof s.mapId !== 'string' || !(s.mapId in MAPS)) return null;
   if (typeof s.x !== 'number' || !Number.isFinite(s.x)) return null;
@@ -259,8 +269,14 @@ export function migrate(raw: unknown): SaveV3 | null {
   const map = MAPS[s.mapId as MapId];
   const playSeconds =
     typeof s.playSeconds === 'number' && Number.isFinite(s.playSeconds) ? s.playSeconds : 0;
+  // v≤3 → v4: the only pre-v4 item ball was HQ's SMOKE BALL behind the
+  // (now retired) gotSmoke flag; an explicit v4 array never re-derives.
+  const legacyFlags = s.flags as Record<string, unknown>;
+  const pickups = Array.isArray(s.pickups)
+    ? s.pickups.filter((p): p is string => typeof p === 'string')
+    : legacyFlags.gotSmoke === true ? ['hq_smoke'] : [];
   return {
-    version: 3,
+    version: 4,
     flags: s.flags as Flags,
     party: party.slice(0, 4),
     box: Array.isArray(s.box)
@@ -277,18 +293,19 @@ export function migrate(raw: unknown): SaveV3 | null {
     vars: isPlainObject(s.vars) ? (s.vars as Record<string, number>) : {},
     heat: isPlainObject(s.heat) ? (s.heat as SaveV3['heat']) : {},
     job: migrateJob(s.job),
+    pickups,
   };
 }
 
-/** Blank the 'b' tile of any map item whose taken-flag is set. Fresh page
- *  loads reset the module-level grids, so a loaded game would otherwise let
- *  the player re-collect items. Script-driven mutations (setTile/addWarp in
- *  dialog scripts) are opaque to this pass — those get flag-gated `enter`
- *  repair steps in the map data instead. */
-export function repairItemBalls(maps: Record<string, MapDef>, flags: Flags): void {
+/** Blank the 'b' tile of any map item whose id is in the taken set (SIDE.6).
+ *  Fresh page loads reset the module-level grids, so a loaded game would
+ *  otherwise let the player re-collect items. Script-driven mutations
+ *  (setTile/addWarp in dialog scripts) are opaque to this pass — those get
+ *  flag-gated `enter` repair steps in the map data instead. */
+export function repairItemBalls(maps: Record<string, MapDef>, pickups: Set<string>): void {
   for (const map of Object.values(maps)) {
     for (const [key, item] of Object.entries(map.items)) {
-      if (!flags[item.flag]) continue;
+      if (!pickups.has(item.id)) continue;
       const [x, y] = key.split(',').map(Number);
       if (map.grid[y]?.[x] === 'b') map.grid[y][x] = ' ';
     }
@@ -301,10 +318,11 @@ export function repairItemBalls(maps: Record<string, MapDef>, flags: Flags): voi
  *  per-map HEAT runtime is restored into G.heatState; `guardPositions` is
  *  ignored — world.ts (1f.6) re-derives guard placement, the timers are what
  *  must survive a reload. */
-export function applySave(save: SaveV3): void {
+export function applySave(save: SaveV4): void {
   quest.flags = { ...save.flags };
   quest.coins = save.coins;
   quest.eggs = new Set(save.eggs);
+  quest.pickups = new Set(save.pickups);
   quest.vars = { ...save.vars };
   quest.items = [...save.items];
   quest.rank = save.rank;
@@ -319,5 +337,5 @@ export function applySave(save: SaveV3): void {
     heat[id] = { stage: e.stage, decayAt: e.decayAt, lockdownAt: e.lockdownAt };
   }
   G.heatState = heat;
-  repairItemBalls(MAPS, quest.flags);
+  repairItemBalls(MAPS, quest.pickups);
 }

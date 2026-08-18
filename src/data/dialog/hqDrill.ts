@@ -39,4 +39,20 @@ export const hqDrillScripts: Record<string, ScriptStep[]> = {
     { warp: ['hq', 10, 9, 'down'] },
   ],
   'tile:W': [{ say: [['The goal pad.', 'Step onto it', 'to finish.']] }],
+  // SIDE.3 map secret — the west wall by the entrance, faced from (1,1). No
+  // e2e spec drives hqDrill at all (grepped the e2e dir clean), so there's
+  // no walked-cell set to dodge here; kept clear of drillguard (7,4) and the
+  // goal pad (10,1) anyway.
+  'at:0,1': [
+    {
+      if: { notEgg: 'drillsign' },
+      then: [
+        { addEgg: 'drillsign' },
+        { sfx: 'item' },
+        { say: [["MYOWTH'S POSTER:", '"YOU GOT THIS,', 'PROBABLY!"']] },
+        { sysMsg: ['EGG FOUND!'] },
+      ],
+      else: [{ say: [['Still probably.']] }],
+    },
+  ],
 };

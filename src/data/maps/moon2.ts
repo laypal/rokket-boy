@@ -14,7 +14,7 @@ export const moon2Map: MapDef = makeMap({
   rows: [
     '####################',
     '#~                 #',
-    '#~ > ~~R#R      ~  #',
+    '#~ > ~~R#R    b ~  #',
     '# ~  ~ ~# R~  ~ #  #',
     '#~R  ~  #~~~ R  #  #',
     '#  ~   R ~~~## TR  #',
@@ -29,7 +29,10 @@ export const moon2Map: MapDef = makeMap({
   // (3,2 and 17,9) so her EKANZZ gift scene never blocks the through route.
   npcs: [{ id: 'jessika', char: 'jessika', x: 12, y: 2, dir: 'down' }],
   signs: {},
-  items: {},
+  // SIDE.6: a ROKKET BALL on the plain-floor cell (14,2) — clear of
+  // chapter2.spec.ts's walked set (row y=1 x2-18, columns x=17/18 y1-9, and
+  // the two stair cells) and off Jessika's tile (12,2).
+  items: { '14,2': { id: 'moon2_ball', item: 'ROKKET BALL' } },
   warps: {
     '3,2': ['moon1', 17, 9, 'left'],
     '17,9': ['moonDig', 3, 2, 'down'],

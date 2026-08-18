@@ -11,7 +11,16 @@ export const cornerScripts: Record<string, ScriptStep[]> = {
     },
     { battle: 'guard_voltorbb' },
   ],
-  'npc:dealer': [{ say: [['DEALER: Coins?', 'No coins here.', 'Never were. Heh.']] }],
+  'npc:dealer': [
+    { say: [['DEALER: Coins?', 'No coins here.', 'Never were. Heh.']] },
+    {
+      choice: {
+        say: [['...But I run a', 'little game.', 'PICKPOCKET.'], ['30 COINS a hand.', 'Sit down?']],
+        yes: [{ cardFlip: true }],
+        no: [{ say: [['DEALER: Smart.', "That's how I'd", 'play it too.']] }],
+      },
+    },
+  ],
   'npc:gambler': [
     {
       say: [

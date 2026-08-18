@@ -14,9 +14,10 @@ import { battleDraw } from './systems/battleDraw';
 import { lockerUpdate, lockerDraw, openLocker } from './systems/locker';
 import { shopUpdate, shopDraw, openShop } from './systems/shop';
 import { jobsUpdate, jobsDraw, openJobs } from './systems/jobsScreen';
+import { cardFlipUpdate, cardFlipDraw, openCardFlip } from './systems/cardFlipScreen';
 import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered } from './systems/scenes';
 import { install as installDiagnostics, rokketApi } from './engine/diagnostics';
-import { quest } from './systems/quest';
+import { quest, setDexMons } from './systems/quest';
 import { runScript } from './systems/script';
 import { worldHooks } from './systems/world';
 import { setEncounterRng } from './systems/encounter';
@@ -89,6 +90,15 @@ registerState('jobs', () => {
   jobsUpdate();
   if (G.state === 'jobs') jobsDraw(BG_PAL[G.map.pal]);
 });
+registerState('cardflip', () => {
+  worldDraw();
+  cardFlipUpdate();
+  if (G.state === 'cardflip') cardFlipDraw(BG_PAL[G.map.pal]);
+});
+
+// SIDE.4: the `{ dexComplete: true }` Cond reads the live collection through
+// this provider (quest.ts stays engine-free — it can't import state.ts).
+setDexMons(() => [...G.party, ...G.box]);
 registerState('end', endUpdate);
 registerState('rankcard', rankCardUpdate);
 
@@ -103,6 +113,8 @@ if (import.meta.env.DEV) {
     openLocker: () => openLocker(() => {}),
     // SIDE.1: drives the real board state module (same class as openShop)
     openJobs: () => openJobs(() => {}),
+    // SIDE.2: the PICKPOCKET table; `seed` pins the deal for e2e specs
+    openCardFlip: (seed?: number) => openCardFlip(() => {}, seed),
     // drives the REAL rankUp contract (interpreter + worldHooks), not a shortcut
     rankUp: () => runScript([{ rankUp: true }], worldHooks),
     // 1f.8: drives the REAL heat hook (interpreter + worldHooks), not a direct

@@ -39,6 +39,7 @@ function makeHooks(): { hooks: ScriptHooks; log: FakeLog } {
     healParty: () => {},
     sysMsg: () => {},
     jobs: (done) => done(),
+    cardFlip: (done) => done(),
     choice: (_p, done) => done(true),
   };
   return { hooks, log };

@@ -11,4 +11,19 @@ export const outskirtsScripts: Record<string, ScriptStep[]> = {
       ],
     },
   ],
+  // SIDE.3 map secret — the river at (3,4)/(17,4) is the only water a player
+  // can face on the whole route (NUGGET SPAN's lane is railed on both sides),
+  // so the `swim` egg lives here. `tile:w` fires for either tile.
+  'tile:w': [
+    {
+      if: { notEgg: 'swim' },
+      then: [
+        { addEgg: 'swim' },
+        { sfx: 'item' },
+        { say: [['You consider a', 'swim. You', 'reconsider.']] },
+        { sysMsg: ['EGG FOUND!'] },
+      ],
+      else: [{ say: [['Still cold.', 'Still no.']] }],
+    },
+  ],
 };

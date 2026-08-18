@@ -16,7 +16,7 @@ export const moon1Map: MapDef = makeMap({
     '####################',
     '# ~      R     ~~  #',
     '# ~~~     R  ~     #',
-    '#~ ~    #  R   ~ R #',
+    '#~ ~    #  R  b~ R #',
     '# ~     #   R ~~ R o',
     'o                 R#',
     '#    ~   R  ## ~~  #',
@@ -34,7 +34,9 @@ export const moon1Map: MapDef = makeMap({
     { id: 'vendor', char: 'grunt', pal: 'gold', x: 2, y: 6, dir: 'down' },
   ],
   signs: {},
-  items: {},
+  // SIDE.6: a SODA on the plain-floor cell (14,3) — clear of chapter2.spec.ts's
+  // walked set (row y=5 full width, column x=17 y=5-9, the (18,9) stairs).
+  items: { '14,3': { id: 'moon1_soda', item: 'SODA' } },
   warps: {
     '0,5': ['corner', 18, 7, 'left'],
     '18,9': ['moon2', 2, 2, 'down'],

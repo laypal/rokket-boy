@@ -52,6 +52,9 @@ export interface ScriptHooks {
    *  "talking IS consent" bit players who mash A through a heal — repeat
    *  visits should be a choice, not an accident. */
   choice(pages: string[][], done: (yes: boolean) => void): void;
+  /** Open the DEALER's PICKPOCKET table (SIDE.2); call done() when the
+   *  player leaves — the locker/shop/jobs suspension class. */
+  cardFlip(done: () => void): void;
 }
 
 interface Frame {
@@ -137,6 +140,7 @@ export function runScript(steps: ScriptStep[], hooks: ScriptHooks, onDone?: () =
       }
       if ('locker' in step) { hooks.locker(next); return; }
       if ('jobs' in step) { hooks.jobs(next); return; }
+      if ('cardFlip' in step) { hooks.cardFlip(next); return; }
       if ('shop' in step) { hooks.shop(step.shop, next); return; }
       if ('endScreen' in step) { hooks.endScreen(); continue; }
       // ladder advance is state (interpreter, like setFlag); the card is

@@ -116,7 +116,7 @@ test('manual SAVE writes a current-version save', async ({ page }) => {
 
   const save = await readSaveFromStorage(page);
   expect(save).not.toBeNull();
-  expect(save!.version).toBe(3); // SaveV2 since 1f.2; SaveV3 since SIDE.1
+  expect(save!.version).toBe(4); // SaveV2 since 1f.2; SaveV3 since SIDE.1; SaveV4 since SIDE.6
   expect(save!.coins).toBe(321);
   expect(save!.party.length).toBe(1);
   expect(save!.party[0].species).toBe('koffink');

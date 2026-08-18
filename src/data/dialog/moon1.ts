@@ -21,4 +21,19 @@ export const moon1Scripts: Record<string, ScriptStep[]> = {
     { say: [['GRUNT: Balls,', 'sodas. Cave', 'prices, sorry.']] },
     { shop: 'moonCart' },
   ],
+  // SIDE.3 map secret — a dead-end wall nub at (12,6), faced from the open
+  // floor at (11,6). Off chapter2.spec.ts's walked set entirely (row y=5,
+  // column x=17 y5-9, the (18,9) stairs never touch row 6).
+  'at:12,6': [
+    {
+      if: { notEgg: 'moonecho' },
+      then: [
+        { addEgg: 'moonecho' },
+        { sfx: 'item' },
+        { say: [['You shout. A beat', 'later: "SHUT UP!"', 'Fair. Was rude.']] },
+        { sysMsg: ['EGG FOUND!'] },
+      ],
+      else: [{ say: [['Still echoing.']] }],
+    },
+  ],
 };

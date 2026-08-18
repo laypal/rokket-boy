@@ -43,6 +43,7 @@ function makeHooks(opts?: { battleFollowUp?: ScriptStep[] | null }) {
     healParty: () => log.healPartys++,
     sysMsg: (lines) => log.sysMsgs.push(lines),
     jobs: (done) => { log.jobsOpened++; done(); },
+    cardFlip: (done) => done(),
     choice: (_p, done) => done(true),
   };
   return { hooks, log };

@@ -35,6 +35,9 @@ export const hqMap: MapDef = makeMap({
     // the C-J-C console cluster on row 2. 'ghost' distinguishes him from the
     // front-of-house 'vendor' (gold) at a glance.
     { id: 'blackmarket', char: 'grunt', x: 10, y: 2, dir: 'down', pal: 'ghost' },
+    // SIDE.4: the GRUNTDEX completion clerk — free floor on the room's
+    // right-hand side, clear of the console cluster and every e2e walk path.
+    { id: 'dexclerk', char: 'grunt', x: 16, y: 5, dir: 'down' },
   ],
   // Two pages each: the old 4-line versions lost their last line at draw
   // time (3-line box), which is why the motto read as a half-sentence.
@@ -48,7 +51,7 @@ export const hqMap: MapDef = makeMap({
       ['NEW GRUNTS: SEE', 'THE BOSS FIRST.', 'JOBS: USE PANEL.'],
     ],
   },
-  items: { '5,9': { name: 'SMOKE BALL', flag: 'gotSmoke' } },
+  items: { '5,9': { id: 'hq_smoke', item: 'SMOKE BALL' } },
   warps: { '9,13': ['corner', 9, 2, 'down'], '10,13': ['corner', 10, 2, 'down'] },
   scripts: hqScripts,
 });

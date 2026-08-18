@@ -7,7 +7,7 @@
 // the player's own local game state — no UA strings, no wall-clock
 // timestamps, nothing network (HRD.3 don't).
 import { G } from '../state';
-import { snapshot, type SaveV3 } from '../systems/save';
+import { snapshot, type SaveV4 } from '../systems/save';
 
 export const RING_CAP = 20;
 
@@ -28,7 +28,7 @@ export interface DiagnosticsReport {
   errors: ErrorEntry[];
   state: string;
   frame: number;
-  save: SaveV3;
+  save: SaveV4;
 }
 
 // `define`-injected in real builds; the typeof guard keeps plain-Node

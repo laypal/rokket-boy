@@ -2,6 +2,7 @@
 import { G } from '../state';
 import { T } from '../data/tiles';
 import { BG_PAL } from '../data/palettes';
+import { EGG_TOTAL } from '../data/eggs';
 import { ctx, decode, fill, rect, text, textC, glyph, startFade, drawWindow, W, H } from '../engine/renderer';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
@@ -178,7 +179,7 @@ export function endUpdate(): void {
   textC('MISSION', 28, pal[0]);
   textC('COMPLETE!', 40, pal[0]);
   textC('COINS: ' + quest.coins, 62, pal[1]);
-  textC('EGGS: ' + quest.eggs.size + '/4', 74, pal[1]);
+  textC('EGGS: ' + quest.eggs.size + '/' + EGG_TOTAL, 74, pal[1]);
   textC('RANK UP SOON...', 92, pal[0]);
   if (G.endT > 60 && (G.frame >> 4) & 1) textC('- A -', 112, pal[1]);
   if (G.endT > 60 && Input.hit('a')) {

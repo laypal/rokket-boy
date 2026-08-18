@@ -549,7 +549,7 @@ describe('drill map lockdown (SIDE.5 training exemption)', () => {
 
   it('step:x,y scripts fire on ARRIVAL at the tile, no A press (the goal-pad class)', () => {
     const map = makeHeatMap(['#####', '#   #', '#####'], []);
-    map.scripts['step:3,1'] = [{ setFlag: 'gotSmoke' }];
+    map.scripts['step:3,1'] = [{ setFlag: 'switchFound' }];
     G.map = map;
     G.player.x = 2;
     G.player.y = 1;
@@ -558,7 +558,7 @@ describe('drill map lockdown (SIDE.5 training exemption)', () => {
     G.player.prog = 15; // one frame from completing the step onto (3,1)
     worldUpdate();
     expect(G.player.x).toBe(3);
-    expect(quest.flags.gotSmoke).toBe(true);
+    expect(quest.flags.switchFound).toBe(true);
   });
 
   it('a non-drill map lockdown still whiteouts (the exemption is opt-in)', () => {

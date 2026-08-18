@@ -216,6 +216,27 @@ export const hqScripts: Record<string, ScriptStep[]> = {
       ],
     },
   ],
+  // SIDE.4: the GRUNTDEX clerk. Completion is a Cond, not a step (the dex is
+  // derived from what the player holds — quest.setDexMons), so the clerk is
+  // pure data: paid once, then a brush-off forever.
+  'npc:dexclerk': [
+    {
+      if: { egg: 'dexmaster' },
+      then: [{ say: [['CLERK: Paid you', 'already. Go steal', 'something.']] }],
+      else: [
+        {
+          if: { dexComplete: true },
+          then: [
+            { addEgg: 'dexmaster' },
+            { sfx: 'item' },
+            { say: [['CLERK: Every line', 'in the GRUNTDEX.', "Didn't think so."], ['Take the egg.', "Don't ask what's", 'in it.']] },
+            { sysMsg: ['EGG FOUND!'] },
+          ],
+          else: [{ say: [['CLERK: GRUNTDEX', 'desk. Fill it', 'and I pay out.'], ['Every line. Not', 'just the cute', 'ones.']] }],
+        },
+      ],
+    },
+  ],
   // The lone terminal at (3,11) is the MON LOCKER; the other C consoles stay
   // locked flavour. Positional `at:` scripts win over the generic `tile:C`.
   'at:3,11': [{ sfx: 'beep' }, { say: [['MON LOCKER', 'ONLINE.']] }, { locker: true }],

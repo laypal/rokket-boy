@@ -45,6 +45,7 @@ function eventHooks() {
     healParty: () => events.push('healParty'),
     sysMsg: (lines) => events.push('sysMsg:' + lines[0]),
     jobs: (done) => { events.push('jobs'); done(); },
+    cardFlip: (done) => { events.push('cardFlip'); done(); },
     choice: (_p, done) => { events.push('choice'); done(true); },
   };
   return { hooks, events };
@@ -72,6 +73,7 @@ function sayLogHooks(): { hooks: ScriptHooks; says: string[][][] } {
     healParty: () => {},
     sysMsg: () => {},
     jobs: (done) => done(),
+    cardFlip: (done) => done(),
     choice: (_p, done) => done(true),
   };
   return { hooks, says };

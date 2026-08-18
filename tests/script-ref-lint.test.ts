@@ -32,7 +32,7 @@ const DISCRIMINANT_KEYS = new Set([
   'say', 'setFlag', 'if', 'giveItem', 'setTile', 'addWarp', 'battle', 'warp',
   'sfx', 'music', 'addCoins', 'addEgg', 'incVar', 'sayCycle', 'locker',
   'shop', 'endScreen', 'rankUp', 'heat', 'giveMon', 'npcRun', 'healParty',
-  'sysMsg', 'jobs', 'choice',
+  'sysMsg', 'jobs', 'choice', 'cardFlip',
 ]);
 
 interface Ref { where: string }
@@ -127,7 +127,7 @@ function collectItemPickups(): IdRef[] {
   const out: IdRef[] = [];
   for (const map of Object.values(MAPS)) {
     for (const [pos, item] of Object.entries(map.items)) {
-      out.push({ id: item.name, where: `${map.id} item@${pos}` });
+      out.push({ id: item.item, where: `${map.id} item@${pos}` });
     }
   }
   return out;
@@ -161,14 +161,14 @@ describe('script reference lints', () => {
 
   it('every {giveItem} name resolves in ITEMS', () => {
     for (const ref of REG.giveItems) {
-      expect(ITEMS[ref.id], `${ref.where}: unknown item name "${ref.id}"`).toBeDefined();
+      expect(ITEMS[ref.id], `${ref.where}: unknown item id "${ref.id}"`).toBeDefined();
     }
     expect(REG.giveItems.length).toBeGreaterThan(0); // sanity: the walker found a {giveItem} step
   });
 
-  it('every map items[].name pickup resolves in ITEMS', () => {
+  it('every map items[].item pickup resolves in ITEMS', () => {
     for (const ref of ITEM_PICKUPS) {
-      expect(ITEMS[ref.id], `${ref.where}: unknown item name "${ref.id}"`).toBeDefined();
+      expect(ITEMS[ref.id], `${ref.where}: unknown item id "${ref.id}"`).toBeDefined();
     }
     expect(ITEM_PICKUPS.length).toBeGreaterThan(0); // sanity: the walker found a map item pickup
   });

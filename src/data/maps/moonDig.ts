@@ -14,7 +14,7 @@ export const moonDigMap: MapDef = makeMap({
   rows: [
     '##################',
     '#~   R   ~~   R  #',
-    '# > ~~ R   ~~  R #',
+    '# > ~~ R   ~~b R #',
     '#~   ~~   R  ~ R #',
     '#~      $  ~R ~~R#',
     '# ~~ R     ~ R ~~#',
@@ -27,7 +27,9 @@ export const moonDigMap: MapDef = makeMap({
   // onWin text says he storms off, and the tile genuinely frees up (CH2.4).
   npcs: [{ id: 'brad', char: 'brad', x: 8, y: 5, dir: 'down', goneIf: { flag: 'bradBeaten' } }],
   signs: {},
-  items: {},
+  // SIDE.6: a SODA on the plain-floor cell (13,2) — clear of chapter2.spec.ts's
+  // walked set ((2,2)-(2,4), (3,2)-(3,4), row y=4 x2-7) and of BRAD/the chest.
+  items: { '13,2': { id: 'moondig_soda', item: 'SODA' } },
   warps: {
     '2,2': ['moon2', 18, 9, 'left'],
   },

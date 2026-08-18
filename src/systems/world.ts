@@ -21,6 +21,7 @@ import { startBattle } from './battle';
 import { openLocker } from './locker';
 import { openShop } from './shop';
 import { openJobs } from './jobsScreen';
+import { openCardFlip } from './cardFlipScreen';
 import { writeSave, sessionOnlyWarning } from './save';
 import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward } from './heat';
 import { sharedWhiteout } from './recovery';
@@ -73,6 +74,7 @@ export const worldHooks: ScriptHooks = {
   locker: (done) => openLocker(done),
   shop: (id, done) => openShop(id, done),
   jobs: (done) => openJobs(done),
+  cardFlip: (done) => openCardFlip(done),
   endScreen: () => {
     G.state = 'end';
     G.endT = 0;
@@ -479,14 +481,15 @@ export function interact(): void {
     openDialog(G.map.signs[key]);
     return;
   }
-  // item balls
+  // item balls (SIDE.6 pickups): the id lands in the persisted taken-set,
+  // the item in the PACK; save.ts's repairItemBalls blanks it on reload
   if (t === 'b' && G.map.items[key]) {
     const it = G.map.items[key];
     setTile(G.map, tx, ty, ' ');
-    quest.flags[it.flag] = true;
-    quest.items.push(it.name);
+    quest.pickups.add(it.id);
+    quest.items.push(it.item);
     Audio2.sfx('item');
-    openDialog([['Found a', it.name + '!']]);
+    openDialog([['Found a', it.item + '!']]);
     return;
   }
   // positional then tile-type scripts

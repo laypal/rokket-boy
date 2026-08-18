@@ -17,7 +17,7 @@ export const outskirtsMap: MapDef = makeMap({
     '##########o##########',
     '#                   #',
     '#     s             #',
-    '#         P         #',
+    '#    b    P     b   #',
     '#  w             w  #',
     '#  B             B  #',
     'o                   #',
@@ -30,7 +30,16 @@ export const outskirtsMap: MapDef = makeMap({
   signs: {
     '6,2': [['PRIZE BRIDGE ->', 'WIN A NUGGET!', 'ENTRY: YOUR EGO.']],
   },
-  items: {},
+  // SIDE.6: two pickups here (the leaf's escape hatch — bridge's 2-wide lane
+  // has no room for a blocking `b` without a grid change beyond a single
+  // egg alcove, so bridge_ball becomes outskirts_ball instead; journaled in
+  // the SIDE.3/6 report). Both cells are plain floor, clear of the room's
+  // only walked cells (chapter3.spec.ts only ever touches (10,0)/(10,1)),
+  // the shill NPC (14,6) and the sign (6,2).
+  items: {
+    '5,3': { id: 'outskirts_soda', item: 'SODA' },
+    '16,3': { id: 'outskirts_ball', item: 'ROKKET BALL' },
+  },
   warps: {
     '0,6': ['moon1', 18, 4, 'left'],
     '10,0': ['bridge', 6, 18, 'up'],

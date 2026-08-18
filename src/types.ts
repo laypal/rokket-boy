@@ -16,7 +16,8 @@ export interface Flags {
   switchFound: boolean;
   lootTaken: boolean;
   missionDone: boolean;
-  gotSmoke: boolean;
+  // `gotSmoke` retired by SIDE.6 — the SMOKE BALL is pickup `hq_smoke` now
+  // (save.ts migrates the flag into quest.pickups on load).
   // CH2 (Mt. Möön) — flag additions carry no save-shape bump; old saves
   // read missing keys as undefined = false (applySave convention)
   fossilsTaken: boolean; // the dig-site chest set piece (pair of fossils)
@@ -44,7 +45,8 @@ export type Cond =
   | { notFlag: FlagName }
   | { egg: string }
   | { notEgg: string }
-  | { varEq: [string, number] };
+  | { varEq: [string, number] }
+  | { dexComplete: true }; // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
 
 /**
  * Declarative script step (plan §3.3). The plan sketched `ifFlag`; this uses a
@@ -76,7 +78,16 @@ export type ScriptStep =
   | { healParty: true }                                   // full-heal + revive the party — the HQ bunk rest (QOL.9, synchronous)
   | { sysMsg: string[] }                                  // timed system toast, 1–3 lines ≤17 chars (CH2.10, synchronous)
   | { jobs: true }                                        // open the HQ job board (SIDE.1, suspends like locker/shop)
-  | { choice: { say: string[][]; yes: ScriptStep[]; no?: ScriptStep[] } }; // ask YES/NO on the last say page; branch runs nested like `if` (2026-08-15, suspends)
+  | { choice: { say: string[][]; yes: ScriptStep[]; no?: ScriptStep[] } } // ask YES/NO on the last say page; branch runs nested like `if` (2026-08-15, suspends)
+  | { cardFlip: true };                                   // open the DEALER's PICKPOCKET table (SIDE.2, suspends like jobs)
+
+/** SIDE.6: a floor item ball (`b` tile). `id` is unique across ALL maps
+ *  (pickup-lint) and lands in quest.pickups when taken; `item` is an ITEMS
+ *  id. Taken balls are blanked on load by save.ts's repairItemBalls. */
+export interface PickupDef {
+  id: string;
+  item: string;
+}
 
 export interface NpcDef {
   id: string;
@@ -118,7 +129,8 @@ export interface MapDef {
    *  Was one flat line list; a 4-line sign silently lost its last line at
    *  draw time (Lyall, 2026-08-15) — pages make the overflow a lint error. */
   signs: Record<string, string[][]>;
-  items: Record<string, { name: string; flag: FlagName }>;
+  /** keyed `x,y` → the item ball on that `b` tile (SIDE.6 pickups) */
+  items: Record<string, PickupDef>;
   warps: Record<string, WarpDef>;
   /** keys: `npc:<id>`, `at:<x>,<y>` (A facing the tile), `step:<x>,<y>`
    *  (fires on ARRIVING at the tile, no button — the goal-pad class),

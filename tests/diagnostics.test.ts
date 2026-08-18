@@ -70,7 +70,7 @@ describe('report()', () => {
     expect(typeof r.build).toBe('string');
     expect(r.state).toBe('world');
     expect(r.frame).toBe(777);
-    expect(r.save.version).toBe(3); // snapshot() — exactly the save blob shape
+    expect(r.save.version).toBe(4); // snapshot() — exactly the save blob shape
     const roundTrip = JSON.parse(JSON.stringify(r)) as ReturnType<typeof report>;
     expect(roundTrip.errors[0].message).toBe('x');
   });

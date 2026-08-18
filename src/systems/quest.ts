@@ -5,11 +5,14 @@
 import type { Cond, Flags } from '../types';
 import type { JobContract } from './jobs';
 import { RANK_REWARDS } from '../data/rankRewards';
+import { SPECIES } from '../data/mons';
+import { dexComplete } from './dex';
 
 export interface QuestState {
   flags: Flags;
   coins: number;
   eggs: Set<string>;
+  pickups: Set<string>;         // SIDE.6: taken item-ball ids (persisted like eggs)
   vars: Record<string, number>; // scratch counters (e.g. slotSpins)
   items: string[];              // PACK contents
   rank: string;                 // §4.7 ladder; stub until 1e's rank system
@@ -23,7 +26,6 @@ function freshFlags(): Flags {
     switchFound: false,
     lootTaken: false,
     missionDone: false,
-    gotSmoke: false,
     fossilsTaken: false,
     gotEkanzz: false,
     bradBeaten: false,
@@ -44,6 +46,7 @@ export const quest: QuestState = {
   flags: freshFlags(),
   coins: 0,
   eggs: new Set(),
+  pickups: new Set(),
   vars: {},
   items: [],
   rank: 'GRUNT',
@@ -54,10 +57,20 @@ export function resetQuest(): void {
   quest.flags = freshFlags();
   quest.coins = 0;
   quest.eggs = new Set();
+  quest.pickups = new Set();
   quest.vars = {};
   quest.items = [];
   quest.rank = 'GRUNT';
   quest.job = null;
+}
+
+/** SIDE.4: who owns what, for the `dexComplete` Cond. The dex is derived
+ *  from the party + box (state.ts), which this engine-free module must not
+ *  import — main.ts registers the live provider once at boot, tests
+ *  register fixtures. Default: nobody owns anything. */
+let dexMons: () => { species: string }[] = () => [];
+export function setDexMons(f: () => { species: string }[]): void {
+  dexMons = f;
 }
 
 export function checkCond(c: Cond): boolean {
@@ -65,6 +78,7 @@ export function checkCond(c: Cond): boolean {
   if ('notFlag' in c) return !quest.flags[c.notFlag];
   if ('egg' in c) return quest.eggs.has(c.egg);
   if ('notEgg' in c) return !quest.eggs.has(c.notEgg);
+  if ('dexComplete' in c) return dexComplete(dexMons(), SPECIES);
   return quest.vars[c.varEq[0]] === c.varEq[1];
 }
 
