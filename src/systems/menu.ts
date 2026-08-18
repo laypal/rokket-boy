@@ -9,11 +9,12 @@ import { quest, currentObjective, formatPlayTime } from './quest';
 import { SPECIES } from '../data/mons';
 import { EGG_TOTAL } from '../data/eggs';
 import { MOVES } from '../data/moves';
-import { maxHp, dexCount, xpProgress } from './mon';
+import { maxHp, dexCount, xpProgress, hpBand } from './mon';
 import { itemDef, applyHeal, usableOutOfBattle, packCounts } from './inventory';
+import { PARTY_CAP } from './locker';
 import { reduceHeat } from './heat';
 import { writeSave, sessionOnlyWarning } from './save';
-import type { Palette } from '../data/palettes';
+import { ALERT_IDX, type Palette } from '../data/palettes';
 import { listInput, flash, tickFlash } from './ui/listScreen';
 import { isRankLadderOpen, openRankLadder, rankLadderUpdate, rankLadderDraw } from './rankLadder';
 import { detailPage, monDetailDraw, pageIndex } from './monDetail';
@@ -330,9 +331,53 @@ let pn: PartyNav | null = null;
 // MNU.3: list-mode footer cap — the PACK_ROW_CAP derivation applied to the
 // party window (2,8,156,100) with the footer at x=8 (was 12: the new
 // 'A:VIEW <HEAL >MOVE' hint is 18 glyphs, one more than x=12 allows).
-const PARTY_WIN = { x: 2, w: 156 };
+// MNU.7: PARTY_WIN now carries y/h too (was x/w only) — the heal-item picker
+// reuses this SAME window (the shared chrome idiom the card asks for,
+// replacing its own narrower (4,8,118,100)) and the footer-clearance lint
+// needs the real y/h to derive drawWindow's border rows.
+//
+// MNU.7(c), second pass: h grew 100 -> 104. The first pass moved the footer
+// UP to y=96 to clear the border and hit the 4th party row instead — a full
+// party is the common case, and the playtester caught it on screen. The
+// window simply had no room: the last row's hp text ends at y=99 and the
+// accent border sat at y=104, four rows of clearance for an 8px glyph. Both
+// constraints below are real, so the window has to give.
+export const PARTY_WIN = { x: 2, y: 8, w: 156, h: 104 };
 const PARTY_FOOTER_X = 8;
 export const PARTY_FOOTER_CAP = Math.floor((PARTY_WIN.x + PARTY_WIN.w - 4 - PARTY_FOOTER_X) / 8);
+
+// Row geometry, named so the footer can be derived from the LAST row rather
+// than from a number that happens to clear it today.
+/** renderer.text() draws every glyph 8x8 (`drawImage(g, x + i*8, y, 8, 8)`). */
+const GLYPH_H = 8;
+const PARTY_ROW_Y0 = 30;
+const PARTY_ROW_H = 18;
+const PARTY_HP_DY = 8; // the hp line sits one glyph under the name line
+/** Bottom of the last party row's hp text — the first row the footer may use. */
+const PARTY_ROWS_END =
+  PARTY_ROW_Y0 + PARTY_ROW_H * (PARTY_CAP - 1) + PARTY_HP_DY + GLYPH_H; // = 100
+// MNU.7(c): the footer clears the last row above it AND drawWindow's accent
+// border below it (y + h - 4). Both are pinned in tests/menu.test.ts — the
+// first pass only pinned the border, which is how the row collision shipped.
+export const PARTY_FOOTER_Y = PARTY_ROWS_END; // = 100
+
+// MNU.7(a): name/level collide because the level column used to start
+// exactly where an 8-glyph name ends (x=80), with zero gap. monLabel() can
+// be as long as MON_NAME_CAP glyphs (the mon/move name budget, docs 02 —
+// the same cap mon-data-lint.test.ts enforces on sp.name; nicknames aren't
+// separately linted today because nothing in-game sets one yet, but the
+// budget is global, not per-field). The level column now starts one full
+// glyph past the longest possible name.
+export const PARTY_NAME_X = 16;
+export const MON_NAME_CAP = 10;
+export const PARTY_LEVEL_X = PARTY_NAME_X + MON_NAME_CAP * 8 + 8; // = 104
+
+// MNU.7(b): the heal-item picker's "USE ON <name>" label lives at the same
+// x=12 the PACK window uses; widened to PARTY_WIN's interior (was its own
+// narrower 118px window), the cap below is exactly 'USE ON '.length (7) +
+// MON_NAME_CAP (10) = 17 — the longest label this screen can ever draw.
+const ITEM_PICKER_TEXT_X = 12;
+export const ITEM_PICKER_CAP = Math.floor((PARTY_WIN.x + PARTY_WIN.w - 4 - ITEM_PICKER_TEXT_X) / 8);
 
 /** QOL.8: in-place party slot swap — pure, no-op when i===j or either index
  *  is out of range. Party array order IS battle send-out priority (meIdx
@@ -442,7 +487,7 @@ function partyDraw(pal: Palette): void {
   if (p.mode === 'list') {
     // MNU.1: near-full-width window (the MNU.2/STATUS idiom) — the extra
     // right column carries each row's xp mini-bar; rows keep their coords.
-    drawWindow(2, 8, 156, 100, pal);
+    drawWindow(PARTY_WIN.x, PARTY_WIN.y, PARTY_WIN.w, PARTY_WIN.h, pal);
     text('PARTY', 12, 14, pal[0]);
     G.party.forEach((mon, i) => {
       const y = 30 + i * 18;
@@ -451,16 +496,35 @@ function partyDraw(pal: Palette): void {
       // partyUpdate); '+amt' rides beside the hp text while it's active.
       const healing = p.heal && p.heal.t > 0 && p.heal.row === i;
       const col = healing ? (Math.floor(p.heal!.t / 4) & 1 ? pal[1] : pal[0]) : mon.hp > 0 ? pal[0] : pal[2];
+      // FLW.2: the hp readout gets its OWN colour, separate from `col` (name
+      // + level keep `col` unchanged — the number is the signal, not the
+      // label). Precedence: healing flash wins (same animation as `col`) >
+      // fainted keeps its pre-existing pal[2] (older than this card, not a
+      // band) > hpBand's ALERT_IDX for a living, hurt mon > pal[0] resting.
+      const maxHpVal = maxHp(SPECIES[mon.species], mon.lv);
+      const hpCol = healing
+        ? col
+        : mon.hp <= 0
+          ? pal[2]
+          : hpBand(mon.hp, maxHpVal) === 'hurt'
+            ? pal[ALERT_IDX]
+            : pal[0];
       // QOL.8: the picked-up row shows '*' instead of the normal '>' cursor
       // (even when it's also the hovered row — the pick-up marker wins).
       if (p.moveSrc !== null && i === p.moveSrc) text('*', 8, y, pal[0]);
       else if (i === p.monSel) text('>', 8, y, pal[0]);
-      text(monLabel(mon), 16, y, col);
-      text('L' + mon.lv, 80, y, col);
-      text(mon.hp + '/' + maxHp(SPECIES[mon.species], mon.lv), 16, y + 8, col);
+      text(monLabel(mon), PARTY_NAME_X, y, col);
+      // MNU.7(a): level column starts one glyph past the longest possible
+      // name (PARTY_LEVEL_X derivation above) — was x=80, zero gap.
+      text('L' + mon.lv, PARTY_LEVEL_X, y, col);
+      text(mon.hp + '/' + maxHpVal, 16, y + 8, hpCol);
       if (healing) text('+' + p.heal!.amt, 72, y + 8, col);
       // MNU.1: xp mini-bar under the L column (UX2.1's xpProgress — build
-      // once, draw twice). Clearances: 'L12' ends ≤98, heal '+NN' ends ≤96.
+      // once, draw twice), on the HP LINE (y+8) — a different row than the
+      // LEVEL column above (which lives on the name line, y). Re-derived
+      // (the old comment's numbers didn't hold): hp text starts x=16, heal
+      // '+NN' rides x=72 (ends ≤96 for '+99'), the bar itself starts x=100 —
+      // all three clear it on the same line.
       rect(100, y + 8, 52, 4, pal[0]);
       rect(101, y + 9, 50, 2, pal[3]);
       rect(101, y + 9, Math.round(50 * xpProgress(mon)), 2, pal[0]);
@@ -474,7 +538,9 @@ function partyDraw(pal: Palette): void {
         : p.moveSrc !== null
           ? ('MOVING: ' + monLabel(G.party[p.moveSrc])).slice(0, PARTY_FOOTER_CAP)
           : 'A:VIEW <HEAL >MOVE';
-    text(footer, PARTY_FOOTER_X, 100, pal[0]);
+    // MNU.7(c): PARTY_FOOTER_Y (derived above) clears the window's own
+    // accent/outer border rows — was y=100, cutting through both.
+    text(footer, PARTY_FOOTER_X, PARTY_FOOTER_Y, pal[0]);
     return;
   }
   const mon = G.party[p.monSel];
@@ -486,8 +552,11 @@ function partyDraw(pal: Palette): void {
     return;
   }
   // mode 'item'
-  drawWindow(4, 8, 118, 100, pal);
-  text('USE ON ' + monLabel(mon), 12, 14, pal[0]);
+  // MNU.7(b): widened to the SAME window the list uses (PARTY_WIN) — was its
+  // own narrower (4,8,118,100), which a 6+glyph name overflowed past its own
+  // right border and over the PARTY window behind it.
+  drawWindow(PARTY_WIN.x, PARTY_WIN.y, PARTY_WIN.w, PARTY_WIN.h, pal);
+  text('USE ON ' + monLabel(mon), ITEM_PICKER_TEXT_X, 14, pal[0]);
   const items = healItems();
   if (items.length === 0) text('NO HEAL ITEMS.', 16, 34, pal[0]);
   items.forEach((e, i) => {

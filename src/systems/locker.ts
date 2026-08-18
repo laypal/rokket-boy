@@ -15,6 +15,19 @@ import { listInput, flash, tickFlash, clampScroll, drawScreenChrome } from './ui
 
 export const PARTY_CAP = 4;
 
+// Header geometry (MNU.6): drawScreenChrome always draws the title at x=6,
+// one 8px-wide glyph per char (ui/listScreen.ts). The header tag keeps its
+// own 6px right margin instead of the shared rightText's 8px (2px off — see
+// the draw comment below). Both exported so the geometry lint in
+// tests/locker.test.ts can pin title-end < tag-start against the real draw
+// values instead of re-deriving the arithmetic independently.
+export const GLYPH_W = 8;
+export const HEADER_TITLE_X = 6;
+export const LOCKER_TITLE = 'LOCKER';
+export function tagX(tag: string): number {
+  return W - tag.length * GLYPH_W - 6;
+}
+
 /** Move party[i] to the end of box. Refuses if it would empty the party or i is
  *  out of range. Mutates both arrays; returns whether the move happened. */
 export function deposit(party: MonInstance[], box: MonInstance[], i: number): boolean {
@@ -98,10 +111,10 @@ export function lockerUpdate(): void {
 export function lockerDraw(pal: Palette): void {
   const l = L!;
   const items = list(l);
-  drawScreenChrome(pal, 'MON LOCKER', null, l.msgT > 0 && l.msg ? l.msg : 'A:MOVE <>:TAB B:OUT');
+  drawScreenChrome(pal, LOCKER_TITLE, null, l.msgT > 0 && l.msg ? l.msg : 'A:MOVE <>:TAB B:OUT');
   // header tag keeps its own 6px right margin (2px off the shared rightText)
   const tag = l.col === 'party' ? 'PARTY ' + G.party.length + '/' + PARTY_CAP : 'BOX ' + G.box.length;
-  text(tag, W - tag.length * 8 - 6, 7, pal[0]);
+  text(tag, tagX(tag), 7, pal[0]);
   if (items.length === 0) {
     text(l.col === 'party' ? 'NO MONS.' : 'BOX EMPTY.', 16, 40, pal[0]);
   }

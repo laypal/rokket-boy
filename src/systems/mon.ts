@@ -58,6 +58,18 @@ export function maxHp(species: MonSpecies, lv: number): number {
   return Math.floor((2 * species.baseHp * lv) / 100) + lv + 10;
 }
 
+export type HpBand = 'ok' | 'hurt';
+
+/** FLW.2: which colour band an hp readout belongs to. The threshold is the
+ *  battle HP bar's own `cur / max > 0.5` split (`battleDraw.ts:44`) — the
+ *  player has already learned where that line sits, so the menus use it too
+ *  rather than inventing a second one. 'hurt' draws in the palette's ALERT
+ *  slot (`palettes.ts`, index 4). Fainted is NOT a band: that branch is
+ *  older than this helper and keeps its own pal[2] colour. */
+export function hpBand(hp: number, max: number): HpBand {
+  return hp / max > 0.5 ? 'ok' : 'hurt';
+}
+
 /** The (up to 4) most recently learnable moves at a level. */
 export function movesAtLevel(species: MonSpecies, lv: number): MoveId[] {
   return species.moves.filter((m) => m.lv <= lv).slice(-4).map((m) => m.move);

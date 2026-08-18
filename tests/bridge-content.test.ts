@@ -198,7 +198,11 @@ describe('CH3.2 map pins (frozen task card)', () => {
     expect(WALKABLE.has('B')).toBe(false);
   });
 
-  it('BG_PAL.span carries exactly 4 shades', () => {
-    expect(BG_PAL.span).toHaveLength(4);
+  it('BG_PAL.span carries the standard palette shape', () => {
+    // FLW.2 added the shared ALERT slot to every BG palette, so the shape
+    // lint that used to live here now runs over ALL of them in
+    // content-lint.test.ts. Kept as a CH3-local guard that span is not
+    // special-cased.
+    expect(BG_PAL.span).toHaveLength(BG_PAL.hq.length);
   });
 });

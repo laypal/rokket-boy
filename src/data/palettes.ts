@@ -1,18 +1,33 @@
-// GB-style palettes: BG 4 shades dark->light; OBJ index 0 outline, '.' transparent.
+// GB-style palettes: BG 4 shades dark->light + an alert slot; OBJ index 0
+// outline, '.' transparent.
 // ── Background palettes (dark → light, exactly 4 shades, GB style) ──────
 import type { TypeId } from './typeChart';
 
 export type Palette = string[];
 
+// FLW.2: index 4 of every BG palette is ALERT — one shared red, outside each
+// map's ramp on purpose. Menus draw from whichever map palette is live
+// (`BG_PAL[G.map.pal]`), so a hurt-HP signal built from the ramp itself would
+// be teal in HQ, magenta in the casino and gold in the vault — and on a
+// `pal[3]` window fill the pal[0]/pal[1] gap reads on inspection rather than
+// at a glance. Same reasoning as RNK.5c's player gold below: when no existing
+// shade can carry the meaning, the palette gains a slot rather than the
+// meaning being faked. Every window interior is pal[3] (the lightest shade of
+// its ramp, `renderer.ts:115`), so this red reads on all eight.
+export const ALERT = '#c81e3c';
+/** Index of the ALERT slot in every BG palette. Draw code indexes the slot
+ *  by name so the contract is greppable, not a bare `pal[4]`. */
+export const ALERT_IDX = 4;
+
 export const BG_PAL: Record<string, Palette> = {
-  gray:   ['#0a0a0f', '#4a4a58', '#9a9aac', '#e8e8f0'],   // boot
-  green:  ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'],   // DMG classic — title/battle
-  hq:     ['#0a1420', '#1d4552', '#4e9aa8', '#cdeef0'],   // Rökket HQ — cold teal
-  casino: ['#1c0a22', '#5c2166', '#b8459c', '#f6cdec'],   // Gamez Corner — magenta
-  vault:  ['#100a04', '#4e3a12', '#a8842e', '#f0e2b0'],   // vault — gold
-  night:  ['#080810', '#22224a', '#5555a0', '#b8b8e8'],   // intro sky
-  moon:   ['#050810', '#16294e', '#3e6496', '#a8c4e0'],   // Mt. Möön caves — dark blue
-  span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8'],   // NUGGET SPAN — daylight river teal (CH3.2)
+  gray:   ['#0a0a0f', '#4a4a58', '#9a9aac', '#e8e8f0', ALERT],   // boot
+  green:  ['#0f380f', '#306230', '#8bac0f', '#9bbc0f', ALERT],   // DMG classic — title/battle
+  hq:     ['#0a1420', '#1d4552', '#4e9aa8', '#cdeef0', ALERT],   // Rökket HQ — cold teal
+  casino: ['#1c0a22', '#5c2166', '#b8459c', '#f6cdec', ALERT],   // Gamez Corner — magenta
+  vault:  ['#100a04', '#4e3a12', '#a8842e', '#f0e2b0', ALERT],   // vault — gold
+  night:  ['#080810', '#22224a', '#5555a0', '#b8b8e8', ALERT],   // intro sky
+  moon:   ['#050810', '#16294e', '#3e6496', '#a8c4e0', ALERT],   // Mt. Möön caves — dark blue
+  span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8', ALERT],   // NUGGET SPAN — daylight river teal (CH3.2)
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent

@@ -30,14 +30,29 @@ vi.mock('../src/engine/input', () => ({
   },
 }));
 
-import { menuHelp, openMenu, menuUpdate, menuDraw, swapParty, statusHelp, PACK_DESC_CAP } from '../src/systems/menu';
+import {
+  menuHelp,
+  openMenu,
+  menuUpdate,
+  menuDraw,
+  swapParty,
+  statusHelp,
+  PACK_DESC_CAP,
+  MON_NAME_CAP,
+  PARTY_NAME_X,
+  PARTY_LEVEL_X,
+  PARTY_WIN,
+  PARTY_FOOTER_Y,
+  ITEM_PICKER_CAP,
+} from '../src/systems/menu';
 import { isRankLadderOpen, closeRankLadder } from '../src/systems/rankLadder';
 import { text } from '../src/engine/renderer';
 import { G } from '../src/state';
 import { quest, resetQuest, currentObjective, RANKS } from '../src/systems/quest';
 import { makeMon, maxHp } from '../src/systems/mon';
 import { SPECIES } from '../src/data/mons';
-import { BG_PAL } from '../src/data/palettes';
+import { BG_PAL, ALERT_IDX } from '../src/data/palettes';
+import { PARTY_CAP } from '../src/systems/locker';
 
 describe('menuHelp', () => {
   it('PACK', () => {
@@ -451,7 +466,8 @@ describe('MNU.3 PARTY detail screen (BDD)', () => {
     tap('left');
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
-    expect(text).toHaveBeenCalledWith('NO HEAL ITEMS.', 8, 100, BG_PAL.green[0]);
+    // MNU.7(c): footer moved off the window border, y=100 -> PARTY_FOOTER_Y.
+    expect(text).toHaveBeenCalledWith('NO HEAL ITEMS.', 8, PARTY_FOOTER_Y, BG_PAL.green[0]);
   });
 
   it('LEFT on the list with a heal item opens the item picker ("USE ON …")', () => {
@@ -484,5 +500,186 @@ describe('MNU.3 PARTY detail screen (BDD)', () => {
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
     expect(text).not.toHaveBeenCalledWith('A:ITEM B:BACK', expect.anything(), expect.anything(), expect.anything());
+  });
+});
+
+// ── MNU.7: three pre-existing PARTY-list layout collisions ─────────────────
+// Pure geometry lints (derive-and-lint, the PACK_ROW_CAP/PARTY_FOOTER_CAP
+// idiom) plus a render-based BDD pass that drives the real draw with a
+// max-length name, per the card's Given/When/Then.
+describe('MNU.7 PARTY list layout geometry (derive-and-lint)', () => {
+  it('name-end for a max-length monLabel clears the level column start', () => {
+    const nameEnd = PARTY_NAME_X + MON_NAME_CAP * 8;
+    expect(nameEnd).toBeLessThan(PARTY_LEVEL_X);
+  });
+
+  it('the heal-item picker interior fits the longest "USE ON <name>" string', () => {
+    const longest = 'USE ON '.length + MON_NAME_CAP;
+    expect(longest).toBeLessThanOrEqual(ITEM_PICKER_CAP);
+  });
+
+  it('the list footer clears the window border rows (accent at y+h-4, an 8px glyph tall)', () => {
+    const accentRow = PARTY_WIN.y + PARTY_WIN.h - 4;
+    expect(PARTY_FOOTER_Y + 8).toBeLessThanOrEqual(accentRow);
+  });
+
+  // The lint above was the whole of MNU.7(c)'s first pass, and it passed while
+  // the footer was drawing straight through the 4th party row's hp text — a
+  // full party being the common case, not an edge one. The footer is squeezed
+  // between two things and only one of them was ever pinned.
+  it('the list footer clears the LAST party row, at a full party', () => {
+    const lastRowHpY = 30 + 18 * (PARTY_CAP - 1) + 8;
+    expect(PARTY_FOOTER_Y).toBeGreaterThanOrEqual(lastRowHpY + 8);
+  });
+
+  it('the window is tall enough to hold four rows and a footer at once', () => {
+    // Belt and braces: if a future change shrinks PARTY_WIN.h back, the two
+    // lints above become mutually unsatisfiable and this one says why.
+    const lastRowHpY = 30 + 18 * (PARTY_CAP - 1) + 8;
+    const accentRow = PARTY_WIN.y + PARTY_WIN.h - 4;
+    expect(accentRow - (lastRowHpY + 8)).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe('MNU.7 PARTY list layout collisions (BDD)', () => {
+  function frame(): void {
+    menuUpdate();
+    keys.pressed.clear();
+  }
+  function tap(k: string): void {
+    keys.pressed.add(k);
+    frame();
+  }
+
+  beforeEach(() => {
+    resetQuest();
+    // Given a party with an 8-glyph name (MNU.7's own example) at max cap...
+    G.party = [makeMon(SPECIES.koffink, 9)];
+    G.party[0].nick = 'X'.repeat(MON_NAME_CAP); // max-length name, MNU.2's rule
+    quest.items.push('SODA'); // ...and a heal item
+    keys.down.clear();
+    keys.pressed.clear();
+    openMenu();
+    tap('down'); // PACK -> PARTY
+    tap('a'); // open PARTY (mode list)
+  });
+
+  it('(a) name and level never overlap for a max-length name', () => {
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const calls = vi.mocked(text).mock.calls;
+    const nameCall = calls.find((c) => c[0] === G.party[0].nick)!;
+    const levelCall = calls.find((c) => c[0] === 'L9')!;
+    expect(nameCall).toBeDefined();
+    expect(levelCall).toBeDefined();
+    const nameEnd = (nameCall[1] as number) + (nameCall[0] as string).length * 8;
+    expect(nameEnd).toBeLessThanOrEqual(levelCall[1] as number);
+  });
+
+  it('(b) the heal-item picker draws "USE ON <name>" inside its own window interior', () => {
+    tap('left'); // list -> heal-item picker
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const label = 'USE ON ' + G.party[0].nick;
+    const call = vi.mocked(text).mock.calls.find((c) => c[0] === label)!;
+    expect(call).toBeDefined();
+    const x = call[1] as number;
+    const end = x + label.length * 8;
+    expect(end).toBeLessThanOrEqual(PARTY_WIN.x + PARTY_WIN.w - 4); // interior right edge
+  });
+
+  it('(c) the list footer clears the window bottom border rows', () => {
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const footerCall = vi.mocked(text).mock.calls.find((c) => c[0] === 'A:VIEW <HEAL >MOVE')!;
+    expect(footerCall).toBeDefined();
+    const y = footerCall[2] as number;
+    const accentRow = PARTY_WIN.y + PARTY_WIN.h - 4;
+    expect(y + 8).toBeLessThanOrEqual(accentRow);
+  });
+});
+
+// ── FLW.2: PARTY HP numbers show damage at a glance — hurt/healthy colour
+// split on the hp readout only (name/level keep their own colour). Land
+// AFTER MNU.7 so geometry is final; these tests only assert colour. ───────
+describe('FLW.2 PARTY HP readout colour', () => {
+  function frame(): void {
+    menuUpdate();
+    keys.pressed.clear();
+  }
+  function tap(k: string): void {
+    keys.pressed.add(k);
+    frame();
+  }
+
+  beforeEach(() => {
+    resetQuest();
+    keys.down.clear();
+    keys.pressed.clear();
+  });
+
+  it('a full-hp mon keeps pal[0] on the hp readout', () => {
+    G.party = [makeMon(SPECIES.koffink, 5)]; // makeMon starts at full hp
+    openMenu();
+    tap('down'); // PACK -> PARTY
+    tap('a'); // open PARTY list
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const max = maxHp(SPECIES.koffink, 5);
+    expect(text).toHaveBeenCalledWith(G.party[0].hp + '/' + max, 16, 38, BG_PAL.green[0]);
+  });
+
+  it('a mon at or below half hp draws the hp readout in the ALERT slot', () => {
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    const max = maxHp(SPECIES.koffink, 5);
+    G.party[0].hp = Math.floor(max / 2); // hpBand boundary: exactly half is 'hurt'
+    openMenu();
+    tap('down');
+    tap('a');
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith(G.party[0].hp + '/' + max, 16, 38, BG_PAL.green[ALERT_IDX]);
+  });
+
+  it('the label and level keep their own colour even when the mon is hurt — only the number is the signal', () => {
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    const max = maxHp(SPECIES.koffink, 5);
+    G.party[0].hp = Math.floor(max / 2);
+    openMenu();
+    tap('down');
+    tap('a');
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('KOFFINK', PARTY_NAME_X, 30, BG_PAL.green[0]);
+    expect(text).toHaveBeenCalledWith('L5', PARTY_LEVEL_X, 30, BG_PAL.green[0]);
+  });
+
+  it('a fainted mon still draws pal[2] on the hp readout (precedence: fainted beats the hp band)', () => {
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    G.party[0].hp = 0;
+    openMenu();
+    tap('down');
+    tap('a');
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const max = maxHp(SPECIES.koffink, 5);
+    expect(text).toHaveBeenCalledWith('0/' + max, 16, 38, BG_PAL.green[2]);
+  });
+
+  it('a healing mon still flashes on the hp readout (QOL.4 regression: precedence puts healing first)', () => {
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    G.party[0].hp = 1; // hurt — would otherwise draw ALERT_IDX
+    quest.items.push('SODA');
+    openMenu();
+    tap('down');
+    tap('a'); // list
+    tap('left'); // heal-item picker
+    tap('a'); // use SODA -> pn.heal set, back to list
+    frame(); // one settle frame, still flashing
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    const max = maxHp(SPECIES.koffink, 5);
+    // odd branch of the frozen flash formula (see the QOL.4 suite above) -> pal[1]
+    expect(text).toHaveBeenCalledWith(G.party[0].hp + '/' + max, 16, 38, BG_PAL.green[1]);
   });
 });

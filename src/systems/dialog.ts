@@ -31,6 +31,15 @@ export function choiceArmed(): boolean {
   return d.page === d.pages.length - 1 && d.chars >= pg.join('').length;
 }
 
+/** FLW.1 (2026-08-18): B advances plain dialog exactly like A — completing the
+ *  typewriter, turning a page, closing the box on the last page. Stated once
+ *  here so the two buttons can't drift apart at a call site. Does NOT apply
+ *  inside the { choice } branch below, where B is the deliberate NO/cancel —
+ *  that check stays local to the choice branch, not folded into this. */
+function advancePressed(): boolean {
+  return Input.hit('a') || Input.hit('b');
+}
+
 export function dialogUpdate(): void {
   const d = G.dialog!;
   const pg = d.pages[d.page];
@@ -55,7 +64,7 @@ export function dialogUpdate(): void {
     c.onAnswer(yes);
     return;
   }
-  if (Input.hit('a')) {
+  if (advancePressed()) {
     Audio2.sfx('beep');
     d.page++;
     d.chars = 0;

@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import type { ScriptStep } from '../src/types';
 import { MAPS } from '../src/data/maps';
 import { ENCOUNTERS } from '../src/data/encounters';
+import { BG_PAL, ALERT, ALERT_IDX } from '../src/data/palettes';
 import { CHAPTERS } from '../src/systems/quest';
 
 const MAX_CHARS = 17; // plan §5: max 3 lines × 17 chars per page
@@ -160,4 +161,28 @@ describe('content lints', () => {
     }
     expect(seen).toBeGreaterThan(0); // sanity: the walker actually found a heatGuard
   });
+});
+
+// ── FLW.2: BG palette shape ──────────────────────────────────────────────
+// Menus draw from whichever map palette is live (`BG_PAL[G.map.pal]`), so a
+// palette missing the ALERT slot would draw a hurt HP readout as `undefined`
+// on exactly the maps nobody thought to test. Pinned over ALL entries so the
+// next map's palette can't ship short — the derive-and-lint idiom MNU.2
+// established for the PACK box.
+describe('BG_PAL shape', () => {
+  it('every background palette is 4 shades plus the shared ALERT slot', () => {
+    for (const [id, pal] of Object.entries(BG_PAL)) {
+      expect(pal, `BG_PAL.${id}`).toHaveLength(5);
+      expect(pal[ALERT_IDX], `BG_PAL.${id} alert slot`).toBe(ALERT);
+    }
+  });
+
+  it('every shade is a full 6-digit hex colour', () => {
+    for (const [id, pal] of Object.entries(BG_PAL)) {
+      pal.forEach((c, i) => {
+        expect(c, `BG_PAL.${id}[${i}]`).toMatch(/^#[0-9a-f]{6}$/);
+      });
+    }
+  });
+
 });

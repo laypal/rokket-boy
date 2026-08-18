@@ -3,9 +3,9 @@
 // formatters below read no G — menu.ts owns navigation/mode; this module
 // owns layout only, the same split rankLadder.ts and battleFx.ts use.
 import type { MonInstance, MonSpecies } from '../types';
-import type { Palette } from '../data/palettes';
+import { ALERT_IDX, type Palette } from '../data/palettes';
 import { ctx, decode, drawWindow, text } from '../engine/renderer';
-import { maxHp } from './mon';
+import { maxHp, hpBand, type HpBand } from './mon';
 
 // Geometry (all pinned — the playtester screenshots against these):
 //   page window   drawWindow(0, 0, 160, 120)     interior x 4..155, y 4..115
@@ -24,6 +24,7 @@ export interface DetailPage {
   lv: string;         // 'LV 12' or 'LV 12 PSN' when status set (≤10)
   type: string;       // sp.type.join('/')                 (≤10, linted)
   hp: string;         // 'HP 45/45'  (current/maxHp)      (≤10)
+  band: HpBand;       // FLW.2 — hpBand(mon.hp, maxHp); build once, draw twice
   ht: string;         // 'HT 0.6M'   = 'HT ' + heightM.toFixed(1) + 'M'
   wt: string;         // 'WT 12.5KG' = 'WT ' + weightKg.toFixed(1) + 'KG'
   atk: string;        // 'ATK 65'  (species base stat — only hp scales with level)
@@ -46,6 +47,7 @@ export function detailPage(
     lv: 'LV ' + mon.lv + (mon.status ? ' ' + mon.status : ''),
     type: sp.type.join('/'),
     hp: 'HP ' + mon.hp + '/' + maxHp(sp, mon.lv),
+    band: hpBand(mon.hp, maxHp(sp, mon.lv)),
     ht: 'HT ' + sp.heightM.toFixed(1) + 'M',
     wt: 'WT ' + sp.weightKg.toFixed(1) + 'KG',
     atk: 'ATK ' + sp.atk,
@@ -78,7 +80,9 @@ export function monDetailDraw(page: DetailPage, sp: MonSpecies, pal: Palette): v
   text(page.label, 72, 8, pal[0]);
   text(page.lv, 72, 18, pal[0]);
   text(page.type, 72, 28, pal[0]);
-  text(page.hp, 72, 38, pal[0]);
+  // FLW.2: same hp readout as the PARTY list — hurt draws in ALERT_IDX, the
+  // label/lv/type lines above keep pal[0] (the number is the signal).
+  text(page.hp, 72, 38, page.band === 'hurt' ? pal[ALERT_IDX] : pal[0]);
   text(page.ht, 72, 48, pal[0]);
   text(page.wt, 72, 58, pal[0]);
   // bottom-left: ATK/DEF/SPD + pager

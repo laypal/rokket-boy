@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   LEVEL_CAP, xpForLevel, levelForXp, maxHp, makeMon, movesAtLevel, gainXp, dexCount, evolveMon,
-  xpProgress, xpFillSegs,
+  xpProgress, xpFillSegs, hpBand,
 } from '../src/systems/mon';
 import { S } from '../src/data/sprites';
 import type { MonSpecies } from '../src/types';
@@ -420,5 +420,39 @@ describe('xpFillSegs', () => {
   it('a gain landing exactly on LEVEL_CAP ends with a full final segment', () => {
     const segs = xpFillSegs(LEVEL_CAP - 1, xpForLevel(LEVEL_CAP - 1), LEVEL_CAP, xpForLevel(LEVEL_CAP));
     expect(segs[segs.length - 1]).toEqual({ from: 0, to: 1 });
+  });
+});
+
+// ── FLW.2 hpBand ─────────────────────────────────────────────────────────
+describe('hpBand', () => {
+  it('full health is ok', () => {
+    expect(hpBand(20, 20)).toBe('ok');
+  });
+
+  it('holds ok all the way down to the halfway mark', () => {
+    expect(hpBand(11, 20)).toBe('ok');
+  });
+
+  it('exactly half is hurt — the split is > 0.5, matching the battle bar', () => {
+    expect(hpBand(10, 20)).toBe('hurt');
+  });
+
+  it('just under half is hurt', () => {
+    expect(hpBand(9, 20)).toBe('hurt');
+  });
+
+  it('one hp left is hurt', () => {
+    expect(hpBand(1, 20)).toBe('hurt');
+  });
+
+  it('zero is hurt — the fainted row keeps its own colour branch upstream', () => {
+    expect(hpBand(0, 20)).toBe('hurt');
+  });
+
+  it('agrees with the battle HP bar at every boundary of an odd max', () => {
+    // battleDraw's bar splits on `cur / max > 0.5`; an odd max is where an
+    // off-by-one in either would show. 7/13 is above half, 6/13 is not.
+    expect(hpBand(7, 13)).toBe('ok');
+    expect(hpBand(6, 13)).toBe('hurt');
   });
 });

@@ -3,7 +3,15 @@
 // but these pure helpers carry the rules and are frozen here.
 import { describe, it, expect } from 'vitest';
 import type { MonInstance } from '../src/types';
-import { deposit, withdraw, PARTY_CAP } from '../src/systems/locker';
+import {
+  deposit,
+  withdraw,
+  PARTY_CAP,
+  LOCKER_TITLE,
+  HEADER_TITLE_X,
+  GLYPH_W,
+  tagX,
+} from '../src/systems/locker';
 
 function mon(species: string, lv: number): MonInstance {
   return { species, lv, hp: 1, xp: 0, moves: [] };
@@ -61,5 +69,28 @@ describe('MON LOCKER transfers', () => {
     expect(withdraw(party, box, 3)).toBe(false);
     expect(withdraw(party, box, -1)).toBe(false);
     expect(box.length).toBe(1);
+  });
+});
+
+// MNU.6: the header title (drawn at HEADER_TITLE_X by drawScreenChrome) and
+// the right-aligned tag (positioned by tagX) must never overlap, for every
+// tag the header can actually show. Derived from the real draw geometry
+// (locker.ts's exported constants/helper) rather than hard-coded pixel
+// numbers, so this lint tracks the draw instead of drifting from it.
+describe('MON LOCKER header geometry (MNU.6)', () => {
+  const titleEnd = HEADER_TITLE_X + LOCKER_TITLE.length * GLYPH_W;
+
+  it('title never overlaps the PARTY tag, for every party size 0..PARTY_CAP', () => {
+    for (let n = 0; n <= PARTY_CAP; n++) {
+      const tag = 'PARTY ' + n + '/' + PARTY_CAP;
+      expect(titleEnd).toBeLessThanOrEqual(tagX(tag));
+    }
+  });
+
+  it('title never overlaps the BOX tag, up to a 2-digit box count', () => {
+    for (const n of [0, 1, 9, 10, 42, 99]) {
+      const tag = 'BOX ' + n;
+      expect(titleEnd).toBeLessThanOrEqual(tagX(tag));
+    }
   });
 });

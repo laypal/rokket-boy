@@ -136,6 +136,29 @@ describe('detailPage', () => {
     expect(detailPage(mon, sp, moveName, 2, 3).pager).toBe('<3/3>');
   });
 
+  // ── FLW.2: hpBand wiring — hpBand's own boundary tests already live in
+  // tests/mon.test.ts; these just prove detailPage() calls it and carries
+  // the result through as data, not that the threshold itself is right.
+  it('band is "ok" for a healthy mon', () => {
+    const sp = makeSpecies();
+    const mon = makeMon(sp, 5); // makeMon starts at full hp
+    expect(detailPage(mon, sp, moveName, 0, 1).band).toBe('ok');
+  });
+
+  it('band is "hurt" for a mon at or below half hp', () => {
+    const sp = makeSpecies();
+    const mon = makeMon(sp, 5);
+    mon.hp = Math.floor(maxHp(sp, 5) / 2);
+    expect(detailPage(mon, sp, moveName, 0, 1).band).toBe('hurt');
+  });
+
+  it('band is "hurt" for a fainted mon (hpBand has no separate fainted state)', () => {
+    const sp = makeSpecies();
+    const mon = makeMon(sp, 5);
+    mon.hp = 0;
+    expect(detailPage(mon, sp, moveName, 0, 1).band).toBe('hurt');
+  });
+
   it('every column field fits its 10-glyph cap and every dex line fits 18', () => {
     const sp = makeSpecies();
     const mon = makeMon(sp, 5);
