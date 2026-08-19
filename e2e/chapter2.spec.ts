@@ -186,7 +186,21 @@ test('Chapter 2: MT. MOON raid, BRAD boss fight, fossil hand-in', async ({ page 
   }
   expect((await flags(page)).fossilsTaken).toBe(true);
   expect((await flags(page)).bradBeaten).toBe(true);
-  await settle(page, 5_000); // clear the trailing storm-off dialog
+  // FLW.4: BRAD's storm-off page now resumes into the ride-home choice (YES
+  // -> warp to HQ). This spec is the sole owner of the walk home (see the
+  // route comment above), so it answers NO with B — FLW.1 made B advance
+  // ordinary dialog pages exactly like A, and B is always NO once the
+  // choice arms, so mashing B alone both clears the storm-off page and
+  // declines the ride.
+  const declineRideStart = Date.now();
+  while (Date.now() - declineRideStart < 5_000) {
+    if ((await state(page)) !== 'dialog') break;
+    await page.keyboard.press('x');
+    await page.waitForTimeout(50);
+  }
+  const declined = await page.evaluate(() => ({ mapId: window.__debug.G.map.id, state: window.__debug.G.state }));
+  expect(declined.mapId).toBe('moonDig');
+  expect(declined.state).toBe('world');
 
   // ── Return: DIG SITE -> moon2 -> moon1 -> corner -> HQ (from (7,4) —
   //    the ambush fought us at the chest, no walk to (7,5) anymore) ────────

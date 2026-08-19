@@ -1,5 +1,6 @@
 // ROKKET HQ B1F — dialogue & interaction scripts (ported from npcDialog/interact v2).
 import type { ScriptStep } from '../../types';
+import { EGG_TOTAL } from '../eggs';
 
 export const hqScripts: Record<string, ScriptStep[]> = {
   // CH2.4/CH3.3: outermost branches first — ch3Done afterglow, then the
@@ -34,6 +35,10 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                 { music: 'victory' },
                 { rankUp: true },
                 { endScreen: true },
+                // ONB.6: first promotion's tutorial. Safe after endScreen (1e rule) because
+                // sysMsg only ticks in worldDraw — it surfaces once MISSION COMPLETE is
+                // dismissed. Fires once; span_kira's onWin (rank 3) gets none.
+                { sysMsg: ['RANK LADDER:', 'START > STATUS', '> RANK'] },
               ],
               else: [
                 {
@@ -201,6 +206,12 @@ export const hqScripts: Record<string, ScriptStep[]> = {
             ["MYOWTH: That's", 'right! Myowth', 'talks!'],
             ['Beat the guard,', 'poke the POSTER,', 'grab the loot.'],
             ['Easy money, see?'],
+            // ONB.4: the egg hint. The count is the registry's (EGG_TOTAL)
+            // — never a literal, so this can never drift from what STATUS
+            // reports.
+            ['Oh, and EGGS.', 'Hidden all over.', EGG_TOTAL + ' of them, see?'],
+            ['Poke anything', 'that looks wrong.', 'Press A, see?'],
+            ['Cracked bricks.', 'Dead ends. Signs', 'that read funny.'],
           ],
         },
       ],

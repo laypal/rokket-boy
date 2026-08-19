@@ -6,7 +6,6 @@
 import { G } from '../state';
 import type { MonInstance } from '../types';
 import { SPECIES } from '../data/mons';
-import { maxHp } from './mon';
 import { text, W } from '../engine/renderer';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
@@ -27,6 +26,19 @@ export const LOCKER_TITLE = 'LOCKER';
 export function tagX(tag: string): number {
   return W - tag.length * GLYPH_W - 6;
 }
+
+// Row geometry (MNU.8): name then level, no hp column. The old row failed two
+// ways on one line — 'L'+lv abutted the hp string with zero gap, AND the hp
+// string alone ('100/100' at LEVEL_CAP, 7 glyphs) overflowed the window — so
+// no column shuffle could save it. Fainted still reads via pal[2] in lockerDraw.
+export const ROW_NAME_X = 16;
+// = MON_NAME_CAP (menu.ts; docs 02's 10-glyph name budget). Mirrored, not
+// imported: menu.ts imports PARTY_CAP from here, importing back would cycle.
+const ROW_NAME_CAP = 10;
+// one full glyph past the longest name — same derivation as PARTY_LEVEL_X (MNU.7)
+export const ROW_LV_X = ROW_NAME_X + ROW_NAME_CAP * GLYPH_W + GLYPH_W; // = 104
+// interior right edge of drawScreenChrome's full-width list window (x+w-4, drawWindow's border)
+export const ROW_RIGHT_X = W - 4; // = 156
 
 /** Move party[i] to the end of box. Refuses if it would empty the party or i is
  *  out of range. Mutates both arrays; returns whether the move happened. */
@@ -116,7 +128,7 @@ export function lockerDraw(pal: Palette): void {
   const tag = l.col === 'party' ? 'PARTY ' + G.party.length + '/' + PARTY_CAP : 'BOX ' + G.box.length;
   text(tag, tagX(tag), 7, pal[0]);
   if (items.length === 0) {
-    text(l.col === 'party' ? 'NO MONS.' : 'BOX EMPTY.', 16, 40, pal[0]);
+    text(l.col === 'party' ? 'NO MONS.' : 'BOX EMPTY.', ROW_NAME_X, 40, pal[0]);
   }
   for (let r = 0; r < VIS; r++) {
     const idx = l.top + r;
@@ -125,8 +137,7 @@ export function lockerDraw(pal: Palette): void {
     const y = 34 + r * 16;
     const col = m.hp > 0 ? pal[0] : pal[2];
     if (idx === l.sel) text('>', 6, y, pal[0]);
-    text(monName(m), 16, y, col);
-    text('L' + m.lv, 100, y, col);
-    text(m.hp + '/' + maxHp(SPECIES[m.species], m.lv), 124, y, col);
+    text(monName(m), ROW_NAME_X, y, col);
+    text('L' + m.lv, ROW_LV_X, y, col);
   }
 }

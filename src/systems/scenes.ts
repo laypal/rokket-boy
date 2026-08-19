@@ -234,6 +234,11 @@ export function introUpdate(): void {
     rect(0, 28, W, bandH, night[0]);
     card.lines.forEach((l, i) => textC(l, 34 + i * 14, night[3]));
   }
+  // ONB.8-FB: the prompts drew night[2] straight onto the backdrop, which
+  // the bridge card's light teal (BG_PAL.span) nearly swallowed. Same idiom
+  // as the words band above: a night[0] floor under them, every card, every
+  // frame — 116 = 122 (the "- A -" row) minus the words band's 6px margin.
+  rect(0, 116, W, H - 116, night[0]);
   if ((G.frame >> 4) & 1) textC('- A -', 122, night[2]);
   textC('START TO SKIP', 134, night[2]);
 

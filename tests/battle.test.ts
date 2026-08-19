@@ -32,7 +32,7 @@ vi.mock('../src/engine/input', () => ({
 }));
 
 import { G } from '../src/state';
-import { startBattle, battleUpdate, setBattleRng, xpFromWin, partyRow, rootHelp, moveInfo, encounterFlash, type BattleState } from '../src/systems/battle';
+import { startBattle, battleUpdate, setBattleRng, xpFromWin, lowLevelBoost, LOW_LV_BOOST_UNTIL, partyRow, rootHelp, moveInfo, encounterFlash, type BattleState } from '../src/systems/battle';
 import { battleDraw } from '../src/systems/battleDraw';
 import { BALL_ITEM } from '../src/data/items';
 import { ENCOUNTERS } from '../src/data/encounters';
@@ -127,6 +127,66 @@ describe('xpFromWin', () => {
   });
 });
 
+// ── ONB.1: low-level recipients get a bigger post-win xp share ───────────
+// Recorded BDD baseline (spec-derived, not re-asserted below — the pure
+// table test plus the single-fight award test are the cheap equivalent):
+// fresh starter koffink lv5 at 125 xp; spar_jessika (lv5 foe, pool 50) then
+// guard_voltorbb (lv4, pool 32). BEFORE ONB.1: 125+50+32=207 xp → still lv5.
+// AFTER: 125 + floor(50×2.25)=112 → 237 xp, crosses 216 (L6) on the first
+// win; recipient is now lv6 (boost 2.0) → +floor(32×2.0)=64 → 301 xp, stays
+// lv6 (< 343 for L7).
+describe('lowLevelBoost (ONB.1)', () => {
+  it('tapers linearly from ×3.25 at lv1 to exactly ×1 at LOW_LV_BOOST_UNTIL, flat above', () => {
+    expect(LOW_LV_BOOST_UNTIL).toBe(10);
+    expect(lowLevelBoost(1)).toBe(3.25);
+    expect(lowLevelBoost(5)).toBe(2.25);
+    expect(lowLevelBoost(9)).toBe(1.25);
+    expect(lowLevelBoost(10)).toBe(1);
+    expect(lowLevelBoost(11)).toBe(1);
+    expect(lowLevelBoost(50)).toBe(1);
+  });
+
+  it('a lv5 recipient gains materially more than a lv12 one for the identical foe', () => {
+    const gainFor = (lv: number): number => {
+      setBattleRng(mulberry32(42));
+      G.party = [makeMon(SPECIES.koffink, lv)];
+      const before = G.party[0].xp;
+      begin('guard_voltorbb'); // lv4 foe, xpFromWin(4)=32
+      fightItOut();
+      return G.party[0].xp - before;
+    };
+    const gained5 = gainFor(5);
+    const gained12 = gainFor(12);
+    expect(gained12).toBe(xpFromWin(4)); // lv12 ≥ LOW_LV_BOOST_UNTIL → boost is exactly ×1
+    expect(gained5).toBe(Math.floor(xpFromWin(4) * lowLevelBoost(5))); // lv5 → ×2.25
+    expect(gained5).toBeGreaterThan(gained12);
+  });
+
+  it('two same-level (lv≥10) recipients still split the pool evenly, unchanged from pre-ONB.1', () => {
+    setBattleRng(mulberry32(9));
+    G.party = [makeMon(SPECIES.koffink, 12), makeMon(SPECIES.voltorbb, 12)];
+    const xp0 = G.party[0].xp;
+    const xp1 = G.party[1].xp;
+    begin('guard_voltorbb');
+    settle();
+    tap('down');
+    tap('down'); // SWITCH
+    tap('a');
+    tap('down'); // bring in VOLTORBB — both slots are now participants
+    tap('a');
+    settle();
+    tap('up'); // rootSel restored the cursor to SWITCH — walk back to FIGHT
+    tap('up');
+    fightItOut();
+    expect(G.battle).toBeNull();
+    // same-level recipients always split evenly; lv≥10 both sides also means
+    // boost ×1, so the shares are unchanged from pre-ONB.1
+    const share = Math.max(1, Math.floor(xpFromWin(4) / 2));
+    expect(G.party[0].xp).toBe(xp0 + share);
+    expect(G.party[1].xp).toBe(xp1 + share);
+  });
+});
+
 // ── the Ch.1 guard battle, seeded end to end ─────────────────────────────
 describe('guard battle (seed 42)', () => {
   it('FIGHT-only play wins, awards XP, hands onWin steps back', () => {
@@ -136,8 +196,8 @@ describe('guard battle (seed 42)', () => {
     expect(G.battle).toBeNull();
     expect(follow).toEqual(ENCOUNTERS.guard_voltorbb.onWin);
     const me = G.party[0];
-    expect(me.lv).toBe(5); // 125 + 32 = 157 xp < 216 (L6)
-    expect(me.xp).toBe(125 + xpFromWin(4));
+    expect(me.lv).toBe(5); // 125 + floor(32×2.25)=72 = 197 xp < 216 (L6) — ONB.1 boost at lv5
+    expect(me.xp).toBe(125 + Math.floor(xpFromWin(4) * lowLevelBoost(5)));
     // regression pins from the first verified run of this seed:
     expect(me.hp).toBe(15); // 19 max; the guard's VOLTORBB chipped 4 off
     expect(turns).toBe(5); // 17 foe hp at 4-5 TACKLE dmg, one low/missed roll
@@ -547,7 +607,8 @@ describe('XP split among participants (QOL.7)', () => {
     tap('up');
     fightItOut();
     expect(G.battle).toBeNull();
-    const share = Math.max(1, Math.floor(xpFromWin(4) / 2)); // lv4 foe → 16 each
+    // lv4 foe → base 16 each, then ONB.1 boost ×2.25 (both recipients lv5) → 36 each
+    const share = Math.max(1, Math.floor(Math.floor(xpFromWin(4) / 2) * lowLevelBoost(5)));
     expect(G.party[0].xp).toBe(xp0 + share);
     expect(G.party[1].xp).toBe(xp1 + share);
   });
@@ -573,7 +634,8 @@ describe('XP split among participants (QOL.7)', () => {
     fightItOut();
     expect(G.battle).toBeNull();
     expect(G.party[0].xp).toBe(xp0); // fainted at win time — no share
-    expect(G.party[1].xp).toBe(xp1 + xpFromWin(4)); // sole recipient → full pool
+    // sole recipient → full pool (32), then ONB.1 boost ×2.25 at lv5 → 72
+    expect(G.party[1].xp).toBe(xp1 + Math.floor(xpFromWin(4) * lowLevelBoost(5)));
   });
 });
 
@@ -623,7 +685,8 @@ describe('level-up move replacement', () => {
       weightKg: 1.0,
       dex: ['TEST.'],
     };
-    // lv7 foe → 98 xp → 125+98 = 223 ≥ 216 → L6 → zap offered (knows 4)
+    // lv7 foe → xpFromWin(7)=98 xp → ONB.1 boost ×2.25 at lv5 → floor(98×2.25)=220
+    // → 125+220=345 ≥ 343 (L7) → crosses L6 (zap offered, knows 4) en route to L7
     ENCOUNTERS.test_learn = {
       trainer: 'DUMMY',
       foe: { species: 'voltorbb', lv: 7 },
@@ -653,7 +716,7 @@ describe('level-up move replacement', () => {
     tap('a'); // forget slot 0 (tackle) → learn zap
     settle();
     expect(G.battle).toBeNull();
-    expect(G.party[0].lv).toBe(6);
+    expect(G.party[0].lv).toBe(7); // ONB.1: the boosted award crosses L6 AND L7 in one gainXp call
     expect(G.party[0].moves).toEqual(['zap', 'smog', 'screech', 'sludge']);
   });
 
@@ -664,7 +727,7 @@ describe('level-up move replacement', () => {
     tap('b');
     settle();
     expect(G.battle).toBeNull();
-    expect(G.party[0].lv).toBe(6);
+    expect(G.party[0].lv).toBe(7); // ONB.1: the boosted award crosses L6 AND L7 in one gainXp call
     expect(G.party[0].moves).toEqual(['tackle', 'smog', 'screech', 'sludge']);
   });
 });
@@ -1013,8 +1076,9 @@ describe('battle xp fill (UX2.1)', () => {
       }
     }
     expect(G.battle).toBeNull();
-    // seed-42 pin: L5 koffink at 125 xp gains xpFromWin(4)=32 — no level cross.
-    expect(seen).toEqual(xpFillSegs(5, 125, 5, 125 + xpFromWin(4)));
+    // seed-42 pin: L5 koffink at 125 xp gains floor(xpFromWin(4)×lowLevelBoost(5))=72
+    // (ONB.1) — 197 xp, still < 216 (L6) — no level cross.
+    expect(seen).toEqual(xpFillSegs(5, 125, 5, 125 + Math.floor(xpFromWin(4) * lowLevelBoost(5))));
   });
 });
 
@@ -1400,7 +1464,10 @@ describe('maybeEvolve degrades cleanly on an unregistered evolvesTo target (batt
     fightItOut();
     expect(G.battle).toBeNull(); // never got stuck in an evolve prompt
     expect(G.party[0].species).toBe('test_typo_evolver'); // unchanged — no crash, no silent swap
-    expect(G.party[0].lv).toBe(6); // the level-up itself still landed
+    // lv7 foe → xpFromWin(7)=98 → ONB.1 boost ×2.25 at lv5 → floor(98×2.25)=220
+    // → 125+220=345 ≥ 343 (L7): the boosted award crosses L6 (evolvesTo fires,
+    // unregistered target skipped) AND L7 in one gainXp call.
+    expect(G.party[0].lv).toBe(7); // the level-up itself still landed
   });
 });
 
@@ -1411,7 +1478,9 @@ describe('a benched participant can evolve (battle.ts:723 comment)', () => {
     const bench = makeMon(SPECIES.ratikatt, 15);
     bench.xp = xpForLevel(16) - 1; // one point below the evolve threshold
     G.party = [makeMon(SPECIES.koffink, 5), bench];
-    begin('guard_voltorbb'); // lv4 foe, xpFromWin(4)=32 → 16 xp each once split
+    begin('guard_voltorbb'); // lv4 foe, xpFromWin(4)=32 → base 16 each once split;
+    // RATIKATT is lv15 (boost ×1, stays 16) — koffink's share differs under
+    // ONB.1 but isn't asserted here, only species/level below.
     settle();
     // Switch to the benched mon and back — QOL.7: this is the only way to add
     // a slot to `participants` without leaving it active at win time.

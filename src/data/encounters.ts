@@ -1,8 +1,25 @@
 // Battle encounters. Phase 1b: foes are species references (plan §4.1) —
 // the player side comes from the party in game state.
-import type { EncounterDef } from '../types';
+import type { EncounterDef, ScriptStep } from '../types';
+
+// FLW.4: "ride back to HQ, or walk?" — one step, reused at every chapter-closing
+// onWin so it reads as a system feature, not an NPC's line. Ordering rule wherever
+// it's used: LAST in onWin, after `{ rankUp }` and BEFORE `{ endScreen }` —
+// endScreen doesn't suspend the script and a choice does (openChoice sets
+// G.state='dialog'), so a choice after it would clobber MISSION COMPLETE before
+// it drew. `no` is omitted: script.ts only pushes a branch `if (branch)`, so
+// declining falls through to the world. Warp cell = the GAMEZ CORNER stairs'
+// landing (corner.ts), so ride and walk arrive identically. CH1 is excluded on
+// purpose: the HEAT escape IS the chapter and the hand-in is already at HQ.
+const RIDE_HOME: ScriptStep = {
+  choice: {
+    say: [['Job done. Head', 'back to HQ now?']],
+    yes: [{ warp: ['hq', 9, 12, 'up'] }],
+  },
+};
 
 export const ENCOUNTERS: Record<string, EncounterDef> = {
+  // FLW.4: no RIDE_HOME here — see the note on RIDE_HOME above.
   guard_voltorbb: {
     trainer: 'GUARD',
     foe: { species: 'voltorbb', lv: 4 },
@@ -24,6 +41,7 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     onWin: [
       { setFlag: 'bradBeaten' },
       { say: [['BRAD storms off', 'into the dark.']] },
+      RIDE_HOME, // FLW.4: no rankUp/endScreen here — the hand-in is at HQ
     ],
     onLose: [],
     // CH2.7: fleeing loops straight back into the fight — his mon resets,
@@ -166,6 +184,7 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
       { say: [['KIRA: The boss', 'wants loyalty', 'that bites back.'], ['Welcome up a', 'rung, OPERATIVE.', "Don't waste it."]] },
       { music: 'victory' },
       { rankUp: true },
+      RIDE_HOME, // FLW.4: after rankUp, before endScreen — see the ordering comment above
       { endScreen: true },
     ],
     onLose: [],

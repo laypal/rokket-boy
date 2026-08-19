@@ -216,9 +216,12 @@ test('Chapter 3: NUGGET SPAN gauntlet, KIRA loyalty test, OPERATIVE promotion', 
   await walk(page, 'ArrowUp', 2, 6, 1);
 
   // KIRA's onWin: setFlag(ch3Done) -> say -> music -> rankUp (suspends into
-  // 'rankcard') -> endScreen (1e rule: rank card FIRST, endScreen LAST —
-  // docs/tasks/02-dos-and-donts.md). Mash through dialog/battle until the
-  // rank card itself takes over, same as chapter2.spec.ts's hq hand-in.
+  // 'rankcard') -> endScreen resumes the script, which now (FLW.4) hits the
+  // ride-home { choice } before endScreen (1e rule: rank card FIRST,
+  // endScreen LAST — docs/tasks/02-dos-and-donts.md — the choice sits
+  // between rankUp and endScreen, still ahead of it). Mash through
+  // dialog/battle until the rank card itself takes over, same as
+  // chapter2.spec.ts's hq hand-in.
   const kiraStart = Date.now();
   while (Date.now() - kiraStart < 90_000) {
     const s = await state(page);
@@ -230,17 +233,41 @@ test('Chapter 3: NUGGET SPAN gauntlet, KIRA loyalty test, OPERATIVE promotion', 
   await page.waitForFunction(() => (window.__debug as unknown as DebugFull).G.endT > 60, undefined, {
     timeout: 5_000,
   });
-  await page.keyboard.press('z'); // dismiss the rank card -> resumes the script -> endScreen
-  await page.waitForFunction(() => window.__debug.G.state === 'end', undefined, { timeout: 5_000 });
+  await page.keyboard.press('z'); // dismiss the rank card -> resumes the script -> the ride-home choice
+
+  // FLW.4: this spec takes the ride — mash A through the choice's typewriter
+  // (the same "mash while dialog" idiom used above) so it types out and then
+  // confirms YES (the default selection), which warps to HQ (9,12) facing up
+  // before endScreen.
+  await page.waitForFunction(() => window.__debug.G.state === 'dialog', undefined, { timeout: 5_000 });
+  const rideStart = Date.now();
+  while (Date.now() - rideStart < 10_000) {
+    if ((await state(page)) !== 'dialog') break;
+    await page.keyboard.press('z');
+    await page.waitForTimeout(50);
+  }
+  await page.waitForFunction(() => window.__debug.G.state === 'end', undefined, { timeout: 10_000 });
 
   const final = await page.evaluate(() => {
     const d = window.__debug as unknown as DebugFull;
-    return { ch3Done: d.quest.flags.ch3Done, rank: d.quest.rank, coins: d.quest.coins };
+    return {
+      ch3Done: d.quest.flags.ch3Done,
+      rank: d.quest.rank,
+      coins: d.quest.coins,
+      mapId: window.__debug.G.map.id,
+      x: window.__debug.G.player.x,
+      y: window.__debug.G.player.y,
+    };
   });
   expect(final.ch3Done).toBe(true);
   expect(final.rank).toBe('OPERATIVE');
   // rankRewards.ts pins OPERATIVE at 600 flat coins, no gear — the five
   // marks' payouts (330 total) plus the promotion grant.
   expect(final.coins).toBe(930);
+  // FLW.4: proves the ride branch end-to-end — the choice warped the player
+  // to HQ's landing cell (9,12) facing up, not just to state 'end'.
+  expect(final.mapId).toBe('hq');
+  expect(final.x).toBe(9);
+  expect(final.y).toBe(12);
   expect(await state(page)).toBe('end');
 });

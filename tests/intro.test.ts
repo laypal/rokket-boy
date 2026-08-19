@@ -44,8 +44,9 @@ vi.mock('../src/systems/world', () => ({
 import { G } from '../src/state';
 import { introUpdate, INTRO_CARDS, HOLD_FRAMES } from '../src/systems/scenes';
 import { landAt, worldDraw } from '../src/systems/world';
-import { rect } from '../src/engine/renderer';
+import { rect, W, H } from '../src/engine/renderer';
 import { MAPS } from '../src/data/maps';
+import { BG_PAL } from '../src/data/palettes';
 
 const MAX_CHARS = 17; // plan §5, same budget as every dialog page
 const MAX_LINES = 5;  // introUpdate draws at 34 + i*14, so five fit above the prompts
@@ -168,11 +169,25 @@ describe('intro card machine (ONB.8)', () => {
     expect(G.introPage).toBe(5);
   });
 
-  it('withholds the band for HOLD_FRAMES on a hold card, then paints it', () => {
-    for (let i = 0; i < HOLD_FRAMES; i++) introUpdate(); // introT 0..HOLD_FRAMES-1: bare
-    expect(rect).not.toHaveBeenCalled();
-    introUpdate(); // introT === HOLD_FRAMES: the band lands
-    expect(rect).toHaveBeenCalledTimes(1);
+  it('withholds the words band for HOLD_FRAMES on a hold card, but always paints the prompt floor', () => {
+    // ONB.8-FB: the prompt floor (rect at y 116) is unconditional, unlike
+    // the words band which waits out the hold — so "bare" now means one
+    // rect per frame (the floor), not zero.
+    for (let i = 0; i < HOLD_FRAMES; i++) introUpdate(); // introT 0..HOLD_FRAMES-1: floor only
+    expect(rect).toHaveBeenCalledTimes(HOLD_FRAMES);
+    expect(rect).not.toHaveBeenCalledWith(0, 28, expect.anything(), expect.anything(), expect.anything());
+    introUpdate(); // introT === HOLD_FRAMES: the words band lands too
+    expect(rect).toHaveBeenCalledTimes(HOLD_FRAMES + 2);
+  });
+
+  it('paints the prompt floor at y 116 in night[0] every frame, on every card', () => {
+    for (const [i] of INTRO_CARDS.entries()) {
+      G.introPage = i;
+      G.introT = 0;
+      vi.clearAllMocks();
+      introUpdate();
+      expect(rect).toHaveBeenCalledWith(0, 116, W, H - 116, BG_PAL.night[0]);
+    }
   });
 
   it('draws the world every frame', () => {

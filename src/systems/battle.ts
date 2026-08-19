@@ -38,6 +38,16 @@ export function xpFromWin(foeLv: number): number {
   return 2 * foeLv * foeLv;
 }
 
+/** ONB.1 balance knob: lv<10 recipients get a bigger share so the first
+ *  fights ding. Linear taper, +0.25 per level below LOW_LV_BOOST_UNTIL
+ *  (×2.25 at the lv5 starter — enough to cross L6 on the Jessika win; see
+ *  .paul/PLAN.md 2026-08-19). Exactly 1 from lv 10 up, so those awards are
+ *  byte-identical to pre-ONB.1. */
+export const LOW_LV_BOOST_UNTIL = 10;
+export function lowLevelBoost(lv: number): number {
+  return lv >= LOW_LV_BOOST_UNTIL ? 1 : 1 + (LOW_LV_BOOST_UNTIL - lv) / 4;
+}
+
 interface BattleMsg {
   lines: string[];
   after?: (() => void) | null;
@@ -611,17 +621,18 @@ function enemyTurn(b: BattleState): void {
   });
 }
 
-// QOL.7: the pool splits evenly among every participant still standing at
-// the win — max(1, floor(pool / n)) each, awarded in party order (offer
-// order = party order). A single-participant battle is byte-identical to
-// the pre-split behaviour (share === pool).
+// QOL.7: the pool splits evenly — base = max(1, floor(pool / n)) — awarded
+// in party order (offer order = party order). A single-participant battle
+// has base === pool. ONB.1 then scales each recipient's base by
+// lowLevelBoost(its pre-gain level) — split first, so same-level recipients
+// still get identical shares.
 function foeDefeated(b: BattleState): void {
   jobBattleWon(); // SIDE.1 hunt counter — quest-only, no rng, snapshots unaffected
   Audio2.sfx('faint'); // the sound of the fall, plays as the sprite starts sliding
   playFx(b, 'faint', 'foe', 'NORMAL', () => {
     say(b, [foeLabel(b), 'fainted!']);
     const recipients = [...b.participants].sort((x, y) => x - y).filter((i) => G.party[i] && G.party[i].hp > 0);
-    const share = Math.max(1, Math.floor(xpFromWin(b.foe.lv) / Math.max(1, recipients.length)));
+    const base = Math.max(1, Math.floor(xpFromWin(b.foe.lv) / Math.max(1, recipients.length)));
     const finish = (): void => {
       if (b.enc.winText.length) say(b, b.enc.winText, () => winBattle(b));
       else afterQueue(b, () => winBattle(b));
@@ -634,6 +645,7 @@ function foeDefeated(b: BattleState): void {
       const mon = G.party[recipients[k]];
       const fromLv = mon.lv; // UX2.1: capture the pre-gain bar position
       const fromXp = mon.xp;
+      const share = Math.max(1, Math.floor(base * lowLevelBoost(fromLv)));
       say(b, [monName(mon) + ' gained', share + ' XP!']);
       const offers: MoveId[] = [];
       let pendingEvo: string | undefined;
