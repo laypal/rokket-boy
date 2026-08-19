@@ -19,6 +19,8 @@ export const hqScripts: Record<string, ScriptStep[]> = {
         {
           if: { flag: 'ch2Done' },
           then: [
+            // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
+            { setFlag: 'ch3Briefed' },
             { say: [['GIOVANNI: AGENT.', 'A new racket.', 'The NUGGET SPAN.'], ['East of MT. MOON.', 'We run a "prize', 'bridge" there.'], ['Five marks paid', 'to cross. Beat', 'them. Keep it.'], ['AGENT KIRA runs', 'the span. Do as', 'she says.']] },
           ],
           else: [
@@ -44,6 +46,8 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                 {
                   if: { flag: 'missionDone' },
                   then: [
+                    // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
+                    { setFlag: 'ch2Briefed' },
                     {
                       say: [
                         ['GIOVANNI: New', 'job. A dig site', 'in MT. MOON.'],

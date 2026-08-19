@@ -7,7 +7,7 @@
 // and script-ref-lint.test.ts.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import type { ScriptStep } from '../src/types';
+import type { Cond, ScriptStep } from '../src/types';
 import { MAPS } from '../src/data/maps';
 import { ENCOUNTERS } from '../src/data/encounters';
 import { EGG_IDS, EGG_TOTAL, allEggsFound } from '../src/data/eggs';
@@ -17,13 +17,21 @@ interface EggRefs {
   checked: Set<string>; // egg/notEgg ids referenced in a Cond
 }
 
+// ONB.3: Cond gained recursive `all`/`any` forms (NpcDef.todoIf, and any
+// future `if` step that wants a compound check) — a plain egg/notEgg read
+// on a top-level Cond misses ids buried inside a compound one.
+function condEggs(c: Cond, r: EggRefs): void {
+  if ('egg' in c) r.checked.add(c.egg);
+  if ('notEgg' in c) r.checked.add(c.notEgg);
+  if ('all' in c) for (const child of c.all) condEggs(child, r);
+  if ('any' in c) for (const child of c.any) condEggs(child, r);
+}
+
 function walk(steps: ScriptStep[], r: EggRefs): void {
   for (const step of steps) {
     if ('addEgg' in step) r.granted.add(step.addEgg);
     if ('if' in step) {
-      const c = step.if;
-      if ('egg' in c) r.checked.add(c.egg);
-      if ('notEgg' in c) r.checked.add(c.notEgg);
+      condEggs(step.if, r);
       walk(step.then, r);
       if (step.else) walk(step.else, r);
     }
@@ -38,6 +46,12 @@ function collectEggRefs(): EggRefs {
   const r: EggRefs = { granted: new Set(), checked: new Set() };
   for (const map of Object.values(MAPS)) {
     for (const steps of Object.values(map.scripts)) walk(steps, r);
+    // ONB.3: NPC goneIf/todoIf are Conds outside the script-step tree —
+    // free coverage of the shipped goneIf set plus the new todoIf markers.
+    for (const npc of map.npcs) {
+      if (npc.goneIf) condEggs(npc.goneIf, r);
+      if (npc.todoIf) condEggs(npc.todoIf, r);
+    }
   }
   for (const enc of Object.values(ENCOUNTERS)) {
     walk(enc.onWin, r);

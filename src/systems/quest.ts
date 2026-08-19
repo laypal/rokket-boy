@@ -40,6 +40,8 @@ function freshFlags(): Flags {
     spanLass: false,
     ch3Done: false,
     introSeen: false,
+    ch2Briefed: false,
+    ch3Briefed: false,
   };
 }
 
@@ -80,6 +82,10 @@ export function checkCond(c: Cond): boolean {
   if ('egg' in c) return quest.eggs.has(c.egg);
   if ('notEgg' in c) return !quest.eggs.has(c.notEgg);
   if ('dexComplete' in c) return dexComplete(dexMons(), SPECIES);
+  // ONB.3 compound forms — recursive, so any-of-alls (a "hand-in OR briefing
+  // waiting" marker) is one Cond in map data, no per-NPC evaluator
+  if ('all' in c) return c.all.every(checkCond);
+  if ('any' in c) return c.any.some(checkCond);
   return quest.vars[c.varEq[0]] === c.varEq[1];
 }
 

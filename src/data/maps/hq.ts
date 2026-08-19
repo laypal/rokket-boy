@@ -25,10 +25,20 @@ export const hqMap: MapDef = makeMap({
     '#########oo#########',
   ],
   npcs: [
-    { id: 'giovanni', char: 'giovanni', x: 7, y: 3, dir: 'down' },
-    { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down' },
+    { id: 'giovanni', char: 'giovanni', x: 7, y: 3, dir: 'down',
+      // ONB.3: lit whenever a briefing or a hand-in is waiting. The notFlag
+      // ch2Done/ch3Done guards keep a skipped briefing from leaving a
+      // permanent `!` once the chapter is over anyway.
+      todoIf: { any: [
+        { notFlag: 'briefed' },                                                              // CH1 briefing
+        { all: [{ flag: 'lootTaken' }, { notFlag: 'missionDone' }] },                        // CH1 hand-in
+        { all: [{ flag: 'missionDone' }, { notFlag: 'ch2Briefed' }, { notFlag: 'ch2Done' }] }, // CH2 briefing
+        { all: [{ flag: 'bradBeaten' }, { notFlag: 'ch2Done' }] },                           // CH2 hand-in
+        { all: [{ flag: 'ch2Done' }, { notFlag: 'ch3Briefed' }, { notFlag: 'ch3Done' }] },   // CH3 briefing
+      ] } },
+    { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down', todoIf: { notFlag: 'drillBattleDone' } }, // ONB.3: until her spar is won once
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },
-    { id: 'myowth', char: 'myowth', x: 10, y: 8, dir: 'down' },
+    { id: 'myowth', char: 'myowth', x: 10, y: 8, dir: 'down', todoIf: { notFlag: 'drillStealthDone' } }, // ONB.3: heist coaching, then sneak school
     { id: 'vendor', char: 'grunt', x: 6, y: 11, dir: 'down', pal: 'gold' },
     { id: 'bunkgrunt', char: 'grunt', x: 3, y: 9, dir: 'down' },
     // RNK.3: the BACK ROOM gear vendor — free floor between the D desks and

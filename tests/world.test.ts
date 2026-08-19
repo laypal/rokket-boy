@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   tileAt, isBlocked, warpAt, performWarp, worldUpdate,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
+  todoMarkersActive, TODO_BOB, npcTodo,
 } from '../src/systems/world';
 import { MAPS } from '../src/data/maps';
 import { WALKABLE } from '../src/data/tiles';
@@ -519,6 +520,80 @@ describe('worldHooks.npcRun cutscene (CH2.7)', () => {
     let arrived = false;
     worldHooks.npcRun('ghost', () => (arrived = true));
     expect(arrived).toBe(true);
+  });
+});
+
+describe('ONB.3 todo markers', () => {
+  afterEach(() => {
+    G.map = MAPS.hq;
+    G.state = 'world';
+    delete G.heatState.hq;
+  });
+
+  it('TODO_BOB is a fixed 4-frame, 2px-amplitude bob table', () => {
+    expect(TODO_BOB).toEqual([0, 1, 2, 1]);
+  });
+
+  it('npcTodo: todoIf gates the flag, no todoIf never flags, goneIf beats todoIf', () => {
+    const npc: NpcDef = { id: 'x', char: 'grunt', x: 1, y: 1, dir: DOWN, todoIf: { notFlag: 'lootTaken' } };
+    expect(npcTodo(npc)).toBe(true); // fresh quest: lootTaken unset
+    quest.flags.lootTaken = true;
+    expect(npcTodo(npc)).toBe(false);
+
+    const noTodo: NpcDef = { id: 'y', char: 'grunt', x: 1, y: 1, dir: DOWN };
+    expect(npcTodo(noTodo)).toBe(false);
+
+    quest.flags.lootTaken = false; // back to fresh for the goneIf/todoIf interplay below
+    const goneWins: NpcDef = {
+      id: 'z', char: 'grunt', x: 1, y: 1, dir: DOWN,
+      goneIf: { flag: 'guardBeaten' }, todoIf: { notFlag: 'lootTaken' },
+    };
+    expect(npcTodo(goneWins)).toBe(true); // fresh: not gone, todoIf holds
+    quest.flags.guardBeaten = true;
+    expect(npcTodo(goneWins)).toBe(false); // gone beats todo
+  });
+
+  it('todoMarkersActive: true only when world.ts alone owns the screen', () => {
+    G.map = MAPS.hq;
+    G.state = 'world';
+    delete G.heatState.hq;
+    expect(todoMarkersActive()).toBe(true);
+
+    G.state = 'dialog';
+    expect(todoMarkersActive()).toBe(false);
+    G.state = 'menu';
+    expect(todoMarkersActive()).toBe(false);
+    G.state = 'worldwait';
+    expect(todoMarkersActive()).toBe(false);
+    G.state = 'world';
+    expect(todoMarkersActive()).toBe(true);
+
+    G.heatState.hq = setHeat(calmHeat(), 1, 0);
+    expect(todoMarkersActive()).toBe(false);
+    G.heatState.hq = setHeat(calmHeat(), 0, 0);
+    expect(todoMarkersActive()).toBe(true);
+    delete G.heatState.hq;
+    expect(todoMarkersActive()).toBe(true);
+  });
+
+  it('todoMarkersActive: suppressed while an npcRun cutscene is in flight, true again after', () => {
+    const npc: NpcDef = { id: 'runner', char: 'grunt', x: 5, y: 1, dir: DOWN };
+    const map = makeHeatMap(['#########', '#       #', '#########'], [npc]);
+    G.map = map;
+    G.state = 'world';
+    G.player.x = 1;
+    G.player.y = 1;
+    G.player.moving = false;
+    G.player.prog = 0;
+    let arrived = false;
+    worldHooks.npcRun('runner', () => (arrived = true));
+    G.frame = 0;
+    for (G.frame = 1; G.frame <= 200 && !arrived; G.frame++) {
+      expect(todoMarkersActive()).toBe(false); // cutscene owns the frame
+      worldUpdate();
+    }
+    expect(arrived).toBe(true);
+    expect(todoMarkersActive()).toBe(true); // resolved — world owns it again
   });
 });
 

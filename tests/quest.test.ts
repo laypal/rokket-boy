@@ -7,9 +7,57 @@ import {
   CHAPTERS,
   currentObjective,
   formatPlayTime,
+  checkCond,
 } from '../src/systems/quest';
 
 beforeEach(() => resetQuest());
+
+describe('checkCond compound forms (ONB.3: all / any)', () => {
+  it('all: every child must hold; the empty list is vacuously true', () => {
+    expect(checkCond({ all: [] })).toBe(true);
+    expect(checkCond({ all: [{ notFlag: 'briefed' }] })).toBe(true);
+    expect(checkCond({ all: [{ notFlag: 'briefed' }, { flag: 'lootTaken' }] })).toBe(false);
+    quest.flags.lootTaken = true;
+    expect(checkCond({ all: [{ notFlag: 'briefed' }, { flag: 'lootTaken' }] })).toBe(true);
+  });
+
+  it('any: at least one child must hold; the empty list is false', () => {
+    expect(checkCond({ any: [] })).toBe(false);
+    expect(checkCond({ any: [{ flag: 'briefed' }, { flag: 'lootTaken' }] })).toBe(false);
+    quest.flags.lootTaken = true;
+    expect(checkCond({ any: [{ flag: 'briefed' }, { flag: 'lootTaken' }] })).toBe(true);
+  });
+
+  it('nests: any-of-alls is the hand-in-or-briefing shape', () => {
+    const c = {
+      any: [
+        { notFlag: 'briefed' as const },
+        { all: [{ flag: 'lootTaken' as const }, { notFlag: 'missionDone' as const }] },
+      ],
+    };
+    expect(checkCond(c)).toBe(true); // fresh: briefing waiting
+    quest.flags.briefed = true;
+    expect(checkCond(c)).toBe(false); // mid-heist: nothing waiting
+    quest.flags.lootTaken = true;
+    expect(checkCond(c)).toBe(true); // hand-in waiting
+    quest.flags.missionDone = true;
+    expect(checkCond(c)).toBe(false); // handed in
+  });
+
+  it('the leaf forms still answer the same way (no regression)', () => {
+    quest.eggs.add('motto');
+    quest.vars.slotSpins = 2;
+    expect(checkCond({ egg: 'motto' })).toBe(true);
+    expect(checkCond({ notEgg: 'motto' })).toBe(false);
+    expect(checkCond({ varEq: ['slotSpins', 2] })).toBe(true);
+    expect(checkCond({ varEq: ['slotSpins', 3] })).toBe(false);
+  });
+
+  it('ch2Briefed / ch3Briefed are real flags, false on a fresh quest', () => {
+    expect(quest.flags.ch2Briefed).toBe(false);
+    expect(quest.flags.ch3Briefed).toBe(false);
+  });
+});
 
 describe('rank ladder (§4.7)', () => {
   it('advances one stage per rankUp through the whole ladder', () => {

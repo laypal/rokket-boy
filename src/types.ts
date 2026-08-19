@@ -40,17 +40,25 @@ export interface Flags {
   // no save-shape bump — old saves read a missing key as false, so a save
   // made before this card hears the line once on its next HQ entry.
   introSeen: boolean;
+  // ONB.3: Giovanni's CH2/CH3 briefings have been heard. Before these the
+  // briefings set nothing, so a "briefing waiting" marker had no way to go
+  // out. No save bump — a pre-ONB.3 save mid-chapter sees one extra `!`
+  // on him until the next talk.
+  ch2Briefed: boolean;
+  ch3Briefed: boolean;
 }
 export type FlagName = keyof Flags;
 
-/** Conditions usable in script `if` steps and NPC visibility. */
+/** Conditions usable in script `if` steps and NPC visibility/markers. */
 export type Cond =
   | { flag: FlagName }
   | { notFlag: FlagName }
   | { egg: string }
   | { notEgg: string }
   | { varEq: [string, number] }
-  | { dexComplete: true }; // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
+  | { dexComplete: true } // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
+  | { all: Cond[] }       // ONB.3: every child holds (empty = true)
+  | { any: Cond[] };      // ONB.3: at least one child holds (empty = false)
 
 /**
  * Declarative script step (plan §3.3). The plan sketched `ifFlag`; this uses a
@@ -101,6 +109,7 @@ export interface NpcDef {
   dir: Dir;
   pal?: string;      // OBJ_PAL override
   goneIf?: Cond;     // hidden + non-blocking when condition holds
+  todoIf?: Cond;     // ONB.3: wears a `!` while the condition holds — REQUIRED NPCs only
   faceDir?: Dir;     // runtime: set when the player talks to them
   /** Guard that starts a battle when it reaches the player under HEAT (§4.8).
    *  encounterId keys ENCOUNTERS; consumed by world.ts from card 1f.6. */

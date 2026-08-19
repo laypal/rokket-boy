@@ -47,6 +47,10 @@ export function setTile(map: MapDef, x: number, y: number, ch: string): void {
 export function npcGone(n: NpcDef): boolean {
   return n.goneIf ? checkCond(n.goneIf) : false;
 }
+/** ONB.3: does this NPC wear the `!` right now? A gone NPC never does. */
+export function npcTodo(n: NpcDef): boolean {
+  return !!n.todoIf && !npcGone(n) && checkCond(n.todoIf);
+}
 export function npcAt(map: MapDef, x: number, y: number): NpcDef | null {
   for (const n of map.npcs) {
     if (npcGone(n)) continue;
@@ -148,10 +152,22 @@ const SYS_MSG_FRAMES = 150;
 let sysMsgLines: string[] = [];
 let sysMsgT = 0;
 
+// ONB.3 todo-marker bob — 32-frame cycle, 2px amplitude. Module constant,
+// never allocated per frame (QA.4).
+export const TODO_BOB = [0, 1, 2, 1] as const;
+
 // ── NPC-run cutscene (CH2.7) ─────────────────────────────────────────────
 const NPC_RUN_EVERY = 12; // frames per tile — 2× guard chase cadence: a RUN
 const NPC_RUN_MAX_STEPS = 40; // bounded — then snap adjacent, never hang
 let npcRunState: { npc: NpcDef; done: () => void; steps: number } | null = null;
+
+/** ONB.3: may the todo `!`s draw this frame? Only when the world itself
+ *  owns the screen — not under a dialog/menu/shop (other states), not
+ *  during the ambush cutscene (npcRun holds state 'world'), not under HEAT
+ *  (the alarm owns the screen), not mid-fade or in the cold open. */
+export function todoMarkersActive(): boolean {
+  return G.state === 'world' && npcRunState === null && (G.heatState[G.map.id]?.stage ?? 0) === 0;
+}
 
 function npcRunAdjacent(npc: NpcDef): boolean {
   const p = G.player;
@@ -699,6 +715,26 @@ export function worldDraw(): void {
     });
   }
   ents.sort((a, b) => a.y - b.y).forEach((e) => e.draw());
+  // ONB.3 todo markers — a bobbing `!` over every REQUIRED NPC whose
+  // todoIf holds. Same glyph + position idiom as the sighting `!` below,
+  // minus a 2px bob instead of a blink; suppressed whenever anything else
+  // owns the screen (todoMarkersActive).
+  if (todoMarkersActive()) {
+    const bob = TODO_BOB[(G.frame >> 3) & 3];
+    for (const n of map.npcs) {
+      if (!npcTodo(n)) continue;
+      const mx = n.x * TILE - camX + 5;
+      const my = n.y * TILE - camY - 14 - bob;
+      // 1px pal[0] outline under the pal[3] glyph: the marker has to read
+      // over busy tile art too — Giovanni's sits on the desk-monitor
+      // highlight, where a bare light glyph vanished (playtester, ONB.3).
+      text('!', mx - 1, my, pal[0]);
+      text('!', mx + 1, my, pal[0]);
+      text('!', mx, my - 1, pal[0]);
+      text('!', mx, my + 1, pal[0]);
+      text('!', mx, my, pal[3]);
+    }
+  }
   // CH2.7 ambush `!` — same blink idiom as the guard flag below
   if (npcRunState && ((G.frame >> 3) & 1) === 1) {
     const rn = npcRunState.npc;
