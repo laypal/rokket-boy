@@ -57,6 +57,7 @@ export const OBJ_PAL: Record<string, Palette> = {
   geodood: ['#1c1408', '#6e5438', '#a8886a', '#e0c8a8'], // SPR.B — GEODOOD/GRAVLR line, rocky grey-brown
   ekanzz:  ['#140a1c', '#3a6e2c', '#6e3a8e', '#c8e0a8'], // SPR.B — EKANZZ/ARBÖK line, venom green-violet
   kira:    ['#0c0c14', '#8a3fa0', '#e8b088', '#f0f0f8'], // CH3.2 — AGENT KIRA, violet/plum accent
+  medic:   ['#0c0c14', '#c81e3c', '#e8b088', '#f8f8f8'], // ONB.7 — bunk healer, grunt dark/red/skin + a lifted shade-3 so the cap reads clinic-white
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────

@@ -886,6 +886,44 @@ HEADS.brad = {
   '...02222220.....'),
 };
 
+// MEDIC — bunk healer (ONB.7): the grunt cap re-cut clinic-white (fill
+// shade 3, was 0) with a red cross badge (shade 1) in the R badge's spot —
+// position carries the meaning, not the shade digit (RNK.5c lesson). The
+// badge is a CONNECTED plus, not the R's cells recoloured verbatim: the
+// playtester's closeup showed the literal recolour leaves a floating arm
+// (the R's counter-gap), which reads as a mark, not a cross. Face rows
+// (skin, shade 2) are copied from grunt unchanged. `u` drops the cross and
+// grunt's hair tuft for a plain cap back.
+HEADS.medic = {
+  d: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033331133330..',
+  '..033311113330..',
+  '..033331133330..',
+  '..022222222220..',
+  '..020222222020..',
+  '...0222222220...'),
+  u: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033333333330..',
+  '..033333333330..',
+  '..033333333330..',
+  '..033333333330..',
+  '..002222222200..',
+  '...0222222220...'),
+  s: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033113333330..',
+  '..031111333330..',
+  '..033113333330..',
+  '..022222200000..',
+  '..0202222200....',
+  '...02222220.....'),
+};
+
 // ── Trainer battle portraits (CH2.4) — 24×24, keyed by EncounterDef.trainer
 // label. Drawn 2× at the foe anchor during the 'slide' phase only; trainers
 // without an entry (GUARD) keep the label-only intro.
@@ -960,6 +998,7 @@ export const CHARSETS: Record<string, Charset> = {
   guard:   { head: HEADS.guard,   body: BODY_SUIT, pal: OBJ_PAL.guard },
   brad:    { head: HEADS.brad,    body: BODY_DARK, pal: OBJ_PAL.brad },
   kira:    { head: HEADS.kira,    body: BODY_DARK, pal: OBJ_PAL.kira },
+  medic:   { head: HEADS.medic,   body: BODY_DARK, pal: OBJ_PAL.medic },
 };
 
 // ── RNK.5: worn gear overlays ────────────────────────────────────────────

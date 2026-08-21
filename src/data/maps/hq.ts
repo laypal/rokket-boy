@@ -40,7 +40,7 @@ export const hqMap: MapDef = makeMap({
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },
     { id: 'myowth', char: 'myowth', x: 10, y: 8, dir: 'down', todoIf: { notFlag: 'drillStealthDone' } }, // ONB.3: heist coaching, then sneak school
     { id: 'vendor', char: 'grunt', x: 6, y: 11, dir: 'down', pal: 'gold' },
-    { id: 'bunkgrunt', char: 'grunt', x: 3, y: 9, dir: 'down' },
+    { id: 'bunkgrunt', char: 'medic', x: 3, y: 9, dir: 'down' }, // ONB.7: full-heal NPC gets its own cap+cross so the bunk room's healer reads distinct from the player and every plain grunt
     // RNK.3: the BACK ROOM gear vendor — free floor between the D desks and
     // the C-J-C console cluster on row 2. 'ghost' distinguishes him from the
     // front-of-house 'vendor' (gold) at a glance.

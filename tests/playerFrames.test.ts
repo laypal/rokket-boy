@@ -3,7 +3,7 @@
 // on top of them is covered by the decode goldens and the playtester pass.
 import { describe, it, expect } from 'vitest';
 import { S, overlayRows, type SpriteRows } from '../src/data/sprites';
-import { CHARSETS, GEAR_WEAR, wornGear, composeCharset } from '../src/data/chars';
+import { CHARSETS, GEAR_WEAR, wornGear, composeCharset, HEADS } from '../src/data/chars';
 import { ITEMS } from '../src/data/items';
 import { OBJ_PAL } from '../src/data/palettes';
 
@@ -125,5 +125,22 @@ describe('GEAR_WEAR registry lint', () => {
       const primary = g.slot === 'head' ? g.rows.d : g.rows.d0;
       expect(primary.some((r) => r !== T), `${id} primary facing is all-transparent`).toBe(true);
     }
+  });
+});
+
+// ── ONB.7: HEADS.medic shape ──────────────────────────────────────────────
+describe('HEADS.medic', () => {
+  it.each(['d', 'u', 's'] as const)('%s facing is 8 rows of 16 chars', (facing) => {
+    const rows = HEADS.medic[facing];
+    expect(rows).toHaveLength(8);
+    for (const r of rows) expect(r).toHaveLength(16);
+  });
+
+  it.each(['d', 'u', 's'] as const)('%s facing uses only shades 0-3 and transparency', (facing) => {
+    for (const r of HEADS.medic[facing]) expect(r, `"${r}"`).toMatch(/^[0-3.]{16}$/);
+  });
+
+  it('all three facings are present', () => {
+    expect(Object.keys(HEADS.medic).sort()).toEqual(['d', 's', 'u']);
   });
 });

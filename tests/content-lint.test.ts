@@ -5,8 +5,10 @@ import { describe, it, expect } from 'vitest';
 import type { ScriptStep } from '../src/types';
 import { MAPS } from '../src/data/maps';
 import { ENCOUNTERS } from '../src/data/encounters';
-import { BG_PAL, ALERT, ALERT_IDX } from '../src/data/palettes';
+import { BG_PAL, ALERT, ALERT_IDX, OBJ_PAL } from '../src/data/palettes';
 import { CHAPTERS } from '../src/systems/quest';
+import { CHARSETS } from '../src/data/chars';
+import { MON_WALKERS } from '../src/systems/world';
 
 const MAX_CHARS = 17; // plan §5: max 3 lines × 17 chars per page
 const MAX_LINES = 3;
@@ -185,4 +187,36 @@ describe('BG_PAL shape', () => {
     }
   });
 
+});
+
+// ── ONB.7: every NpcDef resolves to something drawable ───────────────────
+// Mirrors world.ts's draw-time resolution (MON_WALKERS animated frames, or
+// a CHARSETS entry — CHAR_FRAMES is built to cover every CHARSETS key, so
+// there's no third path) so a typo'd `char` fails a fast lint instead of a
+// blank tile in the browser. `pal` overrides must likewise be a real
+// OBJ_PAL key — the healer card is the reason this lint exists.
+describe('NPC char/pal resolution', () => {
+  it('every NpcDef.char resolves to a drawable char (MON_WALKERS or CHARSETS)', () => {
+    let seen = 0;
+    for (const map of Object.values(MAPS)) {
+      for (const npc of map.npcs) {
+        seen++;
+        const drawable = MON_WALKERS.has(npc.char) || npc.char in CHARSETS;
+        expect(drawable, `${map.id} npc ${npc.id}: char "${npc.char}" resolves in neither MON_WALKERS nor CHARSETS`).toBe(true);
+      }
+    }
+    expect(seen).toBeGreaterThan(0); // sanity: the walker actually found npcs
+  });
+
+  it('every NpcDef.pal is a registered OBJ_PAL key', () => {
+    let seen = 0;
+    for (const map of Object.values(MAPS)) {
+      for (const npc of map.npcs) {
+        if (!npc.pal) continue;
+        seen++;
+        expect(OBJ_PAL[npc.pal], `${map.id} npc ${npc.id}: pal "${npc.pal}" not in OBJ_PAL`).toBeDefined();
+      }
+    }
+    expect(seen).toBeGreaterThan(0); // sanity: vendor/blackmarket pal overrides exist
+  });
 });
