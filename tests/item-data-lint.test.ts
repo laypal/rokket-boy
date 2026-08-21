@@ -69,6 +69,16 @@ describe('item registry', () => {
     expect(ITEMS.SODA.heal).toBe(20);
   });
 
+  it('gear kind and the wear def always agree (FLW.3: shop.ts gates the owned-count column on wear, not kind)', () => {
+    for (const [key, item] of Object.entries(ITEMS)) {
+      if (item.kind === 'gear') {
+        expect(item.wear, `${key} is kind 'gear' but carries no wear def`).toBeDefined();
+      } else {
+        expect(item.wear, `${key} carries a wear def but isn't kind 'gear'`).toBeUndefined();
+      }
+    }
+  });
+
   it('RNK.3: the three BACK ROOM gear pieces are buyable, tier 0, one per perk kind', () => {
     const NIGHT_VISOR = ITEMS['NIGHT VISOR'];
     const HAGGLE_HAT = ITEMS['HAGGLE HAT'];

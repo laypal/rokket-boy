@@ -5,6 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { SHOPS } from '../src/data/shops';
 import { ITEMS } from '../src/data/items';
 import { RANKS } from '../src/systems/quest';
+import { canSell, sellPrice } from '../src/systems/inventory';
+import { SHOP_STACK_ROW_CAP, SHOP_GEAR_ROW_CAP, COUNT_EDGE, PRICE_EDGE } from '../src/systems/shop';
 
 describe('shop data lints', () => {
   it('every stock id is a real, buyable item', () => {
@@ -52,5 +54,56 @@ describe('shop data lints', () => {
   it('shops with no gate leave every stock row unconditionally visible (no-gate path unchanged)', () => {
     expect(SHOPS.hqStall.gate).toBeUndefined();
     expect(SHOPS.moonCart.gate).toBeUndefined();
+  });
+
+  it('pins the derived row-budget geometry (FLW.3)', () => {
+    // Regression pin on shop.ts's geometry derivation — if drawWindow's
+    // border, the mini font's pitch or the reserved digit widths ever
+    // change, this fails loud instead of a row silently overlapping again.
+    expect(SHOP_STACK_ROW_CAP).toBe(11);
+    expect(SHOP_GEAR_ROW_CAP).toBe(12);
+    expect(PRICE_EDGE).toBe(155);
+    expect(COUNT_EDGE).toBe(119);
+  });
+
+  it('FLW.3: every stock row fits its BUY window without overlap — count column for stackables, none for gear', () => {
+    for (const [shopId, shop] of Object.entries(SHOPS)) {
+      for (const id of shop.stock) {
+        const item = ITEMS[id];
+        const gear = item.wear !== undefined;
+        const cap = gear ? SHOP_GEAR_ROW_CAP : SHOP_STACK_ROW_CAP;
+        expect(
+          id.length,
+          `${shopId}: "${id}" (${gear ? 'gear' : 'stackable'}) row overflows the BUY window — cap ${cap}`,
+        ).toBeLessThanOrEqual(cap);
+      }
+    }
+  });
+
+  it('every sellable item fits the stackable row — SELL lists the bag, not a stock list', () => {
+    // canSell admits heal/ball kinds whatever shop is open, so the SELL
+    // list can show any of them; the row budget has to hold for all, not
+    // just the ids some vendor stocks.
+    const sellable = Object.keys(ITEMS).filter(canSell);
+    expect(sellable.length).toBeGreaterThan(0);
+    for (const id of sellable) {
+      expect(id.length, `"${id}" overflows the SELL row — cap ${SHOP_STACK_ROW_CAP}`).toBeLessThanOrEqual(
+        SHOP_STACK_ROW_CAP,
+      );
+      expect(ITEMS[id].wear, `"${id}" is sellable but carries a wear slot — gear rows have no count column`).toBeUndefined();
+    }
+  });
+
+  it('prices stay inside the digit budget each row shape reserves: $999 stackable, $9999 gear', () => {
+    // The caps above reserve '$' + 3 digits on a stackable row and '$' + 4
+    // on a gear row. buyPrice only ever discounts and sellPrice halves, so
+    // the base price is the ceiling for both columns.
+    for (const [id, item] of Object.entries(ITEMS)) {
+      if (item.price <= 0) continue;
+      const gear = item.wear !== undefined;
+      const max = gear ? 9999 : 999;
+      expect(item.price, `"${id}" price $${item.price} overflows its ${gear ? 'gear' : 'stackable'} row`).toBeLessThanOrEqual(max);
+      if (!gear) expect(sellPrice(id)).toBeLessThanOrEqual(999);
+    }
   });
 });

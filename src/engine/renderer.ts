@@ -1,6 +1,6 @@
 // Canvas renderer: sprite decode (pure core + cached canvases), bitmap font,
 // window chrome, GB shutter fade. Call initRenderer(canvas) before drawing.
-import { FONT_HEX } from '../data/font';
+import { FONT_HEX, MINI_GLYPHS } from '../data/font';
 import type { SpriteRows } from '../data/sprites';
 import type { Palette } from '../data/palettes';
 import { G } from '../state';
@@ -98,6 +98,49 @@ export function text(str: string, x: number, y: number, color: string, scale = 1
 }
 export function textC(str: string, y: number, color: string): void {
   text(str, Math.floor((W - str.length * 8) / 2), y, color);
+}
+
+// ── Mini font (3x5 numerals) ─────────────────────────────────────────────
+// FLW.3 follow-up: the smaller set for secondary numbers beside 8px text
+// (the shop's owned-count column). Pitch MINI_W = 3px glyph + 1px gap.
+// Glyphs are MINI_H rows tall; drawn at y + MINI_BASELINE_DY they sit on
+// the main font's cap baseline (row 6 of its 8px cell — caps and digits
+// ink rows 0..6, row 7 is blank). Characters outside MINI_GLYPHS draw
+// nothing, the same stance `text` takes outside ASCII. NOT a scaled-down
+// `text`: nearest-neighbour shrinking an 8x8 glyph drops half its pixels.
+export const MINI_W = 4;
+const MINI_H = 5;
+export const MINI_BASELINE_DY = 2;
+
+/** Ink width of a mini string: glyphs at MINI_W pitch, no trailing gap. */
+export function miniTextW(str: string): number {
+  return str.length ? str.length * MINI_W - 1 : 0;
+}
+
+const miniCache = new Map<string, HTMLCanvasElement>();
+function miniGlyph(ch: string, color: string): HTMLCanvasElement | null {
+  const rows = MINI_GLYPHS[ch];
+  if (!rows) return null;
+  const key = ch + color;
+  let c = miniCache.get(key);
+  if (c) return c;
+  c = document.createElement('canvas');
+  c.width = MINI_W - 1;
+  c.height = MINI_H;
+  const g = c.getContext('2d')!;
+  g.fillStyle = color;
+  for (let y = 0; y < MINI_H; y++) {
+    for (let x = 0; x < MINI_W - 1; x++) if (rows[y][x] === '#') g.fillRect(x, y, 1, 1);
+  }
+  miniCache.set(key, c);
+  return c;
+}
+
+export function miniText(str: string, x: number, y: number, color: string): void {
+  for (let i = 0; i < str.length; i++) {
+    const g = miniGlyph(str[i], color);
+    if (g) ctx.drawImage(g, x + i * MINI_W, y);
+  }
 }
 
 // ── tiny helpers ─────────────────────────────────────────────────────────
