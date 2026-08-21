@@ -46,6 +46,10 @@ export interface Flags {
   // on him until the next talk.
   ch2Briefed: boolean;
   ch3Briefed: boolean;
+  // ONB.2: Myowth's HQ tour has run (or been skipped) once. Set BEFORE the
+  // tour starts so a skip — or a reload mid-tour — never replays it. No
+  // save bump (missing key reads false, the introSeen precedent).
+  introToured: boolean;
 }
 export type FlagName = keyof Flags;
 
@@ -91,7 +95,17 @@ export type ScriptStep =
   | { sysMsg: string[] }                                  // timed system toast, 1–3 lines ≤17 chars (CH2.10, synchronous)
   | { jobs: true }                                        // open the HQ job board (SIDE.1, suspends like locker/shop)
   | { choice: { say: string[][]; yes: ScriptStep[]; no?: ScriptStep[] } } // ask YES/NO on the last say page; branch runs nested like `if` (2026-08-15, suspends)
-  | { cardFlip: true };                                   // open the DEALER's PICKPOCKET table (SIDE.2, suspends like jobs)
+  | { cardFlip: true }                                    // open the DEALER's PICKPOCKET table (SIDE.2, suspends like jobs)
+  | { tour: { stops: TourStop[] } };                      // guided camera tour (ONB.2/FLW.5, suspends): pan stop to stop, A advances, B/START exits; camera always returns
+
+/** ONB.2/FLW.5: one stop of a `{ tour }`. `cam` is a camera TARGET in
+ *  PIXELS (tile*16 — the INTRO_CARDS convention; `cameraFor` clamps it at
+ *  map edges). `lines`: 1–3 band lines, ≤17 chars each, shown while the
+ *  camera holds on the stop. */
+export interface TourStop {
+  cam: [number, number];
+  lines: string[];
+}
 
 /** SIDE.6: a floor item ball (`b` tile). `id` is unique across ALL maps
  *  (pickup-lint) and lands in quest.pickups when taken; `item` is an ITEMS

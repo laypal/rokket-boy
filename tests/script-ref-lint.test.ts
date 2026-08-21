@@ -32,7 +32,7 @@ const DISCRIMINANT_KEYS = new Set([
   'say', 'setFlag', 'if', 'giveItem', 'setTile', 'addWarp', 'battle', 'warp',
   'sfx', 'music', 'addCoins', 'addEgg', 'incVar', 'sayCycle', 'locker',
   'shop', 'endScreen', 'rankUp', 'heat', 'giveMon', 'npcRun', 'healParty',
-  'sysMsg', 'jobs', 'choice', 'cardFlip',
+  'sysMsg', 'jobs', 'choice', 'cardFlip', 'tour',
 ]);
 
 interface Ref { where: string }

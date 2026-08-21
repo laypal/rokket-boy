@@ -1,7 +1,7 @@
 // Script interpreter (plan §3.3). Replaces the npcDialog()/interact() switches:
 // map content is data (ScriptStep[]), engine effects go through an injected
 // hooks interface so the interpreter is unit-testable with fakes.
-import type { ScriptStep, WarpDef } from '../types';
+import type { ScriptStep, TourStop, WarpDef } from '../types';
 import { quest, checkCond, rankUp } from './quest';
 
 export interface ScriptHooks {
@@ -55,6 +55,12 @@ export interface ScriptHooks {
   /** Open the DEALER's PICKPOCKET table (SIDE.2); call done() when the
    *  player leaves — the locker/shop/jobs suspension class. */
   cardFlip(done: () => void): void;
+  /** Guided camera tour (ONB.2/FLW.5): pan the world camera stop to stop
+   *  with a text band, input otherwise frozen — the npcRun suspension
+   *  class. A advances a stop, B/START exits the whole sequence early;
+   *  the camera always returns to the player before done(). An empty
+   *  stops list resolves immediately (the missing-npcRun rule). */
+  tour(stops: TourStop[], done: () => void): void;
 }
 
 interface Frame {
@@ -127,6 +133,8 @@ export function runScript(steps: ScriptStep[], hooks: ScriptHooks, onDone?: () =
       if ('sysMsg' in step) { hooks.sysMsg(step.sysMsg); continue; }
       // ambush cutscene (CH2.7) — suspends like locker/shop until the NPC arrives
       if ('npcRun' in step) { hooks.npcRun(step.npcRun.id, next); return; }
+      // guided camera tour (ONB.2/FLW.5) — the npcRun suspension class
+      if ('tour' in step) { hooks.tour(step.tour.stops, next); return; }
       // yes/no prompt (2026-08-15): the hook shows the pages and a picker on
       // the last one; the answer's branch pushes as a nested frame, like `if`
       if ('choice' in step) {

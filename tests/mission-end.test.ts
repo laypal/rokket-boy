@@ -38,6 +38,7 @@ function eventHooks(answerYes: boolean) {
     sysMsg: (lines) => events.push('sysMsg:' + lines[0]),
     jobs: (done) => { events.push('jobs'); done(); },
     cardFlip: (done) => { events.push('cardFlip'); done(); },
+    tour: (_stops, done) => { events.push('tour'); done(); },
     choice: (_p, done) => { events.push('choice'); done(answerYes); },
   };
   return { hooks, events };

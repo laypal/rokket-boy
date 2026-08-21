@@ -42,6 +42,7 @@ function freshFlags(): Flags {
     introSeen: false,
     ch2Briefed: false,
     ch3Briefed: false,
+    introToured: false,
   };
 }
 

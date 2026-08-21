@@ -55,6 +55,7 @@ function dealerHooks(answer: boolean) {
     sysMsg: () => events.push('sysMsg'),
     jobs: (done) => { events.push('jobs'); done(); },
     cardFlip: (done) => { events.push('cardFlip'); done(); },
+    tour: (_stops, done) => { events.push('tour'); done(); },
     choice: (p, done) => { events.push('choice'); pages = p; done(answer); },
   };
   return { hooks, events, getPages: () => pages };

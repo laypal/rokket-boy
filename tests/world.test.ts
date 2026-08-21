@@ -9,6 +9,7 @@ import { WALKABLE } from '../src/data/tiles';
 import { quest, resetQuest } from '../src/systems/quest';
 import { G } from '../src/state';
 import { setHeat, calmHeat, type HeatState } from '../src/systems/heat';
+import { tourActive, resetTour } from '../src/systems/tour';
 import { makeMon, maxHp } from '../src/systems/mon';
 import { SPECIES } from '../src/data/mons';
 import type { MapDef, NpcDef, MapId, Dir } from '../src/types';
@@ -520,6 +521,34 @@ describe('worldHooks.npcRun cutscene (CH2.7)', () => {
     let arrived = false;
     worldHooks.npcRun('ghost', () => (arrived = true));
     expect(arrived).toBe(true);
+  });
+});
+
+describe('worldHooks.tour (ONB.2/FLW.5): the tour owns the frame like npcRun', () => {
+  afterEach(() => {
+    resetTour();
+    G.map = MAPS.hq;
+    G.state = 'world';
+  });
+
+  it('freezes player input and aims the camera while a stop holds', () => {
+    G.map = MAPS.hq;
+    G.state = 'world';
+    G.heatState = {};
+    G.player.x = 9;
+    G.player.y = 7;
+    G.player.moving = false;
+    G.player.prog = 0;
+    let done = false;
+    worldHooks.tour([{ cam: [112, 48], lines: ['X'] }], () => (done = true));
+    for (G.frame = 1; G.frame <= 60; G.frame++) worldUpdate();
+    expect(done).toBe(false); // no A press: the stop holds
+    expect(tourActive()).toBe(true);
+    expect(G.player.x).toBe(9); // input frozen — the player never moved
+    expect(G.player.y).toBe(7);
+    expect(G.cutscene).not.toBeNull(); // the tour is aiming the world camera
+    expect(G.cutscene!.camX).toBe(112);
+    expect(G.cutscene!.camY).toBe(48);
   });
 });
 

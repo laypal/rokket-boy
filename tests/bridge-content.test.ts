@@ -37,6 +37,7 @@ function makeHooks(): { hooks: ScriptHooks; log: FakeLog } {
     sysMsg: () => {},
     jobs: (done) => done(),
     cardFlip: (done) => done(),
+    tour: (_stops, done) => done(),
     choice: (_p, done) => done(true),
   };
   return { hooks, log };

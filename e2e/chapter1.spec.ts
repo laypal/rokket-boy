@@ -8,7 +8,7 @@
 // inspects menu text, entry names, or menu structure. A bad-RNG loss
 // whitesouts back to HQ, so the fight is retried up to 3 times.
 import { test, expect, type Page } from '@playwright/test';
-import { bootToWorld } from './boot';
+import { bootToWorld, skipTour } from './boot';
 
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
@@ -170,6 +170,9 @@ test('Chapter 1: HQ briefing, guard fight, poster switch, vault heist, hand-in',
   // Giovanni's "you actually did it" line fires automatically on entry
   await page.waitForTimeout(300);
   await settle(page, 8_000);
+  // FLW.5: the enter script follows the say with the hand-in pan to his
+  // desk (lootTaken && !missionDone). Skip it before walking.
+  await skipTour(page);
 
   await walk(page, 'ArrowLeft', 3, 7, 12);
   await walk(page, 'ArrowUp', 8, 7, 4);

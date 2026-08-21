@@ -44,6 +44,7 @@ function makeHooks(opts?: { battleFollowUp?: ScriptStep[] | null }) {
     sysMsg: (lines) => log.sysMsgs.push(lines),
     jobs: (done) => { log.jobsOpened++; done(); },
     cardFlip: (done) => done(),
+    tour: (_stops, done) => done(),
     choice: (_p, done) => done(true),
   };
   return { hooks, log };

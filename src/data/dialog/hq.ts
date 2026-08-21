@@ -295,6 +295,29 @@ export const hqScripts: Record<string, ScriptStep[]> = {
         { say: [['GIOVANNI:', 'TONIGHT IS YOUR', 'FIRST JOB.']] },
       ],
     },
+    // ONB.2: Myowth's tour — new players only: a returning save has
+    // `briefed` set and never sees it. `introToured` is set BEFORE the
+    // tour runs, so a skip — or a reload mid-tour — never replays it.
+    // Ends aimed at the desk: the tour delivers you to the boss, the
+    // briefing talk is yours to start (his ONB.3 `!` is already up).
+    {
+      if: { all: [{ notFlag: 'introToured' }, { notFlag: 'briefed' }] },
+      then: [
+        { setFlag: 'introToured' },
+        { say: [['MYOWTH: New meat!', 'Lemme show ya', 'round the place.']] },
+        {
+          tour: {
+            stops: [
+              { cam: [96, 176], lines: ['THE MARKET.', 'Balls, sodas,', 'smokes. Stock up.'] },
+              { cam: [48, 144], lines: ['THE BUNKS.', 'Nap here, mons', 'patched up free.'] },
+              { cam: [224, 32], lines: ['THE JOB BOARD.', 'Side work pays', 'coins and XP.'] },
+              { cam: [160, 32], lines: ['THE BACK ROOM.', 'Rare gear, if', 'yer rank cuts it.'] },
+              { cam: [112, 48], lines: ['THE BOSS.', 'Go get yer first', 'job. Move it!'] },
+            ],
+          },
+        },
+      ],
+    },
     {
       if: { flag: 'lootTaken' },
       then: [
@@ -310,6 +333,20 @@ export const hqScripts: Record<string, ScriptStep[]> = {
           ],
         },
       ],
+    },
+    // FLW.5: a hand-in is waiting — pan to the desk so the player knows
+    // WHERE it happens; ONB.3's standing `!` on Giovanni does the rest.
+    // The terms are the HAND-IN half of his todoIf, never the briefing
+    // half: a briefing is a thing you go looking for, a hand-in is a
+    // thing the building owes you directions to.
+    {
+      if: {
+        any: [
+          { all: [{ flag: 'lootTaken' }, { notFlag: 'missionDone' }] },
+          { all: [{ flag: 'bradBeaten' }, { notFlag: 'ch2Done' }] },
+        ],
+      },
+      then: [{ tour: { stops: [{ cam: [112, 48], lines: ['THE BOSS WANTS', 'A WORD.'] }] } }],
     },
   ],
 };

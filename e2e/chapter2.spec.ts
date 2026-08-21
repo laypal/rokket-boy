@@ -20,7 +20,7 @@
 // for warp landings. CH2.7 replaced the talk-to-BRAD leg with the ambush
 // cascade (chest interact -> npcRun cutscene -> forced battle).
 import { test, expect, type Page } from '@playwright/test';
-import { bootToWorld } from './boot';
+import { bootToWorld, skipTour } from './boot';
 
 // Matches chapter1.spec.ts / smoke.spec.ts / quest-1e.spec.ts's global
 // Window.__debug augmentation exactly — TS requires identical merged member
@@ -223,6 +223,10 @@ test('Chapter 2: MT. MOON raid, BRAD boss fight, fossil hand-in', async ({ page 
   await walk(page, 'ArrowLeft', 8, 10, 8);
   await walk(page, 'ArrowDown', 2, 10, 10); // steps onto the door, auto-warps
   await waitForMap(page, 'hq');
+
+  // FLW.5: entering with bradBeaten && !ch2Done fires the hand-in pan to
+  // Giovanni's desk. Skip it before walking.
+  await skipTour(page);
 
   // ── Hand-in: Giovanni (7,3), approached from (7,4) facing up — reuses
   //    chapter1's exact validated final leg. With ch1's flags seeded (not

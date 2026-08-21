@@ -25,6 +25,7 @@ import { openJobs } from './jobsScreen';
 import { openCardFlip } from './cardFlipScreen';
 import { writeSave, sessionOnlyWarning } from './save';
 import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward } from './heat';
+import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
 import { makeMon, maxHp } from './mon';
@@ -145,6 +146,9 @@ export const worldHooks: ScriptHooks = {
     sysMsgLines = lines;
     sysMsgT = SYS_MSG_FRAMES;
   },
+  // ONB.2/FLW.5 guided camera tour — hand the pan to the worldUpdate tick
+  // below, the npcRun pattern. tour.ts owns the machine; world only routes.
+  tour: (stops, done) => startTour(stops, done),
 };
 
 // CH2.10 toast state — draw-only (juice rule: never gates logic)
@@ -555,6 +559,7 @@ export function worldUpdate(): void {
     return;
   }
   if (npcRunTick()) return; // CH2.7 cutscene owns the frame — input + guards wait
+  if (tourTick()) return; // ONB.2/FLW.5 tour owns the frame — same contract
   if (heatTick()) return; // §4.8 — may fire the lockdown whiteout or a contact battle
   const p = G.player;
   if (p.turnLock > 0) p.turnLock--;
@@ -792,4 +797,7 @@ export function worldDraw(): void {
     drawWindow(0, H - th, W, th, pal);
     sysMsgLines.forEach((l, i) => text(l, 6, H - th + 5 + i * 10, pal[0]));
   }
+  // ONB.2/FLW.5 tour band — last, over everything: the held stop is the
+  // one thing on screen the player is being asked to look at
+  tourDraw();
 }
