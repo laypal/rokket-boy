@@ -794,6 +794,18 @@ describe('rootHelp', () => {
     for (let sel = 0; sel < 5; sel++) {
       expect(rootHelp(sel, false).length).toBeLessThanOrEqual(17);
       expect(rootHelp(sel, true).length).toBeLessThanOrEqual(17);
+      expect(rootHelp(sel, true, true).length).toBeLessThanOrEqual(17); // ONB.5-FB spent state
+    }
+  });
+  // ONB.5-FB: SWIPE is once per trainer battle, and the help bar used to keep
+  // advertising it after it was spent — the only way to find out was to waste
+  // a press on the refusal.
+  it('SWIPE reads as spent once it has been used', () => {
+    expect(rootHelp(1, true, true)).toBe('ALREADY SWIPED.');
+  });
+  it('the spent state changes nothing else on the bar', () => {
+    for (const sel of [0, 2, 3, 4]) {
+      expect(rootHelp(sel, true, true)).toBe(rootHelp(sel, true, false));
     }
   });
 });
@@ -1788,5 +1800,270 @@ describe('spar battles (SIDE.5 training exemption)', () => {
     fightItOut();
     expect(G.battle).toBeNull();
     expect(follow).toEqual([{ setFlag: 'guardBeaten' }]);
+  });
+});
+
+// ── ONB.5-FB: per-encounter foe moveset ───────────────────────────────────
+describe('EncounterDef.foe.moves override', () => {
+  afterEach(() => {
+    delete ENCOUNTERS.test_moves;
+  });
+
+  it('replaces the learnset for that encounter only, leaving stats alone', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_moves = {
+      ...ENCOUNTERS.guard_voltorbb,
+      foe: { species: 'ekanzz', lv: 5, moves: ['chomp'] },
+    };
+    begin('test_moves');
+    expect(b().foe.moves).toEqual(['chomp']);
+    // level and therefore hp/xp yield are untouched — the whole point of
+    // overriding moves rather than raising the level
+    expect(b().foe.lv).toBe(5);
+    expect(b().foe.hp).toBe(maxHp(SPECIES.ekanzz, 5));
+  });
+
+  it('without an override the learnset still decides', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_moves = {
+      ...ENCOUNTERS.guard_voltorbb,
+      foe: { species: 'ekanzz', lv: 5 },
+    };
+    begin('test_moves');
+    expect(b().foe.moves).toEqual(['wrap']);
+  });
+
+  it('the override is copied, so a battle can never mutate the encounter data', () => {
+    setBattleRng(mulberry32(42));
+    const moves: ('chomp' | 'bite')[] = ['chomp'];
+    ENCOUNTERS.test_moves = {
+      ...ENCOUNTERS.guard_voltorbb,
+      foe: { species: 'ekanzz', lv: 5, moves },
+    };
+    begin('test_moves');
+    b().foe.moves.push('bite');
+    expect(moves).toEqual(['chomp']); // the shipped table is untouched
+  });
+});
+
+// ── ONB.5: mid-battle coaching — the spar-only beat table ─────────────────
+// The beats are content (EncounterDef.coach); these pin the ENGINE contract:
+// when each beat fires, that it fires at most once, that `unless` suppresses
+// a nudge the player has already outgrown, and that a real fight can never
+// coach even with a table attached.
+describe('battle coaching (ONB.5)', () => {
+  const FRAME = ['Just a drill.'];
+  const HURT = ['You are hurt!'];
+  const HEALED = ['Now SWIPE me!'];
+  const LOW = ['SODA, now!'];
+
+  afterEach(() => {
+    delete ENCOUNTERS.test_coach;
+  });
+
+  /** settle(), but returning every message page it dismissed on the way. */
+  function record(): string[] {
+    const seen: string[] = [];
+    let guard = 0;
+    while (G.battle && guard++ < 400) {
+      const s = G.battle;
+      if (s.msg) {
+        seen.push(s.msg.lines.join(' '));
+        popMsg();
+      } else if (s.queue.length || s.phase === 'slide' || s.phase === 'open' || s.phase === 'anim') frame();
+      else return seen;
+    }
+    return seen;
+  }
+  /** One FIGHT turn with the first move; returns the pages it produced. */
+  function fightTurn(): string[] {
+    tap('a'); // FIGHT
+    tap('a'); // first move
+    return record();
+  }
+  function coached(on: 'firstTurn' | 'playerHurt' | 'itemUsed' | 'lowHp', say: string[], unless?: 'swiped' | 'itemUsed'): void {
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb,
+      spar: true,
+      coach: [{ on, say, ...(unless ? { unless } : {}) }],
+    };
+  }
+
+  it('firstTurn coaching lands before the player ever reaches the menu', () => {
+    setBattleRng(mulberry32(42));
+    coached('firstTurn', FRAME);
+    begin('test_coach');
+    const seen = record();
+    expect(seen).toContain(FRAME.join(' '));
+    expect(seen.indexOf(FRAME.join(' '))).toBe(seen.length - 1); // after "Go! …", last thing said
+    expect(b().phase).toBe('menu'); // and the turn is handed over normally
+  });
+
+  it('a coach table on a NON-spar encounter never fires (training only)', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb, // no spar: true
+      coach: [{ on: 'firstTurn', say: FRAME }],
+    };
+    begin('test_coach');
+    expect(record()).not.toContain(FRAME.join(' '));
+  });
+
+  it('playerHurt fires on the first damage taken and never again', () => {
+    setBattleRng(mulberry32(5)); // the seed whose foe reliably connects
+    coached('playerHurt', HURT);
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    begin('test_coach');
+    const seen = record();
+    for (let i = 0; i < 3 && G.battle; i++) seen.push(...fightTurn());
+    expect(seen.filter((l) => l === HURT.join(' '))).toHaveLength(1);
+  });
+
+  it('itemUsed fires when a heal actually lands', () => {
+    setBattleRng(mulberry32(42));
+    coached('itemUsed', HEALED);
+    quest.items.push('SODA');
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    G.party[0].hp = 1;
+    begin('test_coach');
+    record();
+    tap('down');
+    tap('down');
+    tap('down'); // ITEM
+    tap('a'); // open
+    tap('a'); // first item
+    record();
+    tap('a'); // confirm the active mon
+    expect(record()).toContain(HEALED.join(' '));
+  });
+
+  it('a refused heal does not count as itemUsed (no turn passed, nothing learned)', () => {
+    setBattleRng(mulberry32(42));
+    coached('itemUsed', HEALED);
+    quest.items.push('SODA');
+    G.party = [makeMon(SPECIES.koffink, 5)]; // full hp — the heal refuses
+    begin('test_coach');
+    record();
+    tap('down');
+    tap('down');
+    tap('down');
+    tap('a');
+    tap('a');
+    record();
+    tap('a'); // confirm the full-hp mon
+    expect(record()).not.toContain(HEALED.join(' '));
+  });
+
+  it("unless: 'itemUsed' suppresses a nudge the player has already outgrown", () => {
+    setBattleRng(mulberry32(5));
+    coached('playerHurt', HURT, 'itemUsed');
+    quest.items.push('SODA');
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    G.party[0].hp = 1;
+    begin('test_coach');
+    record();
+    tap('down');
+    tap('down');
+    tap('down');
+    tap('a');
+    tap('a');
+    record();
+    tap('a'); // heal lands, and the foe's counter-attack follows
+    const seen = record();
+    expect(G.party[0].hp).toBeGreaterThan(1); // the heal really happened
+    expect(seen).not.toContain(HURT.join(' ')); // …so "you are hurt" is old news
+  });
+
+  it("unless: 'swiped' suppresses a SWIPE nudge once the player has swiped", () => {
+    setBattleRng(mulberry32(42));
+    coached('playerHurt', HEALED, 'swiped');
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    begin('test_coach');
+    record();
+    tap('down'); // sel 1 = SWIPE
+    tap('a');
+    const seen = record();
+    for (let i = 0; i < 3 && G.battle; i++) seen.push(...fightTurn());
+    expect(quest.coins).toBeGreaterThan(0); // the swipe landed
+    expect(seen).not.toContain(HEALED.join(' '));
+  });
+
+  it('lowHp waits for the mon to actually be in trouble, and yields to playerHurt', () => {
+    setBattleRng(mulberry32(5));
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb,
+      spar: true,
+      coach: [
+        { on: 'playerHurt', say: HURT },
+        { on: 'lowHp', say: LOW },
+      ],
+    };
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    begin('test_coach');
+    const first = record();
+    const turn1 = fightTurn();
+    // the first hit teaches playerHurt; lowHp must not double up on that beat
+    expect(turn1).toContain(HURT.join(' '));
+    expect(turn1).not.toContain(LOW.join(' '));
+    const rest: string[] = [...first, ...turn1];
+    for (let i = 0; i < 6 && G.battle; i++) rest.push(...fightTurn());
+    // koffink is worn down over the fight, so the fallback nudge does arrive —
+    // exactly once, and only after playerHurt has had its turn
+    expect(rest.filter((l) => l === LOW.join(' ')).length).toBeLessThanOrEqual(1);
+  });
+
+  it('coachIf gates the whole table — a rematch gets no coaching at all', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb,
+      spar: true,
+      coach: [{ on: 'firstTurn', say: FRAME }],
+      coachIf: { notFlag: 'drillBattleDone' },
+    };
+    quest.flags.drillBattleDone = true; // the veteran's rematch
+    begin('test_coach');
+    expect(record()).not.toContain(FRAME.join(' '));
+    expect(b().coachOn).toBe(false);
+  });
+
+  it('coachIf passing lets the table through (the teaching run)', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb,
+      spar: true,
+      coach: [{ on: 'firstTurn', say: FRAME }],
+      coachIf: { notFlag: 'drillBattleDone' },
+    };
+    quest.flags.drillBattleDone = false;
+    begin('test_coach');
+    expect(record()).toContain(FRAME.join(' '));
+  });
+
+  it('coachIf is resolved once at battle start, not re-read mid-fight', () => {
+    setBattleRng(mulberry32(42));
+    ENCOUNTERS.test_coach = {
+      ...ENCOUNTERS.guard_voltorbb,
+      spar: true,
+      coach: [{ on: 'playerHurt', say: HURT }],
+      coachIf: { notFlag: 'drillBattleDone' },
+    };
+    quest.flags.drillBattleDone = false;
+    G.party = [makeMon(SPECIES.koffink, 5)];
+    begin('test_coach');
+    record();
+    // an encounter's own onWin sets this flag — it must not silence coaching
+    // that is already underway in the same battle
+    quest.flags.drillBattleDone = true;
+    const seen: string[] = [];
+    for (let i = 0; i < 3 && G.battle; i++) seen.push(...fightTurn());
+    expect(seen).toContain(HURT.join(' '));
+  });
+
+  it('an encounter with no coach table queues byte-identical messages (zero-diff)', () => {
+    setBattleRng(mulberry32(42));
+    begin('guard_voltorbb');
+    const seen = record();
+    expect(seen).toEqual(['GUARD sent out VOLTORBB!', 'Go! KOFFINK!']);
+    expect(b().phase).toBe('menu');
   });
 });

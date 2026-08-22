@@ -60,7 +60,32 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
   spar_jessika: {
     trainer: 'JESSIKA',
     spar: true,
-    foe: { species: 'ekanzz', lv: 5 },
+    // ONB.5-FB: CHOMP, not the lv5 learnset's WRAP. Measured over 200 seeded
+    // runs: WRAP (power 25) into KOFFINK's def 95 does ~2 damage a turn, so
+    // the player never dropped below 13/19 and the `lowHp` beat fired 0% of
+    // the time — a coaching line that could not physically happen. CHOMP puts
+    // the floor at ~8/19 and lowHp at ~12%, keeping the win rate at 98%.
+    // Level stays 5 ON PURPOSE: raising it was the obvious fix, but xp scales
+    // with the foe's level and would have pushed the starter to lv7, undoing
+    // ONB.1's tuning that the first win dings to exactly L6. Its 0.85 accuracy
+    // also buys the occasional whiff Lyall asked for (Lyall, 2026-08-22).
+    foe: { species: 'ekanzz', lv: 5, moves: ['chomp'] },
+    // ONB.5: mid-battle coaching. No speaker tag — mid-battle text never
+    // carries one (foeLabel already names the trainer on their own move
+    // lines); winText's "JESSIKA:" prefix below is a different context (the
+    // battle-end concession card), not the convention in here.
+    coach: [
+      { on: 'firstTurn', say: ['Relax, rookie.', 'Lose this and', 'nothing happens.'] },
+      { on: 'playerHurt', unless: 'itemUsed', say: ['Stung, huh? Hit', 'ITEM. That SODA', "won't use itself."] },
+      { on: 'itemUsed', unless: 'swiped', say: ['Good. Now SWIPE', "me while I'm", 'distracted.'] },
+      { on: 'lowHp', unless: 'itemUsed', say: ["You're nearly", 'out! ITEM. NOW.', "Don't be a hero."] },
+    ],
+    // ONB.5-FB: the same gate the SODA hand-over sits behind (hq.ts). The
+    // two MUST agree — a rematch hands over no SODA, so coaching that names
+    // one there is a lie, which is the whole failure this card exists to
+    // avoid. Lose the first spar and the flag stays clear: fresh SODA, and
+    // the lesson runs again, which is right.
+    coachIf: { notFlag: 'drillBattleDone' },
     winText: ['JESSIKA: Not', 'bad, rookie!'],
     onWin: [
       {

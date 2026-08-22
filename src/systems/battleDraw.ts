@@ -264,8 +264,19 @@ export function battleDraw(): void {
   } else if (b.phase === 'menu') {
     text('WHAT WILL', 6, 104, pal[0]);
     text(monName(me) + ' DO?', 6, 116, pal[0]);
-    drawList(b, ROOT_MENU);
-    drawHelpBar(rootHelp(b.sel, !!b.enc.trainer));
+    // ONB.5-FB: SWIPE is once per trainer battle, and the entry used to look
+    // live right up until the press that refused it.
+    //
+    // Dimmed with pal[1], NOT the pal[2] the SWITCH/target lists use for
+    // fainted rows. First cut used pal[2] for consistency and the playtest
+    // killed it: pal[2] on the window's pal[3] interior is 1.2:1 contrast, so
+    // at 160x144 the row read as BLANK with the cursor pointing at nothing —
+    // a rendering fault, not a disabled entry. pal[1] is 3.3:1, about half
+    // the 6:1 of normal text, which reads as dimmed. Every BG_PAL runs
+    // dark->light, so pal[1] is the second-darkest in all of them.
+    const spent = !!b.enc.trainer && !!b.stole;
+    drawList(b, ROOT_MENU, spent ? ROOT_MENU.map((_, i) => (i === 1 ? pal[1] : pal[0])) : undefined);
+    drawHelpBar(rootHelp(b.sel, !!b.enc.trainer, spent));
   } else if (b.phase === 'moves') {
     text('WHICH', 6, 108, pal[0]);
     text('MOVE?', 6, 120, pal[0]);

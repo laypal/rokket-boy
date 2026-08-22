@@ -9,7 +9,7 @@ import { registerState, startLoop } from './engine/loop';
 import { worldUpdate, worldDraw } from './systems/world';
 import { dialogUpdate, drawDialogBox } from './systems/dialog';
 import { menuUpdate, menuDraw } from './systems/menu';
-import { battleUpdate, startBattle } from './systems/battle';
+import { battleUpdate, startBattle, battleTrace } from './systems/battle';
 import { battleDraw } from './systems/battleDraw';
 import { lockerUpdate, lockerDraw, openLocker } from './systems/locker';
 import { shopUpdate, shopDraw, openShop } from './systems/shop';
@@ -134,6 +134,10 @@ if (import.meta.env.DEV) {
     // UX2.1: drop straight into a registered encounter for visual QA — the
     // real startBattle (no shortcut); winBattle restores 'world' on exit.
     startBattle: (enc: string) => startBattle(enc, () => {}),
+    // ONB.5-FB: rolling log of every coach beat fired/suppressed and every
+    // SWIPE outcome. There to capture the "Nothing left to swipe!" report
+    // that reading the code says cannot happen — if it recurs, this says why.
+    battleTrace,
     // RNK.5 (2026-08-15, Lyall's ask): eyeball worn gear without a rank
     // grind. wear(id) puts a piece in the PACK (the real ownership signal —
     // the next world draw recomposes the sprite); wear() with no id strips

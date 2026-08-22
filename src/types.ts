@@ -28,6 +28,10 @@ export interface Flags {
   // SIDE.5 HQ training drills — reward paid once, drills stay repeatable
   drillBattleDone: boolean;  // Jessika's sparring match won at least once
   drillStealthDone: boolean; // Myowth's stealth course goal reached once
+  /** ONB.5-FB: the pre-spar SODA has been handed over. Its own flag, NOT
+   *  drillBattleDone — that one is only set on a WIN, so gating the give on
+   *  it let a player take the SODA, flee, and repeat for free ones. */
+  sparSodaGiven: boolean;
   // CH3 (Nugget Span) — one flag per mark on the bridge (beaten = paid out
   // + gone) and the chapter end (KIRA beaten = OPERATIVE). No save bump.
   spanCamper: boolean;
@@ -229,16 +233,51 @@ export interface MonInstance {
   noEvolve?: boolean;
 }
 
+/** ONB.5: one of the trainer's mid-battle coaching interjections. A beat
+ *  fires at most once per battle, and not at all when `unless` names
+ *  something the player has already done — a nudge that arrives after the
+ *  fact teaches nothing, it just nags.
+ *
+ *  Beats: `firstTurn` as the battle opens · `playerHurt` on the first damage
+ *  the player's mon takes · `itemUsed` when a heal actually lands (a refused
+ *  heal is not a lesson) · `lowHp` under a third of max hp, the fallback for
+ *  a player who never took the ITEM hint. `playerHurt` wins if both it and
+ *  `lowHp` come due on the same hit.
+ *
+ *  Read ONLY for encounters with `spar: true` (battle.ts `coach`), so a real
+ *  fight can never coach even if a table is attached to it by mistake —
+ *  Giovanni's grunts do not offer tips. */
+export interface CoachBeat {
+  on: 'firstTurn' | 'playerHurt' | 'itemUsed' | 'lowHp';
+  unless?: 'swiped' | 'itemUsed';
+  say: string[]; // ONE battle-box page: ≤3 lines × 17 chars (content-lint)
+}
+
 /** Battle encounter (plan §4.3/§4.4). The foe references SPECIES; the player
  *  side is the party in game state, so encounters no longer carry stat blocks. */
 export interface EncounterDef {
   trainer?: string;      // present = trainer battle (SWIPE steals); absent = wild (SWIPE throws a ball)
-  foe: { species: string; lv: number };
+  /** ONB.5-FB: `moves` overrides the species learnset for THIS encounter —
+   *  a trainer's mon drilled on something it wouldn't learn by itself. Added
+   *  because the tutorial spar needed a foe that could actually threaten a
+   *  def-95 POISON starter without raising its level, which would have
+   *  inflated the win's xp and broken ONB.1's "the first fight dings" tuning.
+   *  Absent = the learnset, as before. */
+  foe: { species: string; lv: number; moves?: MoveId[] };
   uncatchable?: boolean; // §4.4: boss/set-piece wilds that refuse the ball
   /** SIDE.5: sparring match — losing skips the whiteout entirely (no coin
    *  loss, no HQ warp, party healed in place) and onLose runs as a true
    *  epilogue. The win path is untouched. */
   spar?: boolean;
+  /** ONB.5: mid-battle coaching, spar-only by construction — battle.ts reads
+   *  this table only when `spar` is set. At most one entry per beat. */
+  coach?: CoachBeat[];
+  /** ONB.5-FB: gate for the whole `coach` table, checked once at battle
+   *  start. Coaching is ONBOARDING, not a permanent feature of the fight —
+   *  without this Jessika lectures a veteran on every rematch, and worse,
+   *  names a SODA the rematch never handed over (Lyall, 2026-08-22).
+   *  Absent = coach whenever `spar` is set. */
+  coachIf?: Cond;
   winText: string[];     // trainer's concession lines (one battle message)
   onWin: ScriptStep[];
   onLose: ScriptStep[];

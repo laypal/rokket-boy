@@ -47,18 +47,23 @@ function choiceHooks(answer: boolean) {
 }
 
 describe('battle drill — Jessika (SIDE.5, re-cut 2026-08-15)', () => {
-  it('from the FIRST talk (pre-briefing): look-sharp line, then the spar OFFER — YES fights', () => {
+  it('from the FIRST talk (pre-briefing): look-sharp line, spar OFFER, one SODA handed over, YES fights', () => {
     const { hooks, events } = choiceHooks(true);
     runScript(hqScripts['npc:jessika'], hooks);
-    // story line, the choice prompt, YES's "rule one" line, then the battle
-    expect(events).toEqual(['say', 'choice', 'say', 'battle:spar_jessika']);
+    // story line, the choice prompt, the SODA hand-over line, "rule one", then the battle
+    expect(events).toEqual(['say', 'choice', 'say', 'say', 'battle:spar_jessika']);
+    // ONB.5: a fresh save has coins:0, items:[] — without this the ITEM menu
+    // is empty at the exact moment spar_jessika's coaching tells the player
+    // to use one (PLAN.md, "the finding that reframed ONB.5").
+    expect(quest.items).toEqual(['SODA']);
   });
 
-  it('NO declines: no battle, a polite line', () => {
+  it('NO declines: no battle, no SODA, a polite line', () => {
     const { hooks, events } = choiceHooks(false);
     runScript(hqScripts['npc:jessika'], hooks);
     expect(events).toEqual(['say', 'choice', 'say']);
     expect(events).not.toContain('battle:spar_jessika');
+    expect(quest.items).toEqual([]);
   });
 
   it('once the drill is done, talking never auto-fights: it OFFERS a rematch, NO walks away', () => {
@@ -75,6 +80,39 @@ describe('battle drill — Jessika (SIDE.5, re-cut 2026-08-15)', () => {
     const { hooks, events } = choiceHooks(true);
     runScript(hqScripts['npc:jessika'], hooks);
     expect(events).toContain('battle:spar_jessika');
+  });
+
+  it('a rematch never re-grants the SODA', () => {
+    quest.flags.drillBattleDone = true;
+    const { hooks } = choiceHooks(true);
+    runScript(hqScripts['npc:jessika'], hooks);
+    expect(quest.items).toEqual([]);
+  });
+
+  // ONB.5-FB: the give used to sit behind drillBattleDone alone, which is
+  // only set on a WIN. Taking the SODA and then fleeing left the flag clear,
+  // so the next talk handed over another one — free SODAs, forever.
+  it('taking the SODA and fleeing cannot farm a second one', () => {
+    const first = choiceHooks(true);
+    runScript(hqScripts['npc:jessika'], first.hooks);
+    expect(quest.items).toEqual(['SODA']);
+    expect(quest.flags.sparSodaGiven).toBe(true);
+    expect(quest.flags.drillBattleDone).toBe(false); // fled, so no win flag
+
+    const second = choiceHooks(true);
+    runScript(hqScripts['npc:jessika'], second.hooks);
+    expect(quest.items).toEqual(['SODA']); // still exactly one
+    expect(second.events).toContain('battle:spar_jessika'); // the drill still runs
+  });
+
+  it('the hand-over LINE goes too, not just the item — no thanks for a SODA you never got', () => {
+    quest.flags.sparSodaGiven = true;
+    const { hooks, events } = choiceHooks(true);
+    runScript(hqScripts['npc:jessika'], hooks);
+    // one 'say' fewer than the first-talk sequence: story line, prompt,
+    // "rule one", battle — the "Catch. One SODA." page is gone with it
+    expect(events).toEqual(['say', 'choice', 'say', 'battle:spar_jessika']);
+    expect(quest.items).toEqual([]);
   });
 
   it('post-mission: the motto egg still lands before the offer', () => {

@@ -33,6 +33,7 @@ function freshFlags(): Flags {
     jobsIntroSeen: false,
     drillBattleDone: false,
     drillStealthDone: false,
+    sparSodaGiven: false,
     spanCamper: false,
     spanPicnicker: false,
     spanHiker: false,

@@ -137,6 +137,37 @@ describe('content lints', () => {
     }
   });
 
+  // ONB.5: a coach beat's `say` is ONE page (a plain string[]), not the
+  // pages-of-pages shape collectSays walks — same budget as winText above,
+  // so it gets its own small check rather than a pointless reshape.
+  it('coach beats fit the message box the same way winText does', () => {
+    let seen = 0;
+    for (const [id, enc] of Object.entries(ENCOUNTERS)) {
+      if (!enc.coach) continue;
+      for (const beat of enc.coach) {
+        seen++;
+        expect(beat.say.length, `${id} coach "${beat.on}" has too many lines`).toBeLessThanOrEqual(MAX_LINES);
+        for (const line of beat.say) {
+          expect(line.length, `${id} coach "${beat.on}" line too long: "${line}"`).toBeLessThanOrEqual(MAX_CHARS);
+        }
+      }
+    }
+    expect(seen).toBeGreaterThan(0); // sanity: the walker actually found a coach beat
+  });
+
+  // ONB.5: battle.ts's `coach()` only reads the table when `enc.spar` is
+  // true (the belt to the card's braces) — this is the data-side half of
+  // that gate, so a coach table can never ship on a real fight by mistake.
+  it('every encounter with a coach table is spar-flagged', () => {
+    let seen = 0;
+    for (const [id, enc] of Object.entries(ENCOUNTERS)) {
+      if (!enc.coach) continue;
+      seen++;
+      expect(enc.spar, `${id} has a coach table but is not spar: true`).toBe(true);
+    }
+    expect(seen).toBeGreaterThan(0); // sanity: the walker actually found a coach table
+  });
+
   it('every chapter objective fits the STATUS line (§4.7)', () => {
     for (const ch of CHAPTERS) {
       for (const step of ch.steps) {

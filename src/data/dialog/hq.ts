@@ -128,7 +128,28 @@ export const hqScripts: Record<string, ScriptStep[]> = {
         {
           choice: {
             say: [['Fancy a sparring', 'drill first? Free', 'lesson, no risk.'], ['Spar with me?']],
-            yes: [{ say: [['Rule one:', 'no mercy!']] }, { battle: 'spar_jessika' }],
+            // ONB.5: a fresh save has coins:0, items:[] — without a hand-over
+            // here the ITEM menu is empty at the exact moment the mid-battle
+            // coaching (encounters.ts spar_jessika.coach) tells the player to
+            // use one.
+            //
+            // ONB.5-FB: the give carries its OWN flag. Gating it on this
+            // branch's drillBattleDone was not enough — that flag is only set
+            // on a WIN (encounters.ts onWin), so taking the SODA and then
+            // fleeing left it clear and handed out another on the next talk,
+            // forever. sparSodaGiven is set the moment the item lands.
+            yes: [
+              {
+                if: { notFlag: 'sparSodaGiven' },
+                then: [
+                  { giveItem: 'SODA' },
+                  { setFlag: 'sparSodaGiven' },
+                  { say: [['Catch. One SODA.', 'On the house.']] },
+                ],
+              },
+              { say: [['Rule one:', 'no mercy!']] },
+              { battle: 'spar_jessika' },
+            ],
             no: [{ say: [['JESSIKA: Suit', "yourself. I'm", 'here if you want.']] }],
           },
         },

@@ -4,7 +4,7 @@
 // XP/catching come from the pure systems modules. The ScriptHooks contract
 // is unchanged: startBattle(id, done) hands follow-up ScriptSteps back.
 import { G } from '../state';
-import type { EncounterDef, MonInstance, MonSpecies, MoveDef, MoveId, ScriptStep } from '../types';
+import type { CoachBeat, EncounterDef, MonInstance, MonSpecies, MoveDef, MoveId, ScriptStep } from '../types';
 import { ENCOUNTERS } from '../data/encounters';
 import { SPECIES } from '../data/mons';
 import { MOVES } from '../data/moves';
@@ -18,7 +18,7 @@ import { playFx, tickFx, EVO_END, EVO_RAMP_END, EVO_SKIP_ARM, EVO_SKIP_TO, type 
 import { makeMon, maxHp, gainXp, evolveMon, xpFillSegs, type XpFillSeg } from './mon';
 import { catchChance, rollCatch } from './catch';
 import { itemDef, applyHeal, usableInBattle, packCounts } from './inventory';
-import { quest } from './quest';
+import { quest, checkCond } from './quest';
 import { jobBattleWon } from './jobs';
 import { sharedWhiteout } from './recovery';
 import { reduceHeat } from './heat';
@@ -73,7 +73,13 @@ export interface BattleState {
   xpAnim?: { segs: XpFillSeg[]; start: number }; // UX2.1 — draw-only post-win xp fill; active mon only, benched shares apply silently
   float?: { side: 'me' | 'foe'; amt: number; mult: number; start: number }; // QOL.11 — draw-only floating damage number; side is whoever TOOK the hit
   caught?: boolean; // BFX.3 — a wild catch landed; keeps the foe hidden after the throwOk fx ends
-  stole?: boolean; // trainer-battle SWIPE gag already fired
+  stole?: boolean; // trainer-battle SWIPE gag already fired — ONB.5 reads it as "the player has swiped"
+  /** ONB.5 — is this battle a coaching one at all? Resolved ONCE in
+   *  startBattle, because `coachIf` reads world flags that the encounter's
+   *  own onWin may set the moment the fight ends. */
+  coachOn: boolean;
+  coached?: CoachBeat['on'][]; // ONB.5 — beats already spoken this battle
+  healed?: boolean; // ONB.5 — a heal item was actually consumed (a refused heal doesn't count)
   forced?: boolean; // switch menu opened by a faint — B can't back out
   participants: number[]; // party slots that took the field this battle (QOL.7)
   pendingItem?: string; // heal item awaiting a target pick (QOL.6)
@@ -93,11 +99,15 @@ export const ROOT_MENU = ['FIGHT', 'SWIPE', 'SWITCH', 'ITEM', 'LEG IT'];
  *  context-sensitive — wild battles throw the ball (doSwipe's catch path),
  *  trainer battles pickpocket (the v2 heist gag, also doSwipe). Pure so it
  *  unit-tests without the renderer; battleDraw is the only caller. */
-export function rootHelp(sel: number, trainer: boolean): string {
+export function rootHelp(sel: number, trainer: boolean, spent = false): string {
   switch (sel) {
     case 0:
       return 'PICK A MOVE.';
     case 1:
+      // ONB.5-FB: a trainer can only be picked once, and nothing used to say
+      // so — the entry sat there reading "PICKPOCKET COINS." after it was
+      // spent, so the only way to learn was to waste a press on the refusal.
+      if (spent) return 'ALREADY SWIPED.';
       return trainer ? 'PICKPOCKET COINS.' : 'THROWS A BALL.';
     case 2:
       return 'SWAP ACTIVE MON.';
@@ -149,6 +159,15 @@ function foeLabel(b: BattleState): string {
   return (b.enc.trainer ? 'Enemy ' : 'Wild ') + spec(b.foe).name;
 }
 
+/** ONB.5-FB: the foe as this encounter wants it — species + level as always,
+ *  with an optional per-encounter moveset overriding the learnset. Stats are
+ *  untouched, so xp yield and the level curve stay exactly where they were. */
+function makeFoe(enc: EncounterDef): MonInstance {
+  const foe = makeMon(SPECIES[enc.foe.species], enc.foe.lv);
+  if (enc.foe.moves) foe.moves = [...enc.foe.moves];
+  return foe;
+}
+
 // CH2.1: accepts a ready EncounterDef too — wild rolls build theirs on the
 // fly (encounter.ts wildEncounter) instead of registering ids in ENCOUNTERS.
 // ScriptHooks.battle stays string-typed; this takes a superset.
@@ -164,7 +183,8 @@ export function startBattle(encounter: string | EncounterDef, done: (followUp: S
     rootSel: 0,
     meIdx: Math.max(0, G.party.findIndex((m) => m.hp > 0)),
     participants: [Math.max(0, G.party.findIndex((m) => m.hp > 0))],
-    foe: makeMon(SPECIES[enc.foe.species], enc.foe.lv),
+    foe: makeFoe(enc),
+    coachOn: !!enc.spar && !!enc.coach && (!enc.coachIf || checkCond(enc.coachIf)),
     msg: null,
     msgChars: 0,
     queue: [],
@@ -172,6 +192,7 @@ export function startBattle(encounter: string | EncounterDef, done: (followUp: S
     shakeMe: 0,
   };
   G.state = 'battle';
+  trace(`--- battle ${typeof encounter === 'string' ? encounter : enc.foe.species} (coachOn=${G.battle.coachOn}) ---`);
 }
 
 function say(b: BattleState, lines: string[], after?: () => void): void {
@@ -190,6 +211,45 @@ function afterQueue(b: BattleState, fn: () => void): void {
     prev?.();
     fn();
   };
+}
+
+/** ONB.5-FB: dev-only trace of the SWIPE/coaching interplay. Lyall hit
+ *  "Nothing left to swipe!" straight after the SWIPE nudge — a pairing the
+ *  code says is impossible (both read `b.stole`) and that a browser hunt
+ *  could not reproduce. Rather than keep guessing, record what actually
+ *  happens so a recurrence is captured instead of reconstructed afterwards.
+ *  Read it from `__debug.battleTrace`. Stripped from production builds. */
+export const battleTrace: string[] = [];
+function trace(line: string): void {
+  if (!import.meta.env.DEV) return;
+  battleTrace.push(line);
+  if (battleTrace.length > 100) battleTrace.shift();
+}
+
+/** ONB.5: queue the trainer's coaching line for `on`, if this battle has one
+ *  that hasn't fired and isn't already old news. Returns whether it spoke, so
+ *  a caller can let one beat pre-empt another on the same event.
+ *
+ *  The `spar` check is the whole scope gate: a real fight never reads the
+ *  table, so no amount of bad data can make Giovanni's grunts offer tips. */
+function coach(b: BattleState, on: CoachBeat['on']): boolean {
+  if (!b.coachOn) return false;
+  const beat = b.enc.coach!.find((c) => c.on === on);
+  if (!beat) return false;
+  const fired = (b.coached ??= []);
+  if (fired.includes(on)) return false;
+  if (beat.unless === 'swiped' && b.stole) {
+    trace(`coach ${on}: SUPPRESSED (already swiped)`);
+    return false;
+  }
+  if (beat.unless === 'itemUsed' && b.healed) {
+    trace(`coach ${on}: SUPPRESSED (already healed)`);
+    return false;
+  }
+  fired.push(on);
+  trace(`coach ${on}: FIRED (stole=${!!b.stole} healed=${!!b.healed})`);
+  say(b, beat.say);
+  return true;
 }
 
 /** Shared vertical-menu input: up/down cycle, A confirms, B cancels (if allowed). */
@@ -234,7 +294,9 @@ export function battleUpdate(): void {
         b.phase = 'open';
         if (b.enc.trainer) say(b, [b.enc.trainer + ' sent out', spec(b.foe).name + '!']);
         else say(b, ['Wild ' + spec(b.foe).name, 'appeared!']);
-        say(b, ['Go! ' + monName(active(b)) + '!'], () => toMenu(b));
+        say(b, ['Go! ' + monName(active(b)) + '!']);
+        coach(b, 'firstTurn'); // ONB.5 — lands after "Go! …", before the menu
+        afterQueue(b, () => toMenu(b));
       }
       break;
     case 'menu':
@@ -419,8 +481,10 @@ function doSwipe(b: BattleState): void {
       // RNK.0: steal perk applies here, at the moment coins land (base 15)
       const got = Math.floor(15 * (1 + perkPct('steal')));
       quest.coins += got;
+      trace(`swipe: OK (+${got} coins)`);
       say(b, ['Swiped ' + got + ' coins', 'mid-battle!'], () => enemyTurn(b));
     } else {
+      trace('swipe: REFUSED (stole already true)');
       say(b, ['Nothing left', 'to swipe!'], () => (b.phase = 'menu'));
     }
     return;
@@ -527,6 +591,7 @@ function applyItemTarget(b: BattleState): void {
   const wasActive = b.sel === b.meIdx;
   b.pendingItem = undefined;
   consume(id);
+  b.healed = true; // ONB.5 — only a heal that actually lands counts as learnt
   const from = t.hp; // QOL.4: pre-heal hp for the draw-side tween
   const healed = applyHeal(t, sp, def);
   if (wasActive) b.hpAnim = { side: 'me', from, start: b.t };
@@ -536,10 +601,14 @@ function applyItemTarget(b: BattleState): void {
     if (wasActive) {
       // only the active mon is on screen — the heal fx has somewhere to play
       playFx(b, 'heal', 'me', 'NORMAL', () => {
-        say(b, [monName(t) + ' got', 'back ' + healed + ' HP!'], () => enemyTurn(b));
+        say(b, [monName(t) + ' got', 'back ' + healed + ' HP!']);
+        coach(b, 'itemUsed'); // ONB.5 — praise the lesson, point at the next one
+        afterQueue(b, () => enemyTurn(b));
       });
     } else {
-      say(b, [monName(t) + ' got', 'back ' + healed + ' HP!'], () => enemyTurn(b));
+      say(b, [monName(t) + ' got', 'back ' + healed + ' HP!']);
+      coach(b, 'itemUsed');
+      afterQueue(b, () => enemyTurn(b));
     }
   });
 }
@@ -616,7 +685,13 @@ function enemyTurn(b: BattleState): void {
       sayEffectiveness(b, mult);
       applyDrain(b, mv, b.foe, foeSp, foeLabel(b), dmg);
       if (mon.hp <= 0) myMonFainted(b);
-      else afterQueue(b, () => toMenu(b));
+      else {
+        // ONB.5: the hit the player just took is the teachable moment. The
+        // first-blood nudge pre-empts the low-hp one — two lessons on a
+        // single hit is nagging, not coaching.
+        if (!coach(b, 'playerHurt') && mon.hp * 3 < maxHp(spec(mon), mon.lv)) coach(b, 'lowHp');
+        afterQueue(b, () => toMenu(b));
+      }
     });
   });
 }
