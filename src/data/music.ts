@@ -117,6 +117,23 @@ export const TRACKS: Record<string, Track> = {
           C2 -  C2 -  C2 -  G1 -  C2 -  C2 -  C2 -  G1 -`,
     dr: `k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.h.h.h.`,
   },
+  // Cold open — night sky, restless minor drone (ONB.9)
+  intro: {
+    bpm: 88,
+    p1: `-  -  A3 =  =  =  -  -  -  -  -  -  E4 =  =  -
+         -  -  -  -  D4 =  =  =  -  -  -  -  C4 =  =  -
+         -  -  A3 =  =  =  -  -  -  -  G3 =  =  =  -  -
+         -  -  -  -  -  -  F#3 =  =  =  =  =  -  -  -  -`,
+    p2: `-  -  -  -  -  -  -  -  E3 =  =  =  -  -  -  -
+         -  -  -  -  -  -  -  -  -  -  -  -  A2 =  =  -
+         -  -  -  -  -  -  -  -  D3 =  =  =  -  -  -  -
+         -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -`,
+    tri: `A2 =  =  =  =  =  =  =  E2 =  =  =  =  =  =  =
+          A2 =  =  =  =  =  =  =  D2 =  =  =  =  =  =  =
+          G2 =  =  =  =  =  =  =  F#2 =  =  =  =  =  =  =
+          E2 =  =  =  =  =  =  =  A2 =  =  =  =  =  =  =`,
+    dr: `k............... k.......h....... k...h...k...h... k...h...s...h...`,
+  },
   // Dig site — same drone family as cave, a little more movement (CH2 AUD.3)
   cave2: {
     bpm: 92,

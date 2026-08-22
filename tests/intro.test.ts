@@ -42,11 +42,12 @@ vi.mock('../src/systems/world', () => ({
 }));
 
 import { G } from '../src/state';
-import { introUpdate, INTRO_CARDS, HOLD_FRAMES } from '../src/systems/scenes';
+import { introUpdate, INTRO_CARDS, HOLD_FRAMES, titleUpdate } from '../src/systems/scenes';
 import { landAt, worldDraw } from '../src/systems/world';
 import { rect, W, H } from '../src/engine/renderer';
 import { MAPS } from '../src/data/maps';
 import { BG_PAL } from '../src/data/palettes';
+import { Audio2 } from '../src/engine/audio';
 
 const MAX_CHARS = 17; // plan §5, same budget as every dialog page
 const MAX_LINES = 5;  // introUpdate draws at 34 + i*14, so five fit above the prompts
@@ -55,6 +56,15 @@ const MAX_LINES = 5;  // introUpdate draws at 34 + i*14, so five fit above the p
 function tap(k: string): void {
   keys.pressed.add(k);
   introUpdate();
+  keys.pressed.clear();
+}
+
+/** One titleUpdate() frame with the given key registered as freshly pressed —
+ *  reaches the module-private startIntro() the same way titleUpdate's own
+ *  NEW GAME selection does (startIntro is not exported; see ONB.9 card). */
+function tapTitle(k: string): void {
+  keys.pressed.add(k);
+  titleUpdate();
   keys.pressed.clear();
 }
 
@@ -213,6 +223,33 @@ describe('intro card machine (ONB.8)', () => {
       introUpdate();
     }
     expect(G.state).toBe('worldwait');
+    expect(landAt).toHaveBeenCalledWith(['hq', 9, 7, 'down']);
+  });
+});
+
+describe('cold-open music (ONB.9)', () => {
+  it('NEW GAME requests the intro track', () => {
+    // no save is set up anywhere in this file, so titleUpdate's NEW GAME
+    // branch (hasSave() false) routes straight into startIntro().
+    tapTitle('a');
+    expect(Audio2.play).toHaveBeenCalledWith('intro');
+  });
+
+  it('START-skip on an early card stops intro before landing at HQ', () => {
+    G.introPage = 1;
+    tap('start');
+    expect(Audio2.stop).toHaveBeenCalled();
+    expect(landAt).toHaveBeenCalledWith(['hq', 9, 7, 'down']);
+  });
+
+  it('the natural end past the last card stops intro before landing at HQ', () => {
+    G.introPage = INTRO_CARDS.length - 1;
+    const frames = INTRO_CARDS[G.introPage].frames;
+    for (let i = 0; i < frames + 1; i++) {
+      if (G.state !== 'intro') break;
+      introUpdate();
+    }
+    expect(Audio2.stop).toHaveBeenCalled();
     expect(landAt).toHaveBeenCalledWith(['hq', 9, 7, 'down']);
   });
 });

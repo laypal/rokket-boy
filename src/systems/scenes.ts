@@ -46,7 +46,7 @@ function startIntro(): void {
   G.introPage = 0;
   G.introT = 0;
   G.cutscene = null;
-  Audio2.stop();
+  Audio2.play('intro');
 }
 
 function continueGame(): void {
@@ -273,6 +273,11 @@ function nextCard(): void {
  *  the SESSION-ONLY toast, and neither belongs at the end of a cinematic. */
 function endIntro(): void {
   G.introT = 0;
+  // ONB.9: stop the intro track here, not inside the fade callback below —
+  // the callback fires ~9 frames (~150ms) after startFade() is called
+  // (renderer.ts), and Audio2 has no fades/cross-fade (play() is a hard
+  // cut), so `intro` would otherwise keep playing across the fade to black.
+  Audio2.stop();
   // Keep the cutscene camera up through the fade-out: `worldwait` still
   // draws the world, and dropping it here would snap the view to the
   // player for nine frames on whatever backdrop the skip landed on.

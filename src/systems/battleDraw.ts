@@ -296,11 +296,19 @@ export function battleDraw(): void {
     // Greying is a REFUSAL cue: switch greys fainted + active (both refuse);
     // target greys only fainted — the active mon is a perfectly good heal
     // target (Lyall's playtest catch). The '*' still marks who's on field.
+    //
+    // pal[1], not pal[2]: shade 2 on the window's shade 3 is 1.20:1 contrast
+    // in the GREEN palette — a fainted row rendered as an empty line rather
+    // than a dim one, which reads as a missing row, not a refused one. Green
+    // is uniquely bad this way (hq 2.62, casino 3.40, vault 2.70 are all dim
+    // but readable) and green is the battle palette, so battle is exactly
+    // where it bit. pal[1] is 3.29:1 against normal text's 6.02:1. Caught on
+    // the ONB.5 SWIPE cue, same one-shade fix, same reason.
     drawWideList(
       b,
       G.party.map((m, i) => ({
         label: partyRow(m, SPECIES[m.species], i === b.meIdx),
-        color: m.hp <= 0 || (b.phase === 'switch' && i === b.meIdx) ? pal[2] : pal[0],
+        color: m.hp <= 0 || (b.phase === 'switch' && i === b.meIdx) ? pal[1] : pal[0],
       })),
     );
     drawHelpBar(b.phase === 'switch' ? 'SWITCH TO?' : 'USE ON WHO?');
