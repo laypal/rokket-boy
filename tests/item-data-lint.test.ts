@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { ITEMS, type ItemKind, BALL_ITEM } from '../src/data/items';
 import { PACK_DESC_CAP, PACK_ROW_CAP } from '../src/systems/menu';
 
-const KINDS: ItemKind[] = ['heal', 'ball', 'key', 'quest', 'gear'];
+const KINDS: ItemKind[] = ['heal', 'ball', 'key', 'quest', 'gear', 'candy'];
 
 describe('item registry', () => {
   it('every item is well-formed', () => {

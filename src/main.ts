@@ -15,7 +15,8 @@ import { lockerUpdate, lockerDraw, openLocker } from './systems/locker';
 import { shopUpdate, shopDraw, openShop } from './systems/shop';
 import { jobsUpdate, jobsDraw, openJobs } from './systems/jobsScreen';
 import { cardFlipUpdate, cardFlipDraw, openCardFlip } from './systems/cardFlipScreen';
-import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered } from './systems/scenes';
+import { levelUpUpdate, levelUpDraw, useLevelCandy } from './systems/levelUpScene';
+import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered, endIntro } from './systems/scenes';
 import { install as installDiagnostics, rokketApi } from './engine/diagnostics';
 import { quest, setDexMons } from './systems/quest';
 import { runScript } from './systems/script';
@@ -23,6 +24,9 @@ import { worldHooks } from './systems/world';
 import { setEncounterRng } from './systems/encounter';
 import { mulberry32 } from './engine/rng';
 import { ITEMS } from './data/items';
+import { SPECIES } from './data/mons';
+import { maxHp } from './systems/mon';
+import { findPartyMon, xpToReach, hpFromArg } from './systems/debugResolve';
 import type { WarpDef } from './types';
 
 // HRD.3: field error capture from the very first frame — the loop guard
@@ -99,6 +103,14 @@ registerState('cardflip', () => {
 // SIDE.4: the `{ dexComplete: true }` Cond reads the live collection through
 // this provider (quest.ts stays engine-free — it can't import state.ts).
 setDexMons(() => [...G.party, ...G.box]);
+// SIDE.7: LEVEL CANDY's level-up scene — the battle's own pipeline, no foe
+registerState('levelup', () => {
+  levelUpUpdate();
+  if (G.state === 'levelup') {
+    worldDraw();
+    levelUpDraw();
+  }
+});
 registerState('end', endUpdate);
 registerState('rankcard', rankCardUpdate);
 
@@ -166,6 +178,54 @@ if (import.meta.env.DEV) {
     // so chapter specs can seed a mid-campaign position instead of walking
     // three maps.
     warp: (w: WarpDef) => runScript([{ warp: w }], worldHooks),
+    // QA.6: primes the NEXT battle win to level this mon through the REAL
+    // gainXp path (moves, evolution offer) — never touches lv/hp directly,
+    // because skipping gainXp skips the very events being tested. The
+    // resolved mon must be ACTIVE at the win.
+    levelTo: (key: string | number, lv: number) => {
+      const mon = findPartyMon(G.party, key);
+      if (!mon) {
+        console.error(`[__debug.levelTo] no party mon matches ${key}`);
+        return;
+      }
+      mon.xp = xpToReach(lv);
+      console.error(`[__debug.levelTo] ${mon.species} (slot ${G.party.indexOf(mon)}) primed for lv ${lv} on next win — must be ACTIVE`);
+    },
+    // QA.8: fraction (<1) or absolute hp, resolved against the mon's real
+    // maxHp and clamped — shares findPartyMon with levelTo (one resolver).
+    setHp: (key: string | number, arg: number) => {
+      const mon = findPartyMon(G.party, key);
+      if (!mon) {
+        console.error(`[__debug.setHp] no party mon matches ${key}`);
+        return;
+      }
+      mon.hp = hpFromArg(maxHp(SPECIES[mon.species], mon.lv), arg);
+      console.error(`[__debug.setHp] ${mon.species} hp -> ${mon.hp}`);
+    },
+    // QA.8: skips the cold-open cinematic + HQ tour by setting the SAME two
+    // flags the real path sets (hq.ts:313-327) before handing over through
+    // endIntro's own fade+landAt — not a second definition of "intro done".
+    // No-op outside the intro state.
+    skipIntro: () => {
+      if (G.state !== 'intro') {
+        console.error(`[__debug.skipIntro] no-op — G.state is '${G.state}', not 'intro'`);
+        return;
+      }
+      quest.flags.introSeen = true;
+      quest.flags.introToured = true;
+      console.error('[__debug.skipIntro] set introSeen + introToured');
+      endIntro();
+    },
+    // SIDE.7: play the LEVEL CANDY scene on a party mon without owning one —
+    // the same useLevelCandy the PARTY picker calls (real gainXp, real scene).
+    levelCandy: (key: string | number) => {
+      const mon = findPartyMon(G.party, key);
+      if (!mon) {
+        console.error(`[__debug.levelCandy] no party mon matches ${key}`);
+        return;
+      }
+      if (!useLevelCandy(mon)) console.error('[__debug.levelCandy] MAXED OUT.');
+    },
   };
 }
 

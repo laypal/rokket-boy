@@ -43,7 +43,7 @@ export function usableInBattle(id: string): boolean {
  *  the map's heat stage so this module stays pure. */
 export function usableOutOfBattle(id: string, heatStage = 0): boolean {
   const kind = itemDef(id).kind;
-  if (kind === 'heal') return true;
+  if (kind === 'heal' || kind === 'candy') return true; // SIDE.7: candy is a PARTY-picker item like a heal
   return kind === 'key' && id === 'SMOKE BALL' && heatStage > 0;
 }
 

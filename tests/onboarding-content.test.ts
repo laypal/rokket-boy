@@ -133,7 +133,12 @@ describe('ONB.6 — first rank-up points at the ladder', () => {
     expect(hits[0].startsWith('hq:npc:giovanni')).toBe(true);
   });
 
-  it('the game-wide count of STATUS-mentioning sysMsg steps is exactly 1', () => {
+  // QA.5 (2026-08-22): three more STATUS-mentioning toasts joined this one —
+  // the CH1/CH2/CH3 briefings' "CHECK STATUS." toast. The invariant this
+  // test actually guards (one rankUp-adjacent toast, checked above) still
+  // holds; this one is retargeted to the new total so a stray extra toast
+  // still fails it.
+  it('the game-wide count of STATUS-mentioning sysMsg steps is exactly 4 (1 rank-ladder + 3 QA.5 briefings)', () => {
     function countStatusToasts(steps: ScriptStep[]): number {
       let n = 0;
       for (const step of steps) {
@@ -159,7 +164,7 @@ describe('ONB.6 — first rank-up points at the ladder', () => {
       total += countStatusToasts(enc.onLose);
       total += countStatusToasts(enc.onFlee);
     }
-    expect(total).toBe(1);
+    expect(total).toBe(4);
   });
 
   it('the giovanni hand-in fires rankUp, then endScreen, then the STATUS toast, in that order', () => {
@@ -182,5 +187,94 @@ describe('ONB.6 — first rank-up points at the ladder', () => {
     runScript(ENCOUNTERS.span_kira.onWin, hooks);
     const toastFired = events.some((e) => e.startsWith('sysMsg:') && e.includes('STATUS'));
     expect(toastFired).toBe(false);
+  });
+});
+
+describe('QA.5 — quest-added toast (hq.ts briefings)', () => {
+  // Every `then` block anywhere in hq.ts that sets one of the three
+  // briefing flags must end with the NEW JOB toast — appended AFTER the
+  // say pages, so it surfaces once the dialog closes (sysMsg only ticks
+  // in worldDraw). Walk every hqScripts entry, not just npc:giovanni, so a
+  // future briefing added elsewhere can't ship silently.
+  const BRIEFING_FLAGS = ['briefed', 'ch2Briefed', 'ch3Briefed'];
+
+  function findBriefingBlocks(steps: ScriptStep[], out: ScriptStep[][]): void {
+    for (const step of steps) {
+      if ('if' in step) {
+        // the CH1 briefing's setFlag lives in the ELSE (the THEN is the
+        // already-briefed brush-off) — check both arms, not just then.
+        if (step.then.some((s) => 'setFlag' in s && BRIEFING_FLAGS.includes(s.setFlag))) {
+          out.push(step.then);
+        }
+        if (step.else && step.else.some((s) => 'setFlag' in s && BRIEFING_FLAGS.includes(s.setFlag))) {
+          out.push(step.else);
+        }
+        findBriefingBlocks(step.then, out);
+        if (step.else) findBriefingBlocks(step.else, out);
+      }
+      if ('choice' in step) {
+        findBriefingBlocks(step.choice.yes, out);
+        if (step.choice.no) findBriefingBlocks(step.choice.no, out);
+      }
+    }
+  }
+
+  it('every branch that sets briefed/ch2Briefed/ch3Briefed ends with the NEW JOB toast', () => {
+    const blocks: ScriptStep[][] = [];
+    for (const steps of Object.values(hqScripts)) findBriefingBlocks(steps, blocks);
+
+    expect(blocks.length).toBe(3); // the CH1/CH2/CH3 briefings — no more, no fewer
+    for (const block of blocks) {
+      const last = block[block.length - 1];
+      expect('sysMsg' in last && last.sysMsg[0] === 'NEW JOB!', `block ending ${JSON.stringify(last)}`).toBe(true);
+    }
+  });
+
+  it('BDD: each briefing talk fires exactly one NEW JOB toast, after the say pages close', () => {
+    // CH1 briefing — fresh save.
+    {
+      const { hooks, events } = eventHooks();
+      runScript(hqScripts['npc:giovanni'], hooks);
+      const sayAt = events.lastIndexOf('say');
+      const toastAt = events.indexOf('sysMsg:NEW JOB!|CHECK STATUS.');
+      expect(toastAt).toBeGreaterThan(sayAt);
+      expect(events.filter((e) => e.startsWith('sysMsg:')).length).toBe(1);
+    }
+    // CH2 briefing.
+    {
+      resetQuest();
+      quest.flags.missionDone = true;
+      const { hooks, events } = eventHooks();
+      runScript(hqScripts['npc:giovanni'], hooks);
+      expect(events).toContain('sysMsg:NEW JOB!|CHECK STATUS.');
+      expect(events.filter((e) => e.startsWith('sysMsg:')).length).toBe(1);
+    }
+    // CH3 briefing.
+    {
+      resetQuest();
+      quest.flags.ch2Done = true;
+      const { hooks, events } = eventHooks();
+      runScript(hqScripts['npc:giovanni'], hooks);
+      expect(events).toContain('sysMsg:NEW JOB!|CHECK STATUS.');
+      expect(events.filter((e) => e.startsWith('sysMsg:')).length).toBe(1);
+    }
+  });
+
+  it('no talk can fire both the NEW JOB toast and the ONB.6 RANK LADDER toast (the CH2 hand-in is a separate talk from either briefing)', () => {
+    resetQuest();
+    quest.flags.missionDone = true;
+    quest.flags.bradBeaten = true;
+    const { hooks, events } = eventHooks();
+    runScript(hqScripts['npc:giovanni'], hooks);
+    const toasts = events.filter((e) => e.startsWith('sysMsg:'));
+    expect(toasts).toEqual(['sysMsg:RANK LADDER:|START > STATUS|> RANK']); // hand-in only — no NEW JOB
+  });
+
+  it('the intro (`enter`) script never sets a briefing flag, so it can never fire the toast', () => {
+    const src = readFileSync(new URL('../src/data/dialog/hq.ts', import.meta.url), 'utf8');
+    const enterBlock = src.slice(src.indexOf('enter: ['), src.indexOf('\n};'));
+    for (const flag of BRIEFING_FLAGS) {
+      expect(enterBlock).not.toMatch(new RegExp(`setFlag: '${flag}'`));
+    }
   });
 });

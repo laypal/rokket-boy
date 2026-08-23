@@ -117,22 +117,22 @@ export const TRACKS: Record<string, Track> = {
           C2 -  C2 -  C2 -  G1 -  C2 -  C2 -  C2 -  G1 -`,
     dr: `k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.h.h.h.`,
   },
-  // Cold open — night sky, restless minor drone (ONB.9)
+  // Cold open — upbeat GB-fanfare energy, G major (ONB.9-FB: was too slow/minor)
   intro: {
-    bpm: 88,
-    p1: `-  -  A3 =  =  =  -  -  -  -  -  -  E4 =  =  -
-         -  -  -  -  D4 =  =  =  -  -  -  -  C4 =  =  -
-         -  -  A3 =  =  =  -  -  -  -  G3 =  =  =  -  -
-         -  -  -  -  -  -  F#3 =  =  =  =  =  -  -  -  -`,
-    p2: `-  -  -  -  -  -  -  -  E3 =  =  =  -  -  -  -
-         -  -  -  -  -  -  -  -  -  -  -  -  A2 =  =  -
-         -  -  -  -  -  -  -  -  D3 =  =  =  -  -  -  -
-         -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -`,
-    tri: `A2 =  =  =  =  =  =  =  E2 =  =  =  =  =  =  =
-          A2 =  =  =  =  =  =  =  D2 =  =  =  =  =  =  =
-          G2 =  =  =  =  =  =  =  F#2 =  =  =  =  =  =  =
-          E2 =  =  =  =  =  =  =  A2 =  =  =  =  =  =  =`,
-    dr: `k............... k.......h....... k...h...k...h... k...h...s...h...`,
+    bpm: 150,
+    p1: `D4 E4 F#4 G4 =  =  =  -  G4 A4 B4  C5 =  =  =  -
+         D4 E4 F#4 G4 =  =  =  -  G4 A4 B4  C5 =  =  =  -
+         D4 E4 F#4 G4 =  =  =  -  G4 A4 B4  C5 =  =  =  -
+         D4 E4 F#4 G4 =  =  =  -  G4 F#4 E4 D4 =  =  =  -`,
+    p2: `G3 G3 G3 G3 G3 G3 G3 G3  D3 D3 D3 D3 D3 D3 D3 D3
+         E3 E3 E3 E3 E3 E3 E3 E3  C3 C3 C3 C3 C3 C3 C3 C3
+         G3 G3 G3 G3 G3 G3 G3 G3  D3 D3 D3 D3 D3 D3 D3 D3
+         E3 E3 E3 E3 E3 E3 E3 E3  D3 D3 D3 D3 D3 D3 D3 D3`,
+    tri: `G2 G2 G2 G2 G2 G2 G2 G2  D2 D2 D2 D2 D2 D2 D2 D2
+          E2 E2 E2 E2 E2 E2 E2 E2  C2 C2 C2 C2 C2 C2 C2 C2
+          G2 G2 G2 G2 G2 G2 G2 G2  D2 D2 D2 D2 D2 D2 D2 D2
+          E2 E2 E2 E2 E2 E2 E2 E2  D2 D2 D2 D2 D2 D2 D2 D2`,
+    dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h.`,
   },
   // Dig site — same drone family as cave, a little more movement (CH2 AUD.3)
   cave2: {

@@ -26,6 +26,7 @@ export const cornerScripts: Record<string, ScriptStep[]> = {
       say: [
         ['GAMBLER: These', 'slots took my', 'last credit...'],
         ['...and my shoes.'],
+        ['The hummin one', 'top right? Pays', 'in CANDY they say'],
       ],
     },
   ],
@@ -99,6 +100,79 @@ export const cornerScripts: Record<string, ScriptStep[]> = {
           },
         },
       ],
+    },
+  ],
+  // SIDE.7-FB: the special machine — visibly flavoured so the player knows
+  // which one to farm. 2-coin stake per spin. Shares slotSpins with the
+  // ordinary `M` bank (spin jobs still count) but rolls its own seeded
+  // prize table via varRoll: nested `if`s on the SAME spin number are ONE
+  // weighted draw (varRoll(n,p) reuses n's uniform for every p), so the
+  // ascending thresholds 0.04/0.10/0.25/0.55 slice a single roll into bands
+  // — 4% candy / 6% +10 / 15% +5 / 30% +1 / 45% nothing, EV ~1.5 per 2 staked.
+  // NOTE: addCoins does not clamp at 0 (script.ts) — safe here only because
+  // this stake is gated behind coinsAtLeast 2 first, so coins is always >=2
+  // when the -2 lands.
+  'tile:Q': [
+    {
+      if: { coinsAtLeast: 2 },
+      then: [
+        { addCoins: -2 },
+        { incVar: 'slotSpins' },
+        { sfx: 'coin' },
+        {
+          if: { varRoll: ['slotSpins', 0.04] },
+          then: [
+            { giveItem: 'LEVEL CANDY' },
+            { sfx: 'item' },
+            {
+              say: [
+                ['* * *', 'JACKPOT!!', 'A LEVEL CANDY!'],
+              ],
+            },
+            { sysMsg: ['CANDY IN PACK!', 'PARTY > LEFT', 'TO USE IT.'] },
+          ],
+          else: [
+            {
+              if: { varRoll: ['slotSpins', 0.10] },
+              then: [
+                { addCoins: 10 },
+                { say: [['* $ $ $ *', 'TEN COINS!']] },
+              ],
+              else: [
+                {
+                  if: { varRoll: ['slotSpins', 0.25] },
+                  then: [
+                    { addCoins: 5 },
+                    { say: [['* $ $ *', 'Five coins!']] },
+                  ],
+                  else: [
+                    {
+                      if: { varRoll: ['slotSpins', 0.55] },
+                      then: [
+                        { addCoins: 1 },
+                        { say: [['* $ *', 'One coin. Heh.']] },
+                      ],
+                      else: [
+                        {
+                          sayCycle: {
+                            counter: 'slotSpins',
+                            dialogs: [
+                              [['*hmmmm* ...', 'This one feels', 'different.']],
+                              [['*clunk* ...', 'Almost.']],
+                              [['*whirrr*', 'It hums louder.']],
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      else: [{ say: [['NEED 2 COINS.', 'The slot just', 'stares back.']] }],
     },
   ],
   'tile:K': [{ say: [['COIN EXCHANGE', '-- CLOSED --']] }],

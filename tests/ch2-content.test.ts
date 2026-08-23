@@ -88,14 +88,17 @@ describe('giovanni hand-in (CH2.4 rank beat)', () => {
     quest.flags.ch2Done = true;
     const { hooks, events } = eventHooks();
     runScript(hqScripts['npc:giovanni'], hooks);
-    expect(events).toEqual(['say']);
+    // QA.5: this IS the ch3 briefing (setFlag: 'ch3Briefed'), so the NEW JOB
+    // toast now follows the say pages — see tests/onboarding-content.test.ts.
+    expect(events).toEqual(['say', 'sysMsg']);
   });
 
   it('missionDone only: the CH2 briefing, no rank beat', () => {
     quest.flags.missionDone = true;
     const { hooks, events } = eventHooks();
     runScript(hqScripts['npc:giovanni'], hooks);
-    expect(events).toEqual(['say']);
+    // QA.5: the CH2 briefing now ends with the NEW JOB toast.
+    expect(events).toEqual(['say', 'sysMsg']);
     expect(quest.flags.ch2Done).toBe(false);
   });
 
@@ -103,7 +106,8 @@ describe('giovanni hand-in (CH2.4 rank beat)', () => {
     const { hooks, events } = eventHooks();
     runScript(hqScripts['npc:giovanni'], hooks);
     expect(quest.flags.briefed).toBe(true);
-    expect(events).toEqual(['say']);
+    // QA.5: the CH1 briefing now ends with the NEW JOB toast.
+    expect(events).toEqual(['say', 'sysMsg']);
   });
 });
 

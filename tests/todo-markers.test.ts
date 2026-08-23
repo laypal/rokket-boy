@@ -84,6 +84,7 @@ describe('progression (BDD): the ! tracks the frozen flag order', () => {
     expect(marked()).toEqual(['jessika', 'myowth']);
     quest.flags.drillBattleDone = true;
     expect(marked()).toEqual(['myowth']);
+    quest.eggs.add('myowth'); // ONB.3-FB: the drill is reached by talking to him, which grants his egg
     quest.flags.drillStealthDone = true;
     expect(marked()).toEqual([]);
   });
@@ -102,6 +103,26 @@ describe('progression (BDD): the ! tracks the frozen flag order', () => {
       briefed: true, lootTaken: true, missionDone: true, bradBeaten: true, ch2Done: true, ch3Done: true,
     }); // ch2Briefed and ch3Briefed both left false
     expect(marked()).not.toContain('giovanni');
+  });
+});
+
+// ONB.3-FB: Myowth's ! clears on the first talk (the egg his script grants is
+// the "met" signal), comes back once the mission is done (sneak school is a
+// new reason to talk), and clears for good when the drill is done.
+describe('myowth invariant — first talk clears it, the drill brings it back', () => {
+  it('fresh: marked; one talk clears; missionDone re-marks; drillStealthDone clears', () => {
+    expect(npcTodo(hqNpc('myowth'))).toBe(true);
+    runScript(hqScripts['npc:myowth'], eventHooks().hooks);
+    expect(quest.eggs.has('myowth')).toBe(true);
+    expect(npcTodo(hqNpc('myowth'))).toBe(false);
+    quest.flags.missionDone = true;
+    expect(npcTodo(hqNpc('myowth'))).toBe(true);
+    quest.flags.drillStealthDone = true;
+    expect(npcTodo(hqNpc('myowth'))).toBe(false);
+  });
+  it('a save that never talked to him keeps the ! through missionDone (no lie either way)', () => {
+    quest.flags.missionDone = true;
+    expect(npcTodo(hqNpc('myowth'))).toBe(true);
   });
 });
 

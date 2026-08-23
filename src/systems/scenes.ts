@@ -271,7 +271,9 @@ function nextCard(): void {
  *  gets his opening line (src/data/dialog/hq.ts, behind `introSeen`). Not
  *  performWarp: that autosaves and fires
  *  the SESSION-ONLY toast, and neither belongs at the end of a cinematic. */
-function endIntro(): void {
+// Exported for QA.8's `__debug.skipIntro()` — it needs this exact hand-off
+// (fade + landAt), not a copy of it.
+export function endIntro(): void {
   G.introT = 0;
   // ONB.9: stop the intro track here, not inside the fade callback below —
   // the callback fires ~9 frames (~150ms) after startFade() is called

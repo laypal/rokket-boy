@@ -21,11 +21,13 @@ const projectDir = data?.cwd || process.cwd();
 const rel = path.relative(projectDir, filePath).replace(/\\/g, '/');
 if (rel.startsWith('..') || !rel.endsWith('.md')) process.exit(0);
 
-// Watched: files loaded to orient a session. Narrative docs
-// (project-documentation/, docs/superpowers/) are deliberately not listed.
+// Watched: files loaded to orient a session, plus project-documentation/
+// since 2026-08-22 (Lyall: one chapter per feature deck, no unbounded
+// journals). docs/superpowers/ is deliberately not listed.
 const WATCHED = [
   /^\.paul\//,
   /^docs\/tasks\//,
+  /^project-documentation\//,
   /^(CLAUDE|AGENTS|ABOUT|ERRORS|STACK|VOICE)\.md$/,
 ];
 // Exempt: rolled-off records — they are read one at a time, on purpose.

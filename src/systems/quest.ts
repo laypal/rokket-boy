@@ -7,6 +7,7 @@ import type { JobContract } from './jobs';
 import { RANK_REWARDS } from '../data/rankRewards';
 import { SPECIES } from '../data/mons';
 import { dexComplete } from './dex';
+import { mulberry32 } from '../engine/rng';
 
 export interface QuestState {
   flags: Flags;
@@ -78,6 +79,13 @@ export function setDexMons(f: () => { species: string }[]): void {
   dexMons = f;
 }
 
+/** SIDE.7: deterministic per-spin jackpot roll — spin number `n` always
+ *  rolls the same outcome under probability `p`, so a winning spin count is
+ *  reproducible and pinnable in tests; never an unseeded roll. */
+export function varRoll(n: number, p: number): boolean {
+  return mulberry32(0x51de7 + n * 7919)() < p;
+}
+
 export function checkCond(c: Cond): boolean {
   if ('flag' in c) return quest.flags[c.flag];
   if ('notFlag' in c) return !quest.flags[c.notFlag];
@@ -88,6 +96,8 @@ export function checkCond(c: Cond): boolean {
   // waiting" marker) is one Cond in map data, no per-NPC evaluator
   if ('all' in c) return c.all.every(checkCond);
   if ('any' in c) return c.any.some(checkCond);
+  if ('varRoll' in c) return varRoll(quest.vars[c.varRoll[0]] ?? 0, c.varRoll[1]);
+  if ('coinsAtLeast' in c) return quest.coins >= c.coinsAtLeast;
   return quest.vars[c.varEq[0]] === c.varEq[1];
 }
 

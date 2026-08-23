@@ -12,7 +12,7 @@ export const cornerMap: MapDef = makeMap({
     '####################',
     '===p=========s======',
     '#                  #',
-    '#K  MM  MM  MM  MM #',
+    '#K  MM  MM  MM  QQ #',
     '#                  #',
     '#   MM  MM  MM  MM #',
     '#                  #',

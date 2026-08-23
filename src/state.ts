@@ -20,6 +20,7 @@ export type StateName =
   | 'shop'
   | 'jobs'
   | 'cardflip'  // SIDE.2: the DEALER's PICKPOCKET table (jobs-class modal)
+  | 'levelup'   // SIDE.7: LEVEL CANDY's out-of-battle level-up (move-learn / evolution) scene
   | 'end'
   | 'rankcard';
 

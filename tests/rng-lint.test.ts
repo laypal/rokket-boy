@@ -55,7 +55,7 @@ function findMathRandom(): Hit[] {
 // this test until the allowlist is updated on purpose.
 const ALLOWED: Hit[] = [
   { file: 'src/engine/audio.ts', line: 30 }, // white-noise SFX buffer, cosmetic
-  { file: 'src/systems/battle.ts', line: 30 }, // battleRng's injectable default
+  { file: 'src/systems/battle.ts', line: 33 }, // battleRng's injectable default
   { file: 'src/systems/encounter.ts', line: 41 }, // encounterRng's injectable default
 ];
 

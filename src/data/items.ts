@@ -6,7 +6,7 @@
 /** Item a wild-battle SWIPE consumes (plan §4.4; buyable from Ch.2). */
 export const BALL_ITEM = 'ROKKET BALL';
 
-export type ItemKind = 'heal' | 'ball' | 'key' | 'quest' | 'gear';
+export type ItemKind = 'heal' | 'ball' | 'key' | 'quest' | 'gear' | 'candy';
 
 /** Perk surfaces a piece of gear (or a rank) may touch — never XP (spec
  *  2026-08-10 §1). Lives here so data stays the leaf: perks.ts imports this,
@@ -28,6 +28,9 @@ export const ITEMS: Record<string, ItemDef> = {
   SODA: { id: 'SODA', kind: 'heal', price: 60, heal: 20, desc: 'RESTORES 20 HP.' },
   'SMOKE BALL': { id: 'SMOKE BALL', kind: 'key', price: 0, desc: 'GUARANTEED FLEE.' },
   'CASE OF COINS': { id: 'CASE OF COINS', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // SIDE.7: the Gamez Corner jackpot prize — never stocked, never bought;
+  // only the special machine's tile script grants it (dialog/corner.ts).
+  'LEVEL CANDY': { id: 'LEVEL CANDY', kind: 'candy', price: 0, desc: 'UP ONE LEVEL.' },
   // RNK.1 promotion trophies (rankRewards.ts) — price 0 = unbuyable, and
   // canSell excludes gear, so a perk once earned can never be lost. Wear
   // tiers are the ladder rungs; the three deliberately occupy three

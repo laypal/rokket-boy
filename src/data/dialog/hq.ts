@@ -22,6 +22,10 @@ export const hqScripts: Record<string, ScriptStep[]> = {
             // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
             { setFlag: 'ch3Briefed' },
             { say: [['GIOVANNI: AGENT.', 'A new racket.', 'The NUGGET SPAN.'], ['East of MT. MOON.', 'We run a "prize', 'bridge" there.'], ['Five marks paid', 'to cross. Beat', 'them. Keep it.'], ['AGENT KIRA runs', 'the span. Do as', 'she says.']] },
+            // QA.5: last step in the branch — surfaces once the dialog
+            // closes (sysMsg only ticks in worldDraw), telling the player
+            // STATUS just moved on.
+            { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
           ],
           else: [
             {
@@ -55,6 +59,8 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                         ['Scientists dug', 'up a PAIR of', 'fossils. Fetch.'],
                       ],
                     },
+                    // QA.5: last step — surfaces once the dialog closes.
+                    { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
                   ],
                   else: [
                     {
@@ -80,6 +86,8 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                                 ['Find the switch.', 'Take the case.', 'Do NOT fail me.'],
                               ],
                             },
+                            // QA.5: last step — surfaces once the dialog closes.
+                            { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
                           ],
                         },
                       ],

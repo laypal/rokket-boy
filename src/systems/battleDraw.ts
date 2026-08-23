@@ -35,6 +35,7 @@ import {
   partyRow,
   type BattleState,
 } from './battle';
+import type { LevelUpHost } from './levelUp';
 
 // ── render ───────────────────────────────────────────────────────────────
 function hpBar(x: number, y: number, w: number, cur: number, max: number, pal: string[]): void {
@@ -87,14 +88,31 @@ function outlinedText(label: string, x: number, y: number, color: string, halo: 
   text(label, x, y, color, scale);
 }
 
-function drawList(b: BattleState, labels: string[], colors?: string[], y0 = 100): void {
+// QA.7: window x is now a parameter — moves/replace/evolve/evoConfirm keep
+// the wide LIST_X window (their labels run up to 9 glyphs, e.g. ROCKTHROW);
+// the root menu alone narrows to ROOT_LIST_X to give its prompt three lines
+// of room (WHAT WILL / mon name / DO?). Same +8 cursor / +16 label offsets
+// from x either way.
+export const LIST_X = 62;
+export const ROOT_LIST_X = 92;
+function drawList(b: { sel: number }, labels: string[], colors?: string[], y0 = 100, x = LIST_X): void {
   const pal = BG_PAL.green;
-  drawWindow(62, 96, 98, 48, pal);
+  drawWindow(x, 96, W - x, 48, pal);
   labels.forEach((l, i) => {
     const y = y0 + i * 9; // 9px rows fit 5 entries (FIGHT/SWIPE/SWITCH/ITEM/LEG IT)
-    text(l, 78, y, colors?.[i] ?? pal[0]);
-    if (i === b.sel) text('>', 70, y, pal[0]);
+    text(l, x + 16, y, colors?.[i] ?? pal[0]);
+    if (i === b.sel) text('>', x + 8, y, pal[0]);
   });
+}
+
+/** QA.7: pure geometry helpers so every prompt/label lint derives from the
+ *  same numbers the drawing uses — no hard-coded 7/10/11 anywhere. */
+export const PROMPT_X = 6;
+export function promptBudget(listX: number): number {
+  return Math.floor((listX - PROMPT_X) / 8);
+}
+export function labelBudget(listX: number): number {
+  return Math.floor((W - 4 - (listX + 16)) / 8);
 }
 
 /** QOL.1/QOL.10 shared one-line help strip. 16px tall because drawWindow's
@@ -149,7 +167,7 @@ function drawWideList(b: BattleState, rows: { label: string; color?: string }[])
  *  text share the same y=104/116 rows, so hold text is suppressed whenever
  *  b.phase is 'evoConfirm' — this also covers pressing B early enough in the
  *  real scene that pausedAt itself lands in the hold phase. */
-function drawEvolveScene(b: BattleState, pal: Palette): void {
+export function drawEvolveScene(b: LevelUpHost, pal: Palette): void {
   const scene = b.evoScene;
   const mon = scene ? scene.mon : b.evolve!.mon;
   const to = scene ? scene.to : b.evolve!.to;
@@ -174,9 +192,8 @@ function drawEvolveScene(b: BattleState, pal: Palette): void {
     text(SPECIES[to].name + '!', 8, 104, pal[0]);
   }
   if (b.phase === 'evoConfirm') {
-    // ≤7 chars per line: drawList's window starts at x=62, so a line from
-    // x=6 must end by glyph 7 (the LET IT / CHANGE? budget). "STOP FOR"
-    // was 8 and lost its R under the window — final-review catch.
+    // promptBudget(LIST_X) glyphs per line (the LET IT / CHANGE? budget).
+    // "STOP FOR" was 8 and lost its R under the window — final-review catch.
     text('NEVER', 6, 104, pal[0]);
     text('EVOLVE?', 6, 116, pal[0]);
     drawList(b, ['NO', 'YES']);
@@ -255,15 +272,14 @@ export function battleDraw(): void {
   // dialog area
   drawWindow(0, 96, W, 48, pal);
   if (b.msg && b.msg.lines) {
-    let rem = b.msgChars;
-    b.msg.lines.slice(0, 3).forEach((l, i) => {
-      const n = clamp(rem, 0, l.length);
-      text(l.substring(0, n), 8, 104 + i * 12, pal[0]);
-      rem -= l.length;
-    });
+    drawMessage(b, pal);
   } else if (b.phase === 'menu') {
+    // QA.7: three lines (promptBudget(ROOT_LIST_X) = 10 fits both WHAT WILL
+    // and a MON_NAME_CAP name) now that the root menu narrows to
+    // ROOT_LIST_X instead of sharing the wider LIST_X the other lists use.
     text('WHAT WILL', 6, 104, pal[0]);
-    text(monName(me) + ' DO?', 6, 116, pal[0]);
+    text(monName(me), 6, 116, pal[0]);
+    text('DO?', 6, 128, pal[0]);
     // ONB.5-FB: SWIPE is once per trainer battle, and the entry used to look
     // live right up until the press that refused it.
     //
@@ -275,7 +291,7 @@ export function battleDraw(): void {
     // the 6:1 of normal text, which reads as dimmed. Every BG_PAL runs
     // dark->light, so pal[1] is the second-darkest in all of them.
     const spent = !!b.enc.trainer && !!b.stole;
-    drawList(b, ROOT_MENU, spent ? ROOT_MENU.map((_, i) => (i === 1 ? pal[1] : pal[0])) : undefined);
+    drawList(b, ROOT_MENU, spent ? ROOT_MENU.map((_, i) => (i === 1 ? pal[1] : pal[0])) : undefined, 100, ROOT_LIST_X);
     drawHelpBar(rootHelp(b.sel, !!b.enc.trainer, spent));
   } else if (b.phase === 'moves') {
     text('WHICH', 6, 108, pal[0]);
@@ -312,7 +328,23 @@ export function battleDraw(): void {
       })),
     );
     drawHelpBar(b.phase === 'switch' ? 'SWITCH TO?' : 'USE ON WHO?');
-  } else if (b.phase === 'replace') {
+  } else drawLevelUpPrompt(b, pal);
+}
+
+/** The typewriter message in the bottom window (caller draws the window). */
+export function drawMessage(b: LevelUpHost, pal: Palette): void {
+  let rem = b.msgChars;
+  b.msg!.lines.slice(0, 3).forEach((l, i) => {
+    const n = clamp(rem, 0, l.length);
+    text(l.substring(0, n), 8, 104 + i * 12, pal[0]);
+    rem -= l.length;
+  });
+}
+
+/** SIDE.7: the two level-up prompts that draw beside a list — shared with
+ *  the LEVEL CANDY scene. No-op for any other phase. */
+export function drawLevelUpPrompt(b: LevelUpHost, pal: Palette): void {
+  if (b.phase === 'replace') {
     text('FORGET', 6, 104, pal[0]);
     text('WHICH?', 6, 116, pal[0]);
     drawList(

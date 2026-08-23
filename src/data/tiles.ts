@@ -808,3 +808,47 @@ T.RAIL = S(
 '0000000110000000',
 '0000000000000000');
 TILES['B'] = [T.RAIL];
+
+// SIDE.7-FB: the special jackpot slot machine — its OWN cabinet art (copied
+// from SLOT_A/SLOT_B, not shared with the `M` bank) with a flashing marquee:
+// the top band (row 2) alternates lightest/darkest between frames instead of
+// staying lit, so the jackpot machine reads as lit before the player learns
+// which tile pays in candy. NOTE: still ticks on the shared (G.frame>>5)&1
+// tile-animation idiom, same rate as every other multi-frame tile (`~`/M/C/J)
+// — there is no per-tile-char rate; see corner.ts's tile:Q comment.
+T.CANDY_A = S(
+'0000000000000000',
+'0111111111111110',
+'0133333333333310',
+'0130303030303310',
+'0133333333333310',
+'0122222222222210',
+'0123032302303210',
+'0122222222222210',
+'0111111111111110',
+'0122222222222210',
+'0122122212212210',
+'0122222222222210',
+'0111111111111110',
+'0011111111111100',
+'0000000000000000',
+'1111111111111111');
+
+T.CANDY_B = S(
+'0000000000000000',
+'0111111111111110',
+'0100000000000010',
+'0130303030303310',
+'0133333333333310',
+'0122222222222210',
+'0120323023032210',
+'0122222222222210',
+'0111111111111110',
+'0122222222222210',
+'0122212221222210',
+'0122222222222210',
+'0111111111111110',
+'0011111111111100',
+'0000000000000000',
+'1111111111111111');
+TILES['Q'] = [T.CANDY_A, T.CANDY_B];

@@ -38,7 +38,11 @@ export const hqMap: MapDef = makeMap({
       ] } },
     { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down', todoIf: { notFlag: 'drillBattleDone' } }, // ONB.3: until her spar is won once
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },
-    { id: 'myowth', char: 'myowth', x: 10, y: 8, dir: 'down', todoIf: { notFlag: 'drillStealthDone' } }, // ONB.3: heist coaching, then sneak school
+    // ONB.3-FB (Lyall 2026-08-22): the ! used to sit on Myowth from the first
+    // frame until sneak school was DONE — a marker that lied for a whole
+    // chapter. His first talk grants the `myowth` egg, so that's the "met"
+    // signal; the second reason to talk (the drill) only exists post-mission.
+    { id: 'myowth', char: 'myowth', x: 10, y: 8, dir: 'down', todoIf: { any: [{ notEgg: 'myowth' }, { all: [{ flag: 'missionDone' }, { notFlag: 'drillStealthDone' }] }] } },
     { id: 'vendor', char: 'grunt', x: 6, y: 11, dir: 'down', pal: 'gold' },
     { id: 'bunkgrunt', char: 'medic', x: 3, y: 9, dir: 'down' }, // ONB.7: full-heal NPC gets its own cap+cross so the bunk room's healer reads distinct from the player and every plain grunt
     // RNK.3: the BACK ROOM gear vendor — free floor between the D desks and

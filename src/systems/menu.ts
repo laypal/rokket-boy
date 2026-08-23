@@ -9,7 +9,8 @@ import { quest, currentObjective, formatPlayTime } from './quest';
 import { SPECIES } from '../data/mons';
 import { EGG_TOTAL } from '../data/eggs';
 import { MOVES } from '../data/moves';
-import { maxHp, dexCount, xpProgress, hpBand } from './mon';
+import { maxHp, dexCount, xpProgress, hpBand, LEVEL_CAP } from './mon';
+import { useLevelCandy } from './levelUpScene';
 import { itemDef, applyHeal, usableOutOfBattle, packCounts } from './inventory';
 import { PARTY_CAP } from './locker';
 import { reduceHeat } from './heat';
@@ -205,8 +206,8 @@ function packUpdate(): void {
 
 function usePackItem(p: PackNav, id: string): void {
   const kind = itemDef(id).kind;
-  if (kind === 'heal') {
-    flash(p, 'USE IN PARTY.'); // heals need a mon target — PARTY owns that
+  if (kind === 'heal' || kind === 'candy') {
+    flash(p, 'USE IN PARTY.'); // heals and candy need a mon target — PARTY owns that
     return;
   }
   const stage = G.heatState[G.map.id]?.stage ?? 0;
@@ -470,6 +471,16 @@ function partyUpdate(): void {
 function useHealOnMon(p: PartyNav, id: string): void {
   const mon = G.party[p.monSel];
   const sp = SPECIES[mon.species];
+  if (itemDef(id).kind === 'candy') {
+    // SIDE.7: LEVEL CANDY — the menu closes and the levelup scene plays the
+    // level (moves / evolution offer) out over the world, battle-style.
+    if (mon.lv >= LEVEL_CAP) { flash(p, 'MAXED OUT.'); return; }
+    consumeItem(id);
+    G.menu = null;
+    pn = null;
+    useLevelCandy(mon);
+    return;
+  }
   // SODA does not revive ANYWHERE (QOL.6 rule, aligned out-of-battle after
   // the 2026-08-04 playtest): bunk + whiteout are the revive paths until a
   // REVIVE item exists.

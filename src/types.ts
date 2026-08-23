@@ -64,6 +64,8 @@ export type Cond =
   | { egg: string }
   | { notEgg: string }
   | { varEq: [string, number] }
+  | { varRoll: [string, number] } // SIDE.7: quest.varRoll(vars[name] ?? 0, p) — seeded per-spin jackpot odds
+  | { coinsAtLeast: number }      // SIDE.7-FB: quest.coins >= n — the Q machine's stake gate
   | { dexComplete: true } // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
   | { all: Cond[] }       // ONB.3: every child holds (empty = true)
   | { any: Cond[] };      // ONB.3: at least one child holds (empty = false)

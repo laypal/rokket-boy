@@ -10,12 +10,16 @@ import { SPECIES } from '../data/mons';
 import { MOVES } from '../data/moves';
 import { BALL_ITEM } from '../data/items';
 import { effectiveness } from '../data/typeChart';
-import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
 import { rollInt, type Rng } from '../engine/rng';
 import { damage, drainHeal } from './combat';
-import { playFx, tickFx, EVO_END, EVO_RAMP_END, EVO_SKIP_ARM, EVO_SKIP_TO, type ActiveFx } from './battleFx';
-import { makeMon, maxHp, gainXp, evolveMon, xpFillSegs, type XpFillSeg } from './mon';
+import { playFx, tickFx, type ActiveFx } from './battleFx';
+import { makeMon, maxHp, gainXp, xpFillSegs, type XpFillSeg } from './mon';
+// SIDE.7: the level-up pipeline (message pump, move-replace, evolution
+// offer + cinematic) lives in levelUp.ts so the LEVEL CANDY scene can run
+// it outside a battle. BattleState is a LevelUpHost structurally.
+import { say, afterQueue, pumpMessages, menuInput, levelUpInput, announceLevelUps, spec, monName, type BattleMsg } from './levelUp';
+export { spec, monName } from './levelUp';
 import { catchChance, rollCatch } from './catch';
 import { itemDef, applyHeal, usableInBattle, packCounts } from './inventory';
 import { quest, checkCond } from './quest';
@@ -23,7 +27,6 @@ import { jobBattleWon } from './jobs';
 import { sharedWhiteout } from './recovery';
 import { reduceHeat } from './heat';
 import { perkPct } from './perks';
-import { listInput } from './ui/listScreen';
 
 // Injectable RNG (plan §4.9): seeded-snapshot battle tests swap this out;
 // the game keeps Math.random.
@@ -46,12 +49,6 @@ export function xpFromWin(foeLv: number): number {
 export const LOW_LV_BOOST_UNTIL = 10;
 export function lowLevelBoost(lv: number): number {
   return lv >= LOW_LV_BOOST_UNTIL ? 1 : 1 + (LOW_LV_BOOST_UNTIL - lv) / 4;
-}
-
-interface BattleMsg {
-  lines: string[];
-  after?: (() => void) | null;
-  auto?: boolean;
 }
 
 export interface BattleState {
@@ -136,13 +133,6 @@ export function encounterFlash(t: number, wild: boolean): number | null {
   return Math.floor(t / 3) & 1 ? 0 : 3;
 }
 
-export function spec(mon: MonInstance): MonSpecies {
-  return SPECIES[mon.species];
-}
-export function monName(mon: MonInstance): string {
-  return mon.nick ?? spec(mon).name;
-}
-
 /** QOL.12: SWITCH/target-list row — name, hp/maxHp, active marker, status
  *  tag. Pure formatter so the 15-char wide-list column width is lint-tested
  *  against every real species (mon-data-lint precedent). */
@@ -195,24 +185,6 @@ export function startBattle(encounter: string | EncounterDef, done: (followUp: S
   trace(`--- battle ${typeof encounter === 'string' ? encounter : enc.foe.species} (coachOn=${G.battle.coachOn}) ---`);
 }
 
-function say(b: BattleState, lines: string[], after?: () => void): void {
-  b.queue.push({ lines, after });
-}
-
-/** Chain fn onto whatever message is last in flight (or run now if none). */
-function afterQueue(b: BattleState, fn: () => void): void {
-  const last = b.queue[b.queue.length - 1] ?? b.msg;
-  if (!last) {
-    fn();
-    return;
-  }
-  const prev = last.after;
-  last.after = () => {
-    prev?.();
-    fn();
-  };
-}
-
 /** ONB.5-FB: dev-only trace of the SWIPE/coaching interplay. Lyall hit
  *  "Nothing left to swipe!" straight after the SWIPE nudge — a pairing the
  *  code says is impossible (both read `b.stole`) and that a browser hunt
@@ -252,41 +224,11 @@ function coach(b: BattleState, on: CoachBeat['on']): boolean {
   return true;
 }
 
-/** Shared vertical-menu input: up/down cycle, A confirms, B cancels (if allowed). */
-function menuInput(b: BattleState, n: number, confirm: () => void, cancel?: () => void): void {
-  b.sel = listInput(b.sel, n);
-  if (Input.hit('a')) {
-    confirm();
-    return;
-  }
-  if (Input.hit('b') && cancel) {
-    Audio2.sfx('cancel');
-    cancel();
-  }
-}
-
 export function battleUpdate(): void {
   const b = G.battle!;
   b.t++;
-  // message pump
-  if (b.msg) {
-    const total = b.msg.lines.join('').length;
-    if (b.msgChars < total) {
-      b.msgChars += Input.held('a') || Input.held('b') ? 3 : 1;
-      if (G.frame % 4 === 0) Audio2.sfx('blip');
-    } else if (Input.hit('a') || (b.msg.auto && b.t % 50 === 0)) {
-      const after = b.msg.after;
-      b.msg = null;
-      b.msgChars = 0;
-      if (after) after();
-    }
-    return;
-  }
-  if (b.queue.length) {
-    b.msg = b.queue.shift()!;
-    b.msgChars = 0;
-    return;
-  }
+  if (pumpMessages(b, G.frame)) return;
+  if (levelUpInput(b)) return; // replace / evolve / evolveScene / evoConfirm
 
   switch (b.phase) {
     case 'slide':
@@ -366,54 +308,6 @@ export function battleUpdate(): void {
               b.phase = 'menu';
               b.sel = 2;
             },
-      );
-      break;
-    case 'replace':
-      menuInput(
-        b,
-        b.replace!.mon.moves.length, // QOL.7: the leveling mon may be benched
-        () => resolveReplace(b, true),
-        () => resolveReplace(b, false),
-      );
-      break;
-    case 'evolve':
-      menuInput(
-        b,
-        2, // EVOLVE / STOP
-        () => resolveEvolve(b, b.sel === 0),
-        () => resolveEvolve(b, false), // B = cancel, GB convention (now confirms)
-      );
-      break;
-    case 'evolveScene': {
-      const s = b.evoScene!;
-      const et = b.t - s.start;
-      // Amendment to the frozen spec: the original `et >= EVO_SKIP_ARM` guard
-      // had no upper bound, so A pressed again during the reveal (et already
-      // in [EVO_SKIP_TO, EVO_END)) rebased `start` BACKWARDS and replayed the
-      // reveal — mash A faster than every 45 frames and the scene never ends.
-      // `et < EVO_SKIP_TO` closes the window once the skip has already fired.
-      // If A and B land on the very same armed frame, A (skip) wins — checked
-      // first, deliberately: skipping is idempotent-safe, cancelling isn't.
-      if (Input.hit('a') && et >= EVO_SKIP_ARM && et < EVO_SKIP_TO) {
-        s.start = b.t - EVO_SKIP_TO; // jump into the reveal; outcome unchanged
-      } else if (Input.hit('a') && et >= EVO_END) {
-        // UX2.4-FB: the scene holds on the fully revealed mon (name boxed)
-        // and only hands back on A — no auto-continue.
-        finishEvolve(b);
-      } else if (Input.hit('b') && et < EVO_RAMP_END) {
-        s.pausedAt = et;
-        b.phase = 'evoConfirm';
-        b.sel = 0; // default NO
-        Audio2.sfx('cancel');
-      }
-      break;
-    }
-    case 'evoConfirm':
-      menuInput(
-        b,
-        2, // NO / YES
-        () => resolveEvoConfirm(b, b.sel === 1),
-        () => resolveEvoConfirm(b, false), // B backs out of the confirmation
       );
       break;
     case 'anim':
@@ -629,23 +523,6 @@ function pickSwitch(b: BattleState): void {
   say(b, ['Go! ' + monName(active(b)) + '!'], () => (wasForced ? toMenu(b) : enemyTurn(b)));
 }
 
-function resolveReplace(b: BattleState, learn: boolean): void {
-  const r = b.replace!;
-  const mon = r.mon; // QOL.7: the leveling mon may be benched
-  b.replace = undefined;
-  b.phase = 'anim';
-  if (learn) {
-    Audio2.sfx('confirm');
-    const old = mon.moves[b.sel];
-    mon.moves[b.sel] = r.move;
-    say(b, [monName(mon) + ' forgot', MOVES[old].name + '!']);
-    say(b, ['It learned', MOVES[r.move].name + '!'], r.next);
-  } else {
-    Audio2.sfx('cancel');
-    say(b, [monName(mon), 'kept its', 'old moves.'], r.next);
-  }
-}
-
 function doFlee(b: BattleState): void {
   b.phase = 'anim';
   const lines = b.enc.trainer
@@ -722,106 +599,13 @@ function foeDefeated(b: BattleState): void {
       const fromXp = mon.xp;
       const share = Math.max(1, Math.floor(base * lowLevelBoost(fromLv)));
       say(b, [monName(mon) + ' gained', share + ' XP!']);
-      const offers: MoveId[] = [];
-      let pendingEvo: string | undefined;
-      for (const ev of gainXp(mon, spec(mon), share)) {
-        say(b, [monName(mon) + ' grew', 'to L' + ev.lv + '!']);
-        for (const id of ev.learned) say(b, [monName(mon), 'learned', MOVES[id].name + '!']);
-        offers.push(...ev.offered);
-        pendingEvo = ev.evolvesTo ?? pendingEvo;
-      }
+      const events = gainXp(mon, spec(mon), share);
       // UX2.1: arm the draw-only fill for the ACTIVE mon; it plays under the
       // award messages (no close gating — the juice rule outranks pacing).
       if (recipients[k] === b.meIdx) b.xpAnim = { segs: xpFillSegs(fromLv, fromXp, mon.lv, mon.xp), start: b.t };
-      processOffers(b, mon, offers, () => {
-        maybeEvolve(b, mon, pendingEvo, () => award(k + 1));
-      });
+      announceLevelUps(b, mon, events, () => award(k + 1));
     };
     award(0);
-  });
-}
-
-// Evolution scene (SPR.0): offered after move-learn prompts, before winText.
-// Cancellable per GB convention, but UX2.4 makes a CONFIRMED decline
-// permanent (mon.noEvolve) — declining routes through resolveEvoConfirm's
-// "NEVER EVOLVE?" prompt, not a free no-questions-asked cancel.
-function maybeEvolve(b: BattleState, mon: MonInstance, to: string | undefined, then: () => void): void {
-  if (!to || !SPECIES[to]) {
-    then();
-    return;
-  }
-  say(b, ['WHAT?'], () => {
-    say(b, [monName(mon) + ' is', 'evolving!'], () => {
-      b.phase = 'evolve';
-      b.sel = 0;
-      b.evolve = { mon, to, next: then };
-    });
-  });
-}
-
-function resolveEvolve(b: BattleState, accept: boolean): void {
-  const e = b.evolve!;
-  if (!accept) {
-    // UX2.4: STOP no longer cancels on its own — refusing is permanent, so it
-    // shares the mid-scene confirmation. b.evolve stays set so NO can go back.
-    b.phase = 'evoConfirm';
-    b.sel = 0; // default NO
-    // no sfx here: menuInput already beeped this press ('cancel' on B,
-    // 'confirm' on A) — a second note the same frame just doubles it
-    return;
-  }
-  b.evolve = undefined;
-  b.phase = 'evolveScene';
-  b.evoScene = { mon: e.mon, to: e.to, start: b.t, next: e.next };
-  Audio2.sfx('evolve');
-}
-
-/** The cinematic ran to its end (or was skipped into the reveal): commit the
- *  evolution. SPR.0's hp/move rules live in evolveMon and are untouched. */
-function finishEvolve(b: BattleState): void {
-  const s = b.evoScene!;
-  const mon = s.mon; // QOL.7: a benched participant can evolve — never assume active
-  b.evoScene = undefined;
-  b.phase = 'anim';
-  const from = spec(mon);
-  const to = SPECIES[s.to];
-  const oldName = monName(mon); // nick survives the swap; the label shouldn't
-  evolveMon(mon, from, to);
-  say(b, [oldName + ' evolved', 'into ' + to.name + '!'], s.next);
-}
-
-/** YES/NO on "NEVER EVOLVE?". YES is irreversible by design. */
-function resolveEvoConfirm(b: BattleState, stopIt: boolean): void {
-  if (!stopIt) {
-    if (b.evoScene) {
-      // resume from the frozen elapsed count, not from wherever b.t drifted to
-      b.evoScene.start = b.t - b.evoScene.pausedAt!;
-      b.evoScene.pausedAt = undefined;
-      b.phase = 'evolveScene';
-    } else {
-      b.phase = 'evolve';
-      b.sel = 0;
-    }
-    return;
-  }
-  const src = b.evoScene ?? b.evolve!;
-  src.mon.noEvolve = true; // permanent — gainXp never offers this mon again
-  b.evoScene = undefined;
-  b.evolve = undefined;
-  b.phase = 'anim';
-  say(b, ['...it stopped.'], src.next);
-}
-
-function processOffers(b: BattleState, mon: MonInstance, offers: MoveId[], then: () => void): void {
-  const next = offers.shift();
-  if (!next) {
-    then();
-    return;
-  }
-  say(b, [monName(mon) + ' wants', 'to learn', MOVES[next].name + '!'], () => {
-    b.phase = 'replace';
-    b.sel = 0;
-    b.replace = { mon, move: next, next: () => processOffers(b, mon, offers, then) };
   });
 }
 
