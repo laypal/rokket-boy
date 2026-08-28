@@ -28,7 +28,6 @@ import { bootToWorld, skipTour } from './boot';
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
   quest: { flags: Record<string, boolean> };
-  install: { prompted: boolean; fake(): void; reset(): void };
 }
 declare global {
   interface Window {

@@ -7,7 +7,6 @@ import { EGG_TOTAL } from '../data/eggs';
 import { ctx, decode, fill, rect, text, textC, glyph, startFade, drawWindow, W, H } from '../engine/renderer';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
-import { canInstall, promptInstall } from '../engine/install';
 import { CHAR_FRAMES } from '../engine/charFrames';
 import { quest } from './quest';
 import { hasSave, readSave, applySave } from './save';
@@ -104,9 +103,6 @@ export function titleUpdate(): void {
   ctx.drawImage(CHAR_FRAMES.djames.right[walk], wx + 20, H - 30);
   if (titleSel === null && (G.titleT >> 4) & 1) textC('PRESS START', 104, pal[0]);
   textC('ANTI-FAN GAMES 2026', 118, pal[1]);
-  // PKG.4: the game invites its own install — only while Chrome is offering
-  // one, never under the CONTINUE/NEW GAME window (drawn below, y 92–128)
-  if (titleSel === null && canInstall()) textC('SELECT: INSTALL APP', 126, pal[1]);
   // HRD.3 build stamp — stays in prod (harmless, useful in bug screenshots)
   text(typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev', 2, 133, pal[1]);
   // CONTINUE/NEW GAME window (only offered when a save exists)
@@ -133,10 +129,6 @@ export function titleUpdate(): void {
       else startIntro();
     }
     return;
-  }
-  if (Input.hit('select') && canInstall()) {
-    Audio2.sfx('confirm');
-    promptInstall();
   }
   // konami
   for (const k of ['up', 'down', 'left', 'right', 'a', 'b', 'start']) {

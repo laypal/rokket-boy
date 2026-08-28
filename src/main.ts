@@ -28,7 +28,6 @@ import { SPECIES } from './data/mons';
 import { maxHp } from './systems/mon';
 import { findPartyMon, xpToReach, hpFromArg } from './systems/debugResolve';
 import { requestPersist } from './engine/storage';
-import { initInstall, resetInstall } from './engine/install';
 import type { WarpDef } from './types';
 
 // HRD.3: field error capture from the very first frame — the loop guard
@@ -63,7 +62,6 @@ initInput({
 // is harmless — one code path, no mode branch. Absent on file:// and in
 // browsers without SW support; a failed registration is not the game's problem.
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-initInstall(window); // PKG.4: hold beforeinstallprompt for the title screen
 
 registerState('boot', bootUpdate);
 registerState('title', titleUpdate);
@@ -233,28 +231,6 @@ if (import.meta.env.DEV) {
         return;
       }
       if (!useLevelCandy(mon)) console.error('[__debug.levelCandy] MAXED OUT.');
-    },
-    // PKG.4: fake Chrome's install offer so e2e/playtester can see the title
-    // line and press SELECT without a real prompt. `prompted` flips when the
-    // game calls prompt().
-    install: {
-      prompted: false,
-      fake(): void {
-        const ev = new Event('beforeinstallprompt', { cancelable: true });
-        Object.assign(ev, {
-          prompt: () => {
-            (window as unknown as { __debug: { install: { prompted: boolean } } }).__debug.install.prompted = true;
-            return Promise.resolve();
-          },
-        });
-        window.dispatchEvent(ev);
-      },
-      // clear a REAL offer (Chromium fires one on localhost) so a "no offer"
-      // baseline is stageable; also drops `prompted` back to false
-      reset(): void {
-        resetInstall();
-        (window as unknown as { __debug: { install: { prompted: boolean } } }).__debug.install.prompted = false;
-      },
     },
   };
 }
