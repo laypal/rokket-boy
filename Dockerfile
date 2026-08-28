@@ -15,5 +15,9 @@ RUN npm run build
 RUN node scripts/gen-headers-conf.mjs dist/team-rokket.html > /app/security-headers.conf
 
 FROM nginx:stable-alpine@sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46
-COPY --from=build /app/dist/team-rokket.html /usr/share/nginx/html/index.html
+# PKG.2/3: the whole dist/ — single-file game plus the PWA statics
+# (manifest, icons, sw.js) Vite copies from public/. The rename keeps
+# nginx's index resolution; nothing else changed.
+COPY --from=build /app/dist/ /usr/share/nginx/html/
+RUN mv /usr/share/nginx/html/team-rokket.html /usr/share/nginx/html/index.html
 COPY --from=build /app/security-headers.conf /etc/nginx/conf.d/security-headers.conf

@@ -6,6 +6,7 @@ import { bootToWorld } from './boot';
 interface DebugHandle {
   G: { state: string; frame: number; map: { id: string; name: string }; player: { x: number; y: number } };
   quest: { flags: Record<string, boolean> };
+  install: { prompted: boolean; fake(): void; reset(): void };
 }
 declare global {
   interface Window {
@@ -40,4 +41,20 @@ test('boots to title, skips the intro, lands in ROKKET HQ', async ({ page }) => 
   expect(nonBlank).toBe(true);
 
   expect(await state(page)).toBe('world');
+});
+
+// PKG.4: a faked beforeinstallprompt lights the title line; SELECT prompts.
+test('title screen offers the install and SELECT triggers it', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__debug.G.state === 'title', undefined, { timeout: 10_000 });
+  // Chromium fires a REAL beforeinstallprompt on localhost — reset() clears
+  // it so this test doesn't depend on whether that already landed.
+  await page.evaluate(() => window.__debug.install.reset());
+  await page.evaluate(() => window.__debug.install.fake());
+  // a frame for the line to draw, then SELECT (Shift in the keymap)
+  const f0 = await page.evaluate(() => window.__debug.G.frame);
+  await page.waitForFunction(([f]) => window.__debug.G.frame >= f + 2, [f0]);
+  await page.keyboard.press('Shift');
+  await page.waitForFunction(() => window.__debug.install.prompted, undefined, { timeout: 5_000 });
+  expect(await state(page)).toBe('title'); // still on the title — prompt is Chrome's sheet, not a state
 });

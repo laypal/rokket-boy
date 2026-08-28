@@ -14,7 +14,12 @@ export default tseslint.config(
   },
   {
     files: ['scripts/**/*.mjs'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+    languageOptions: { globals: { console: 'readonly', process: 'readonly', Buffer: 'readonly', URL: 'readonly' } },
+  },
+  {
+    // PKG.3: the service worker runs in a worker scope, not a window
+    files: ['public/sw.js'],
+    languageOptions: { globals: { self: 'readonly', caches: 'readonly', fetch: 'readonly', Response: 'readonly' } },
   },
   {
     // HRD.7: lock in what's already true of src/ — zero stray logs, zero any,

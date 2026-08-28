@@ -30,6 +30,11 @@ test('prod deployment serves the game', async ({ page }) => {
   expect(csp).toContain("frame-ancestors 'none'");
   expect(csp).toContain("base-uri 'none'");
   expect(csp).toContain("form-action 'none'");
+  // PKG.2/3: the PWA statics are allowed by CSP and actually served
+  expect(csp).toContain("img-src 'self' data:");
+  expect(csp).toContain("manifest-src 'self'");
+  expect(csp).toContain("worker-src 'self'");
+  expect(csp).toContain("connect-src 'self'");
   // server_tokens off — nginx may name itself, but never with a version
   expect(headers['server'] ?? '').not.toMatch(/[0-9]/);
 
@@ -40,4 +45,17 @@ test('prod deployment serves the game', async ({ page }) => {
   // this is also the CSP canary: a wrong script hash kills boot loudly
   await page.waitForTimeout(1_000);
   expect(errors).toEqual([]);
+});
+
+test('prod serves the PWA statics next to the game', async ({ request }) => {
+  const manifest = await request.get('/manifest.webmanifest');
+  expect(manifest.status()).toBe(200);
+  expect(JSON.parse(await manifest.text()).display).toBe('standalone');
+  const icon = await request.get('/icon-192.png');
+  expect(icon.status()).toBe(200);
+  expect(icon.headers()['content-type']).toBe('image/png');
+  const sw = await request.get('/sw.js');
+  expect(sw.status()).toBe(200);
+  expect(sw.headers()['content-type']).toContain('javascript');
+  expect(sw.headers()['cache-control']).toBe('no-cache'); // a new worker ships with the deploy that carries it
 });

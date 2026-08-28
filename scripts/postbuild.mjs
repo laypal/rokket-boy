@@ -7,6 +7,9 @@ const src = 'dist/index.html';
 const out = 'dist/team-rokket.html';
 if (existsSync(out)) rmSync(out);
 renameSync(src, out);
+// PKG.3: public/sw.d.ts is the tsc twin for tests/sw.test.ts, not a deploy
+// asset — Vite copies public/ wholesale, so drop it here.
+rmSync('dist/sw.d.ts', { force: true });
 
 const bytes = statSync(out).size;
 const err = checkArtifactSize(bytes, SIZE_LIMIT_BYTES);

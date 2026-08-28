@@ -24,8 +24,14 @@ const csp = [
   "default-src 'none'",
   `script-src ${tokens.join(' ')}`,
   "style-src 'unsafe-inline'",
-  'img-src data:',
+  // PKG.2/3: 'self' covers the manifest icons, the service worker script
+  // and the worker's own fetch() (nginx sends this header on /sw.js too —
+  // without connect-src a worker under default-src 'none' can't fetch).
+  "img-src 'self' data:",
   'media-src data:',
+  "manifest-src 'self'",
+  "worker-src 'self'",
+  "connect-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'none'",
   "form-action 'none'",

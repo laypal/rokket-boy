@@ -15,5 +15,5 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "tests", "e2e", "e2e-prod", "vite.config.ts", "playwright.config.ts", "playwright.prod.config.ts"]
+  "include": ["src", "tests", "e2e", "e2e-prod", "e2e-dist", "vite.config.ts", "playwright.config.ts", "playwright.prod.config.ts", "playwright.dist.config.ts"]
 }
