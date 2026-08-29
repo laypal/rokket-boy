@@ -5,6 +5,8 @@
 
 /** Item a wild-battle SWIPE consumes (plan §4.4; buyable from Ch.2). */
 export const BALL_ITEM = 'ROKKET BALL';
+/** CH5.0 §1: the key item that lifts the LAVENDAR TOWER's fog (systems/fog.ts). */
+export const SCOPE_ITEM = 'SILF SCOPE';
 
 export type ItemKind = 'heal' | 'ball' | 'key' | 'quest' | 'gear' | 'candy';
 
@@ -28,6 +30,12 @@ export const ITEMS: Record<string, ItemDef> = {
   SODA: { id: 'SODA', kind: 'heal', price: 60, heal: 20, desc: 'RESTORES 20 HP.' },
   'SMOKE BALL': { id: 'SMOKE BALL', kind: 'key', price: 0, desc: 'GUARANTEED FLEE.' },
   'CASE OF COINS': { id: 'CASE OF COINS', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // CH5 LAVENDAR TOWER — the SCOPE lifts the fog (a 2F pickup), the CHARM is
+  // the only thing the spirit fight answers to (consumed there), the MASK is
+  // the prize. None buyable, none sellable (canSell excludes key/quest).
+  [SCOPE_ITEM]: { id: SCOPE_ITEM, kind: 'key', price: 0, desc: 'SEES THROUGH FOG.' },
+  'BONE CHARM': { id: 'BONE CHARM', kind: 'key', price: 0, desc: 'CALMS A SPIRIT.' },
+  'BONE MASK': { id: 'BONE MASK', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
   // SIDE.7: the Gamez Corner jackpot prize — never stocked, never bought;
   // only the special machine's tile script grants it (dialog/corner.ts).
   'LEVEL CANDY': { id: 'LEVEL CANDY', kind: 'candy', price: 0, desc: 'UP ONE LEVEL.' },

@@ -4,7 +4,8 @@
 // from the open floor; the sign says the same, louder. `w`/`B` scenery
 // (river glimpse + fence posts) previews the bridge before you reach it.
 // Palette 'span' + the 'bridge' track (CH3.2) carry over from the span itself.
-// CH4.2: a second east door at (20,6) opens onto the ANN DOCK.
+// CH4.2: a second east door at (20,6) opens onto the ANN DOCK. CH5.2: a
+// south door 'o' at (10,8) opens onto LAVENDAR TOWER (row 8, was all wall).
 import type { MapDef } from '../../types';
 import { outskirtsScripts } from '../dialog/outskirts';
 import { makeMap } from './make';
@@ -23,7 +24,7 @@ export const outskirtsMap: MapDef = makeMap({
     '#  B             B  #',
     'o                   o',
     '#                   #',
-    '#####################',
+    '##########o##########',
   ],
   npcs: [
     { id: 'shill', char: 'grunt', x: 14, y: 6, dir: 'down' },
@@ -45,6 +46,7 @@ export const outskirtsMap: MapDef = makeMap({
     '0,6': ['moon1', 18, 4, 'left'],
     '10,0': ['bridge', 6, 18, 'up'],
     '20,6': ['dock', 1, 6, 'right'],
+    '10,8': ['lav1', 9, 10, 'up'],
   },
   scripts: outskirtsScripts,
 });

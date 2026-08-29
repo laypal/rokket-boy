@@ -5,7 +5,7 @@ import type { SpriteRows } from './data/sprites';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -60,6 +60,15 @@ export interface Flags {
   ch4Safe: boolean;    // the captain's safe is cracked: loot in hand, clock running
   ch4Done: boolean;    // the security chief fell — LIEUTENANT
   disguised: boolean;  // the suit is ON right now (dropped on landing off-ship)
+  // CH5 (LAVENDAR TOWER) — contract in .paul/PLAN.md CH5.0 §8. No save bump.
+  ch5Briefed: boolean; // Giovanni's CH5 briefing heard (ONB.3 marker pattern)
+  ch5Spirit: boolean;  // the MAROWL spirit calmed with the BONE CHARM
+  ch5Mask: boolean;    // the BONE MASK is off the altar
+  ch5Myowth: boolean;  // Myowth joined the party (the conscience scene ran)
+  ch5Done: boolean;    // the mask handed in at HQ
+  lavMedium1: boolean; // 2F MEDIUM beaten (one payday, no rematch)
+  lavMedium2: boolean; // 3F MEDIUM beaten
+  myowthGagSeen: boolean; // the HQ Myowth's "two of me" fourth-wall gag has played (Lyall, 2026-08-29)
 }
 export type FlagName = keyof Flags;
 
@@ -73,6 +82,8 @@ export type Cond =
   | { varRoll: [string, number] } // SIDE.7: quest.varRoll(vars[name] ?? 0, p) — seeded per-spin jackpot odds
   | { coinsAtLeast: number }      // SIDE.7-FB: quest.coins >= n — the Q machine's stake gate
   | { dexComplete: true } // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
+  | { hasItem: string }   // CH5.0 §6: the PACK holds this item id — the SILF SCOPE gate
+  | { partyFull: true }   // CH5.3 playtest: the party is at its cap (quest.setPartySize provider) — branch BEFORE a giveMon
   | { all: Cond[] }       // ONB.3: every child holds (empty = true)
   | { any: Cond[] };      // ONB.3: at least one child holds (empty = false)
 
@@ -195,6 +206,9 @@ export interface MapDef {
   /** CH4.0 §3: OBJ_PAL key the player is drawn in while disguised here.
    *  Absent = no disguise possible on this map; landing here takes it off. */
   disguise?: string;
+  /** CH5.0 §1: fog of war — worldDraw masks every tile outside the lantern
+   *  ring (systems/fog.ts) until the SILF SCOPE is in the PACK. */
+  fog?: true;
 }
 
 // ── Phase 1 mon/move data model (plan §4.1) ────────────────────────────────
@@ -240,6 +254,14 @@ export interface MonSpecies {
   heightM: number;   // 0.1 ≤ h ≤ 99.9
   weightKg: number;  // 0.1 ≤ w ≤ 999.9
   dex: string[];     // 1..2 lines, ≤ 18 glyphs each (uppercase, ASCII)
+  /** CH5.0 §4: battle-text pages this mon speaks as it takes the field (open
+   *  and every switch-in), rotating through `quest.vars['talk_' + id]`. Each
+   *  entry is ONE battle-box page (≤3 lines × 17, content-lint). Myowth. */
+  talk?: string[][];
+  /** CH5.0 §5: a set-piece foe no ball can hold (MAROWL; MYOOTOO-0 later).
+   *  Left out of the GRUNTDEX denominator (mon.ts dexTotal); the data lint
+   *  keeps it out of wild tables and catchable encounters. */
+  bossOnly?: true;
 }
 
 export interface MonInstance {
@@ -301,6 +323,17 @@ export interface EncounterDef {
    *  names a SODA the rematch never handed over (Lyall, 2026-08-22).
    *  Absent = coach whenever `spar` is set. */
   coachIf?: Cond;
+  /** CH5.0 §2: a fight that cannot be won — every hit passes through, LEG IT
+   *  and SMOKE BALL are off, and the ONE item named here ends it (consumed,
+   *  onWin runs, no xp). A wipe is the spar-style clean loss: party healed
+   *  in place, no coins lost, onLose as the epilogue. Requires `uncatchable`
+   *  (data lint). `hint` is ONE battle-box page said after "Go! X!" at the
+   *  open and again after every hit that passes through — Lyall's dev test
+   *  (2026-08-29): the way out has to be obvious IN the fight, not just in
+   *  a mourner's line two floors down. */
+  unwinnable?: { item: string; hint: string[] };
+  /** CH5.0 §2: TRACKS id played instead of `battle` — the spirit's `ghost`. */
+  music?: string;
   winText: string[];     // trainer's concession lines (one battle message)
   onWin: ScriptStep[];
   onLose: ScriptStep[];

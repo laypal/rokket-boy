@@ -13,6 +13,9 @@ import { dockMap } from './dock';
 import { deck1Map } from './deck1';
 import { deck2Map } from './deck2';
 import { cabinMap } from './cabin';
+import { lav1Map } from './lav1';
+import { lav2Map } from './lav2';
+import { lav3Map } from './lav3';
 
 export const MAPS: Record<MapId, MapDef> = {
   hq: hqMap,
@@ -29,4 +32,7 @@ export const MAPS: Record<MapId, MapDef> = {
   deck1: deck1Map,
   deck2: deck2Map,
   cabin: cabinMap,
+  lav1: lav1Map,
+  lav2: lav2Map,
+  lav3: lav3Map,
 };

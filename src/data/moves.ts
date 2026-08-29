@@ -20,4 +20,10 @@ export const MOVES: Record<MoveId, MoveDef> = {
   rumble:  { id: 'rumble',  name: 'RUMBLE',  type: 'GROUND',   power: 75, acc: 0.8,  anim: 'blast', desc: 'THE GROUND HEAVES.' },
   wrap:    { id: 'wrap',    name: 'WRAP',    type: 'NORMAL',   power: 25, acc: 0.9,  anim: 'rings', desc: 'A CRUSHING COIL.' },
   sting:   { id: 'sting',   name: 'PSN STING',type: 'POISON',  power: 35, acc: 0.95, anim: 'lob',   desc: 'A VENOMOUS JAB.' },
+  // SPR.C — WHEEZINK/GASTLEE/HAUNTOR/MYOWTH/MAROWL learnsets (CH5).
+  lick:      { id: 'lick',      name: 'LICK',      type: 'GHOST',  power: 30, acc: 1,    anim: 'lunge', desc: 'A COLD, WET LICK.' },
+  spook:     { id: 'spook',     name: 'SPOOK',     type: 'GHOST',  power: 50, acc: 0.9,  anim: 'rings', desc: 'A CHILLING SHRIEK.' },
+  shade:     { id: 'shade',     name: 'SHADE',     type: 'GHOST',  power: 70, acc: 0.85, anim: 'gas',   desc: 'SHADOWS SWALLOW.' },
+  boneclub:  { id: 'boneclub',  name: 'BONE CLUB', type: 'GROUND', power: 65, acc: 0.85, anim: 'lob',   desc: 'A THROWN OLD BONE.' },
+  payday:    { id: 'payday',    name: 'PAY DAY',   type: 'NORMAL', power: 40, acc: 1,    anim: 'lob',   desc: 'COINS FLY. YOURS.' },
 };

@@ -10,6 +10,8 @@ import {
   ZUBATT_FRONT, ZUBATT_BACK, GOLBATT_FRONT, GOLBATT_BACK,
   GEODOOD_FRONT, GEODOOD_BACK, GRAVLR_FRONT, GRAVLR_BACK,
   EKANZZ_FRONT, EKANZZ_BACK, ARBOK_FRONT, ARBOK_BACK,
+  WHEEZINK_FRONT, WHEEZINK_BACK, GASTLEE_FRONT, GASTLEE_BACK,
+  HAUNTOR_FRONT, HAUNTOR_BACK, MYOWTH_FRONT, MYOWTH_BACK, MAROWL_FRONT,
 } from './chars';
 import { OBJ_PAL } from './palettes';
 
@@ -28,6 +30,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 9, move: 'screech' },
       { lv: 14, move: 'sludge' },
     ],
+    evolvesTo: { id: 'wheezink', lv: 28 }, // SPR.C — completes the starter line
     front: KOFFINK_BACK, // placeholder until the KOFFINK front sprite card
     back: KOFFINK_BACK,
     pal: OBJ_PAL.koffink,
@@ -233,5 +236,126 @@ export const SPECIES: Record<string, MonSpecies> = {
     heightM: 3.5,
     weightKg: 65.0,
     dex: ['THE HOOD PATTERN', 'SCARES DEBTORS.'],
+  },
+  // SPR.C — WHEEZINK/GASTLEE/HAUNTOR/MYOWTH/MAROWL, needed by CH5. WHEEZINK
+  // completes the starter line (KOFFINK lv 28); GASTLEE evolves to HAUNTOR.
+  wheezink: {
+    id: 'wheezink',
+    name: 'WHEEZINK',
+    type: ['POISON'],
+    baseHp: 65,
+    atk: 90,
+    def: 120,
+    spd: 60,
+    moves: [
+      { lv: 1, move: 'tackle' },
+      { lv: 1, move: 'smog' },
+      { lv: 9, move: 'screech' },
+      { lv: 14, move: 'sludge' },
+    ],
+    front: WHEEZINK_FRONT,
+    back: WHEEZINK_BACK,
+    pal: OBJ_PAL.koffink, // reuses the KOFFINK/WHEEZINK line palette
+    catchRate: 0.2,
+    heightM: 1.2,
+    weightKg: 9.5,
+    dex: ['TWO HEADS. TWICE', 'THE COMPLAINING.'],
+  },
+  gastlee: {
+    id: 'gastlee',
+    name: 'GASTLEE',
+    type: ['GHOST'],
+    baseHp: 30,
+    atk: 35,
+    def: 30,
+    spd: 80,
+    moves: [
+      { lv: 1, move: 'lick' },
+      { lv: 8, move: 'spook' },
+      { lv: 14, move: 'drain' },
+      { lv: 20, move: 'shade' },
+    ],
+    evolvesTo: { id: 'hauntor', lv: 25 },
+    front: GASTLEE_FRONT,
+    back: GASTLEE_BACK,
+    pal: OBJ_PAL.gastlee,
+    catchRate: 0.4,
+    heightM: 1.3,
+    weightKg: 0.1,
+    dex: ['GRINS IN THE DARK.', 'MOSTLY AT YOU.'],
+  },
+  hauntor: {
+    id: 'hauntor',
+    name: 'HAUNTOR',
+    type: ['GHOST'],
+    baseHp: 45,
+    atk: 50,
+    def: 45,
+    spd: 95,
+    moves: [
+      { lv: 1, move: 'lick' },
+      { lv: 1, move: 'spook' },
+      { lv: 14, move: 'drain' },
+      { lv: 20, move: 'shade' },
+    ],
+    front: HAUNTOR_FRONT,
+    back: HAUNTOR_BACK,
+    pal: OBJ_PAL.gastlee,
+    catchRate: 0.2,
+    heightM: 1.6,
+    weightKg: 0.1,
+    dex: ['THE HANDS ARE NOT', 'ATTACHED. ASK WHY.'],
+  },
+  myowth: {
+    id: 'myowth',
+    name: 'MYOWTH',
+    type: ['NORMAL'],
+    baseHp: 40,
+    atk: 45,
+    def: 40,
+    spd: 90,
+    moves: [
+      { lv: 1, move: 'bite' },
+      { lv: 6, move: 'screech' },
+      { lv: 12, move: 'payday' },
+      { lv: 24, move: 'chomp' },
+    ],
+    front: MYOWTH_FRONT,
+    back: MYOWTH_BACK,
+    pal: OBJ_PAL.myowth,
+    catchRate: 0.3,
+    heightM: 0.4,
+    weightKg: 4.2,
+    dex: ['KNOWS IT IS IN A', 'GAME. UNBOTHERED.'],
+    // CH5.0 §4 — talks in battle text as it takes the field; pages rotate
+    // through quest.vars['talk_myowth'] (script.ts, CH5 content).
+    talk: [
+      ['MYOWTH: Ugh,', 'a fight. Fine.', 'FINE.'],
+      ['MYOWTH: Do I', 'get paid for', 'this? No? Cool.'],
+      ['MYOWTH: Watch', 'the claws. They', 'are insured.'],
+      ['MYOWTH: The', 'player picks', 'FIGHT. Classic.'],
+    ],
+  },
+  marowl: {
+    id: 'marowl',
+    name: 'MAROWL',
+    type: ['GHOST'], // single-typed: 'GHOST/GROUND' overflows the dex page's DETAIL_COL_CAP (10); the bone club is a GROUND move regardless
+    baseHp: 60,
+    atk: 80,
+    def: 110,
+    spd: 45,
+    moves: [
+      { lv: 1, move: 'boneclub' },
+      { lv: 1, move: 'spook' },
+      { lv: 1, move: 'shade' },
+    ],
+    front: MAROWL_FRONT,
+    back: MAROWL_FRONT, // koffink placeholder-reuse rule — a boss's back is never drawn
+    pal: OBJ_PAL.marowl,
+    catchRate: 0.05,
+    heightM: 1.0,
+    weightKg: 45.0,
+    dex: ['WEARS THE SKULL OF', 'ITS OWN MOTHER.'],
+    bossOnly: true, // CH5.0 §5 — a set-piece foe no ball can hold
   },
 };

@@ -102,6 +102,7 @@ describe('species registry', () => {
     expect(SPECIES.zubatt.evolvesTo).toEqual({ id: 'golbatt', lv: 18 });
     expect(SPECIES.geodood.evolvesTo).toEqual({ id: 'gravlr', lv: 18 });
     expect(SPECIES.ekanzz.evolvesTo).toEqual({ id: 'arbok', lv: 21 });
+    expect(SPECIES.koffink.evolvesTo).toEqual({ id: 'wheezink', lv: 28 });
   });
 
   // MNU.3 — the dex page's flavour block. Same ASCII-printable rule the

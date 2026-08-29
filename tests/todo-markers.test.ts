@@ -215,7 +215,14 @@ describe('briefing text untouched (D4 ordering)', () => {
   });
 
   it('pins setFlag-before-say ordering in the CH2/CH3/CH4 briefing branches, reading the data directly', () => {
-    const top = hqScripts['npc:giovanni'][0];
+    // CH5.3 wrapped the old chain in three more outer branches (ch5Done
+    // afterglow, ch5Mask hand-in, ch4Done -> CH5 briefing) — walk past them
+    // to reach the same `if ch4Done` node this pin originally started from.
+    const outerCh5Done = hqScripts['npc:giovanni'][0];
+    if (!('if' in outerCh5Done) || !outerCh5Done.else) throw new Error('unexpected giovanni script shape (ch5Done)');
+    const outerCh5Mask = outerCh5Done.else[0];
+    if (!('if' in outerCh5Mask) || !outerCh5Mask.else) throw new Error('unexpected giovanni script shape (ch5Mask)');
+    const top = outerCh5Mask.else[0]; // if ch4Done (now the CH5 briefing node)
     if (!('if' in top) || !top.else) throw new Error('unexpected giovanni script shape');
     const ch3DoneIf = top.else[0]; // else[0] of the top `if ch4Done`
     if (!('if' in ch3DoneIf) || !ch3DoneIf.else) throw new Error('unexpected shape (ch3Done)');

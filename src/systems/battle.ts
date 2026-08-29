@@ -163,7 +163,7 @@ function makeFoe(enc: EncounterDef): MonInstance {
 // ScriptHooks.battle stays string-typed; this takes a superset.
 export function startBattle(encounter: string | EncounterDef, done: (followUp: ScriptStep[] | null) => void): void {
   const enc = typeof encounter === 'string' ? ENCOUNTERS[encounter] : encounter;
-  Audio2.play('battle');
+  Audio2.play(enc.music ?? 'battle'); // CH5.0 §2: a set piece brings its own track
   G.battle = {
     enc,
     done,
@@ -224,6 +224,20 @@ function coach(b: BattleState, on: CoachBeat['on']): boolean {
   return true;
 }
 
+/** CH5.0 §4: a party mon with `talk` pages speaks as it takes the field —
+ *  battle open and every switch-in. The page rotates through a saved
+ *  counter (the sayCycle idiom), so Myowth's four lines come round in order
+ *  across battles instead of repeating the first one. */
+function monTalk(b: BattleState): void {
+  const mon = active(b);
+  const pages = spec(mon).talk;
+  if (!pages?.length) return;
+  const key = 'talk_' + mon.species;
+  const n = quest.vars[key] ?? 0;
+  quest.vars[key] = n + 1;
+  say(b, pages[n % pages.length]);
+}
+
 export function battleUpdate(): void {
   const b = G.battle!;
   b.t++;
@@ -237,6 +251,8 @@ export function battleUpdate(): void {
         if (b.enc.trainer) say(b, wrapWords(b.enc.trainer + ' sent out ' + spec(b.foe).name + '!'));
         else say(b, ['Wild ' + spec(b.foe).name, 'appeared!']);
         say(b, ['Go! ' + monName(active(b)) + '!']);
+        monTalk(b); // CH5.0 §4 — a talker's line rides right behind "Go!"
+        if (b.enc.unwinnable) say(b, b.enc.unwinnable.hint); // CH5-FB — the way out, said up front
         coach(b, 'firstTurn'); // ONB.5 — lands after "Go! …", before the menu
         afterQueue(b, () => toMenu(b));
       }
@@ -336,6 +352,13 @@ function useMove(b: BattleState, id: MoveId): void {
     // never re-roll or recompute (13-battle-fx.md hard rule, same as the fx).
     const mult = effectiveness(mv.type, foeSp.type);
     playFx(b, mv.anim, 'me', mv.type, () => {
+      if (b.enc.unwinnable) {
+        // CH5.0 §2: nothing lands on a spirit — no hp, no float, no drain.
+        // The rolls above already happened, so rng order is untouched.
+        say(b, ['But it passed', 'right through!']);
+        say(b, b.enc.unwinnable.hint, () => enemyTurn(b)); // CH5-FB — and again every time a hit fails
+        return;
+      }
       Audio2.sfx('hit');
       b.shakeFoe = 14;
       b.foe.hp = Math.max(0, b.foe.hp - dmg);
@@ -420,9 +443,12 @@ function doSwipe(b: BattleState): void {
 }
 
 // ── ITEM: use a heal or the SMOKE BALL mid-battle (plan §4.5) ─────────────
-/** Distinct pack items usable in battle (heals + SMOKE BALL), with counts. */
-export function battleItems(): { id: string; count: number }[] {
-  return packCounts(quest.items).filter((e) => usableInBattle(e.id));
+/** Distinct pack items usable in battle, with counts: heals plus SMOKE BALL
+ *  — or, in an unwinnable fight, heals plus the one item it answers to
+ *  (CH5.0 §2; SMOKE BALL is simply not on the list there). */
+export function battleItems(enc: Pick<EncounterDef, 'unwinnable'> | null = G.battle?.enc ?? null): { id: string; count: number }[] {
+  const keys = enc?.unwinnable ? [enc.unwinnable.item] : ['SMOKE BALL'];
+  return packCounts(quest.items).filter((e) => usableInBattle(e.id, keys));
 }
 function consume(id: string): void {
   const i = quest.items.indexOf(id);
@@ -446,6 +472,15 @@ function useItem(b: BattleState, id: string): void {
     b.phase = 'target';
     b.pendingItem = id;
     b.sel = b.meIdx;
+    return;
+  }
+  if (b.enc.unwinnable && id === b.enc.unwinnable.item) {
+    // CH5.0 §2: the one item this fight answers to. Consumed; the encounter's
+    // onWin tells the story. No xp — nothing was defeated.
+    consume(id);
+    Audio2.sfx('item');
+    b.phase = 'anim';
+    say(b, ['The ' + id, 'glows softly...'], () => winBattle(b));
     return;
   }
   // key item — SMOKE BALL: guaranteed getaway; §4.8 also blows one stage off
@@ -520,7 +555,9 @@ function pickSwitch(b: BattleState): void {
   b.meIdx = b.sel;
   if (!b.participants.includes(b.sel)) b.participants.push(b.sel); // QOL.7
   b.phase = 'anim';
-  say(b, ['Go! ' + monName(active(b)) + '!'], () => (wasForced ? toMenu(b) : enemyTurn(b)));
+  say(b, ['Go! ' + monName(active(b)) + '!']);
+  monTalk(b); // CH5.0 §4 — switch-ins talk too
+  afterQueue(b, () => (wasForced ? toMenu(b) : enemyTurn(b)));
 }
 
 /** CH4 playtest: word-wrap a GENERATED battle line to the box's 17-glyph
@@ -543,6 +580,11 @@ export function wrapWords(text: string, w = 17): string[] {
 
 function doFlee(b: BattleState): void {
   b.phase = 'anim';
+  if (b.enc.unwinnable) {
+    // CH5.0 §2: no way out but the item (or the clean loss). No turn passes.
+    say(b, ["Can't escape!"], () => toMenu(b));
+    return;
+  }
   const lines = b.enc.trainer
     ? ['Got away safely!', ...wrapWords('...' + b.enc.trainer + ' is still there.')]
     : ['Got away safely!'];
@@ -639,12 +681,14 @@ function myMonFainted(b: BattleState): void {
       });
       return;
     }
-    if (b.enc.spar) {
+    if (b.enc.spar || b.enc.unwinnable) {
       // SIDE.5: training loss — no disgrace tax, no HQ warp. The full-heal
       // mirrors the whiteout's (a wiped party walking the world is a state
       // the game has never allowed); the exit mirrors winBattle, so onLose
       // runs as a true epilogue instead of a post-whiteout one.
-      say(b, ['No shame in a', 'practice loss!']);
+      // CH5.0 §2: an unwinnable fight loses the same clean way — the hint
+      // for next time lives in its onLose.
+      say(b, b.enc.unwinnable ? ['Overwhelmed...', 'You stumble', 'back.'] : ['No shame in a', 'practice loss!']);
       afterQueue(b, () => {
         for (const m of G.party) m.hp = maxHp(SPECIES[m.species], m.lv);
         G.battle = null;

@@ -188,7 +188,7 @@ describe('the CHIEF NPC visibility window (dock)', () => {
 });
 
 describe('ch4 chapter-objective derivation', () => {
-  it('walks SUIT UP -> CRACK THE SAFE -> BEAT THE CHIEF -> AWAIT ORDERS.', () => {
+  it('walks SUIT UP -> CRACK THE SAFE -> BEAT THE CHIEF -> FIND THE SCOPE (CH5 follows)', () => {
     quest.flags.briefed = true;
     quest.flags.guardBeaten = true;
     quest.flags.switchFound = true;
@@ -210,7 +210,7 @@ describe('ch4 chapter-objective derivation', () => {
     quest.flags.ch4Safe = true;
     expect(currentObjective()).toBe('BEAT THE CHIEF');
     quest.flags.ch4Done = true;
-    expect(currentObjective()).toBe('AWAIT ORDERS.');
+    expect(currentObjective()).toBe('FIND THE SCOPE'); // CH5's first step follows (CH5.0 §9)
   });
 });
 

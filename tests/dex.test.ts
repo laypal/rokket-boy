@@ -5,7 +5,7 @@
 // Worker C appends the clerk-content tests below the predicate block.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { dexComplete } from '../src/systems/dex';
-import { dexCount } from '../src/systems/mon';
+import { dexCount, dexTotal } from '../src/systems/mon';
 import { SPECIES } from '../src/data/mons';
 import { quest, resetQuest, checkCond, setDexMons } from '../src/systems/quest';
 import { runScript, type ScriptHooks } from '../src/systems/script';
@@ -15,7 +15,9 @@ import { hqMap } from '../src/data/maps/hq';
 const m = (species: string) => ({ species });
 /** Six mons that credit every current species under line credit: each
  *  evolved form walks back to its base, koffink/voltorbb are standalone. */
-const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb'].map(m);
+// CH5 (SPR.C): wheezink credits the KOFFINK line, hauntor the GASTLEE line; MAROWL is
+// bossOnly and outside the denominator (dexTotal), so no fixture ever holds it.
+const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth'].map(m);
 
 describe('dexComplete (SIDE.4)', () => {
   it('is false for an empty collection', () => {
@@ -24,7 +26,7 @@ describe('dexComplete (SIDE.4)', () => {
 
   it('is false one line short, true when every species id is credited', () => {
     const short = COMPLETE.filter((x) => x.species !== 'voltorbb');
-    expect(dexCount(short, SPECIES)).toBe(Object.keys(SPECIES).length - 1);
+    expect(dexCount(short, SPECIES)).toBe(dexTotal(SPECIES) - 1);
     expect(dexComplete(short, SPECIES)).toBe(false);
     expect(dexComplete(COMPLETE, SPECIES)).toBe(true);
   });

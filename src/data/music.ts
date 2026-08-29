@@ -136,6 +136,40 @@ export const TRACKS: Record<string, Track> = {
           D2 -  D2 -  D2 -  D2 -  G2 -  G2 -  G2 -  G2 -`,
     dr: `k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.s.s.s.`,
   },
+  // CH5 — LAVENDAR TOWER, a slow minor dirge (area loop)
+  dirge: {
+    bpm: 72,
+    p1: `D5 =  =  =  -  -  -  -  C5 =  =  =  -  -  -  -
+         A4 =  =  =  =  =  =  =  -  -  -  -  -  -  -  -
+         F4 =  =  =  -  -  -  -  D4 =  =  =  -  -  -  -
+         A3 =  =  =  =  =  =  =  =  =  =  =  =  =  -  -`,
+    p2: `D3 =  =  =  =  =  =  =  =  =  =  =  =  =  =  =
+         D3 =  =  =  =  =  =  =  =  =  =  =  =  =  =  =
+         A2 =  =  =  =  =  =  =  =  =  =  =  =  =  =  =
+         A2 =  =  =  =  =  =  =  D3 =  =  =  =  =  =  =`,
+    tri: `D2 =  =  =  =  =  =  =  A1 =  =  =  =  =  =  =
+          D2 =  =  =  =  =  =  =  A1 =  =  =  =  =  =  =
+          D2 =  =  =  =  =  =  =  A1 =  =  =  =  =  =  =
+          D2 =  =  =  =  =  =  =  A1 =  =  =  =  =  =  =`,
+    dr: `k............... ........h....... k............... ........h.......`,
+  },
+  // CH5 — the MAROWL spirit, bespoke boss loop (EncounterDef.music: 'ghost')
+  ghost: {
+    bpm: 140,
+    p1: `D4 D#4 D4 C#4 -  G#4 -  D4 D#4 D4 C#4 -  G#4 -  D4 -
+         E4 F4  E4 D#4 -  A4  -  E4 F4  E4 D#4 -  A4  -  E4 -
+         D4 C#4 C4 B3  -  F#4 -  D4 C#4 C4 B3  -  F#4 -  D4 -
+         C4 C#4 D4 D#4 -  G#4 =  =  -  -  D4  -  D#4 -  D4 -`,
+    p2: `-  A4  -  A4  -  A4  -  A4  -  A4  -  A4  -  A4  -  A4
+         -  G#4 -  G#4 -  G#4 -  G#4 -  G#4 -  G#4 -  G#4 -  G#4
+         -  A4  -  A4  -  A4  -  A4  -  A4  -  A4  -  A4  -  A4
+         -  G#4 -  G#4 -  G#4 -  G#4 -  D5  -  D5  -  D5  -  D5`,
+    tri: `D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2
+          D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2
+          D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2
+          D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2`,
+    dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.s.s.`,
+  },
   // Cold open — upbeat GB-fanfare energy, G major (ONB.9-FB: was too slow/minor)
   intro: {
     bpm: 150,

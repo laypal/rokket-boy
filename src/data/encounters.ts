@@ -11,7 +11,10 @@ import type { EncounterDef, ScriptStep } from '../types';
 // declining falls through to the world. Warp cell = the GAMEZ CORNER stairs'
 // landing (corner.ts), so ride and walk arrive identically. CH1 is excluded on
 // purpose: the HEAT escape IS the chapter and the hand-in is already at HQ.
-const RIDE_HOME: ScriptStep = {
+// CH5.2: exported so lav3's altar script (dialog/lav3.ts) can reuse it — the
+// only chapter-closing choice that fires from map data instead of an
+// ENCOUNTERS onWin (the mask hand-in happens back at HQ, not on the fight).
+export const RIDE_HOME: ScriptStep = {
   choice: {
     say: [['Job done. Head', 'back to HQ now?']],
     yes: [{ warp: ['hq', 9, 12, 'up'] }],
@@ -264,5 +267,52 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     ],
     onLose: [],
     onFlee: [{ say: [['CHIEF: Coward.', "I'm not chasing."]] }],
+  },
+  // ── CH5 LAVENDAR TOWER ──────────────────────────────────────────────────
+  // The two MEDIUMs are once-only side fights (own flags, own coin payouts,
+  // no ride-home — the chapter isn't over). lav_spirit is the set piece:
+  // CH5.0 §2's unwinnable contract — no trainer, uncatchable, every hit
+  // passes through, LEG IT and SMOKE BALL are both off. The ONE way out is
+  // using the BONE CHARM (the item named in `unwinnable`), which ends the
+  // fight via winBattle with no xp; a full wipe is a spar-style clean loss
+  // (party healed in place, no coins lost, map unchanged) with the hint —
+  // "bring the CHARM" — living in onLose as the epilogue. `music: 'ghost'`
+  // overrides the default battle track for the one fight that needs it.
+  lav_medium1: {
+    trainer: 'MEDIUM',
+    foe: { species: 'gastlee', lv: 17 },
+    winText: ["MEDIUM: It's...", 'gone. Thank you.'],
+    onWin: [
+      { setFlag: 'lavMedium1' },
+      { addCoins: 120 },
+      { say: [['She slumps, then', 'presses coins', 'into your hand.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  lav_medium2: {
+    trainer: 'MEDIUM',
+    foe: { species: 'hauntor', lv: 20 },
+    winText: ['MEDIUM: The mask.', 'She let go of me.'],
+    onWin: [
+      { setFlag: 'lavMedium2' },
+      { addCoins: 200 },
+      { say: [['She staggers off,', 'muttering about', 'a debt owed.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  lav_spirit: {
+    foe: { species: 'marowl', lv: 22 },
+    uncatchable: true,
+    unwinnable: { item: 'BONE CHARM', hint: ['She cannot be', 'hurt. Try using', 'ITEM: BONE CHARM'] },
+    music: 'ghost',
+    winText: [],
+    onWin: [
+      { setFlag: 'ch5Spirit' },
+      { say: [['She takes the', 'charm. The mask', 'slips from her.'], ['The mist thins.', 'She is gone.']] },
+    ],
+    onLose: [{ say: [['A whisper in the', 'dark: the CHARM.', 'Bring the CHARM.']] }],
+    onFlee: [],
   },
 };

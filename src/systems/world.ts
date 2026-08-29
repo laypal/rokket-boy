@@ -26,6 +26,7 @@ import { openCardFlip } from './cardFlipScreen';
 import { writeSave, sessionOnlyWarning } from './save';
 import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward, heatKey } from './heat';
 import { disguiseCovers, toggleDisguise, dropDisguise } from './disguise';
+import { fogActive, fogVisible } from './fog';
 import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
@@ -778,6 +779,15 @@ export function worldDraw(): void {
     if (flagged && ((G.frame >> 3) & 1) === 1) {
       text('!', n.x * TILE - camX + 5, n.y * TILE - camY - 14, pal[3]);
     }
+  }
+  // CH5.0 §1 fog — a draw-time mask over everything world-space (tiles,
+  // sprites, every `!`) and under everything screen-space (vignette, plates,
+  // toasts). Centre is the player's TILE, so the ring snaps on arrival.
+  if (fogActive(map, quest.items)) {
+    ctx.fillStyle = pal[0];
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++)
+        if (!fogVisible(x - p.x, y - p.y)) ctx.fillRect(x * TILE - camX, y * TILE - camY, TILE, TILE);
   }
   // 1f.10 pulsing screen-edge vignette while the map is hot — draw-only.
   // Slow breathe at stage 1-2, fast heartbeat at 3; a stage raise adds a

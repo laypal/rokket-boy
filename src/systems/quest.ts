@@ -50,6 +50,14 @@ function freshFlags(): Flags {
     ch4Safe: false,
     ch4Done: false,
     disguised: false,
+    ch5Briefed: false,
+    ch5Spirit: false,
+    ch5Mask: false,
+    ch5Myowth: false,
+    ch5Done: false,
+    lavMedium1: false,
+    lavMedium2: false,
+    myowthGagSeen: false,
   };
 }
 
@@ -84,6 +92,18 @@ export function setDexMons(f: () => { species: string }[]): void {
   dexMons = f;
 }
 
+/** CH5.3 playtest: how full is the party, for the `partyFull` Cond. Same
+ *  shape as setDexMons — the party lives in state.ts, which this module
+ *  must not import; main.ts registers the live reader, tests register
+ *  fixtures. Default: empty. Exists because the join scene's "I'm in the
+ *  LOCKER" line fired unconditionally and read as a lie whenever Myowth had
+ *  actually joined (playtester, 2026-08-29). */
+export const PARTY_CAP = 4;
+let partySize: () => number = () => 0;
+export function setPartySize(f: () => number): void {
+  partySize = f;
+}
+
 /** SIDE.7: deterministic per-spin jackpot roll — spin number `n` always
  *  rolls the same outcome under probability `p`, so a winning spin count is
  *  reproducible and pinnable in tests; never an unseeded roll. */
@@ -103,6 +123,8 @@ export function checkCond(c: Cond): boolean {
   if ('any' in c) return c.any.some(checkCond);
   if ('varRoll' in c) return varRoll(quest.vars[c.varRoll[0]] ?? 0, c.varRoll[1]);
   if ('coinsAtLeast' in c) return quest.coins >= c.coinsAtLeast;
+  if ('hasItem' in c) return quest.items.includes(c.hasItem); // CH5.0 §6
+  if ('partyFull' in c) return partySize() >= PARTY_CAP;
   return quest.vars[c.varEq[0]] === c.varEq[1];
 }
 
@@ -194,6 +216,18 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'SUIT UP', done: { flag: 'ch4Suit' } },
       { objective: 'CRACK THE SAFE', done: { flag: 'ch4Safe' } },
       { objective: 'BEAT THE CHIEF', done: { flag: 'ch4Done' } },
+    ],
+  },
+  // CH5 (LAVENDAR TOWER): the SCOPE is a hard gate (a ghost holds the 2F
+  // stairs until it's in the PACK), so these always fall in order. Myowth's
+  // join is a scene between the mask and the hand-in, not an objective.
+  {
+    id: 'ch5',
+    steps: [
+      { objective: 'FIND THE SCOPE', done: { hasItem: 'SILF SCOPE' } },
+      { objective: 'CALM THE SPIRIT', done: { flag: 'ch5Spirit' } },
+      { objective: 'TAKE THE MASK', done: { flag: 'ch5Mask' } },
+      { objective: 'REPORT TO BOSS', done: { flag: 'ch5Done' } },
     ],
   },
 ];

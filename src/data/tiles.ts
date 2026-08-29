@@ -628,6 +628,27 @@ T.BALL = S(
 '1222222222222222');
 TILES['b'] = [T.BALL];
 
+// CH5.0 §11 — headstone, blocking (not in WALKABLE). A rounded slab on the
+// light floor field, shade-1 inscription dashes, a dark plinth at the foot.
+T.GRAVE = S(
+'3333333333333333',
+'3333300000033333',
+'3333022222203333',
+'3330222222220333',
+'3302222222222033',
+'3302233333322033',
+'3302231113322033',
+'3302233333322033',
+'3302231113322033',
+'3302233333322033',
+'3302222222222033',
+'3302222222222033',
+'3300000000000033',
+'3301111111111033',
+'3300000000000033',
+'3333333333333333');
+TILES['t'] = [T.GRAVE];
+
 // loose rubble — the walkable wild-encounter tile (CH2.1). Placeholder art:
 // floor field with scattered rock clusters; CH2.2 owns the real cave set.
 T.RUBBLE = S(

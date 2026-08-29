@@ -188,7 +188,7 @@ describe('chapter state machine (§4.7)', () => {
     expect(currentObjective()).toBe('SUIT UP');
   });
 
-  it('ch4 walks its three steps (suit, safe, chief), then the tease', () => {
+  it('ch4 walks its three steps (suit, safe, chief), then the CH5 opener', () => {
     for (const f of ['briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone', 'fossilsTaken', 'bradBeaten', 'ch2Done', 'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done'] as const)
       quest.flags[f] = true;
     expect(currentObjective()).toBe('SUIT UP');
@@ -197,7 +197,7 @@ describe('chapter state machine (§4.7)', () => {
     quest.flags.ch4Safe = true;
     expect(currentObjective()).toBe('BEAT THE CHIEF');
     quest.flags.ch4Done = true;
-    expect(currentObjective()).toBe('AWAIT ORDERS.');
+    expect(currentObjective()).toBe('FIND THE SCOPE'); // CH5's first step follows (CH5.0 §9)
   });
 
   it('first-unmet semantics: an out-of-order flag does not skip earlier steps', () => {

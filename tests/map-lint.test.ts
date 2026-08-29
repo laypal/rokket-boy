@@ -10,7 +10,7 @@ import { TILES, WALKABLE } from '../src/data/tiles';
 
 const CAVE_MAX_W = 28;
 const CAVE_MAX_H = 20;
-const CAVE_IDS = ['moon1', 'moon2', 'moonDig', 'outskirts', 'bridge'];
+const CAVE_IDS = ['moon1', 'moon2', 'moonDig', 'outskirts', 'bridge', 'lav1', 'lav2', 'lav3'];
 
 describe('map lints', () => {
   it('every map grid is rectangular: row count matches h, every row length matches w', () => {

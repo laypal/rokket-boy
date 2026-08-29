@@ -3,9 +3,9 @@
 // player holds, never persisted; scripts reach it through the
 // `{ dexComplete: true }` Cond (quest.ts).
 import type { MonSpecies } from '../types';
-import { dexCount } from './mon';
+import { dexCount, dexTotal } from './mon';
 
-/** Complete ⇔ STATUS would read n/n. */
+/** Complete ⇔ STATUS would read n/n (boss-only species excluded, CH5.0 §5). */
 export function dexComplete(mons: { species: string }[], species: Record<string, MonSpecies>): boolean {
-  return dexCount(mons, species) === Object.keys(species).length;
+  return dexCount(mons, species) === dexTotal(species);
 }

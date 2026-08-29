@@ -3,20 +3,49 @@ import type { ScriptStep } from '../../types';
 import { EGG_TOTAL } from '../eggs';
 
 export const hqScripts: Record<string, ScriptStep[]> = {
-  // CH2.4/CH3.3/CH4.3: outermost branches first — the newest chapter's
-  // afterglow, then its briefing (replacing the PREVIOUS chapter's afterglow
-  // line in that slot, the same way CH3 replaced CH2's), then the untouched
-  // older chain. KIRA runs the span and promotes the player herself
-  // (span_kira's onWin), so there is no CH3 hand-in branch here — just the
-  // briefing and afterglow that bookend it. CH4 is the same shape: the
-  // chief's ss_chief2.onWin sets ch4Done and promotes directly, no hand-in.
+  // CH2.4/CH3.3/CH4.3/CH5.3: outermost branches first — the newest
+  // chapter's afterglow, then its hand-in (if it has one), then its
+  // briefing (replacing the PREVIOUS chapter's afterglow line in that slot,
+  // the same way CH4 replaced CH3's), then the untouched older chain. KIRA
+  // runs the span and promotes the player herself (span_kira's onWin), so
+  // there is no CH3 hand-in branch here — just the briefing and afterglow
+  // that bookend it. CH4 is the same shape: the chief's ss_chief2.onWin sets
+  // ch4Done and promotes directly, no hand-in. CH5 DOES hand in here — the
+  // mask has no rank attached (CH5.0 assumption 1, no rankUp this chapter).
   'npc:giovanni': [
     {
-      if: { flag: 'ch4Done' },
+      if: { flag: 'ch5Done' },
       then: [
-        { say: [['GIOVANNI: The', 'chief fell. Good.'], ['LIEUTENANT now.', 'Do not slow down.']] },
+        { say: [['GIOVANNI: The', 'mask sold for', 'good money.'], ['SYLPHCO is', 'next. Rest while', 'you still can.']] },
       ],
       else: [
+        {
+          if: { flag: 'ch5Mask' },
+          then: [
+            { say: [['GIOVANNI: The', 'mask. Priceless.', 'And you froze.'], ['Ghosts. Guilt.', 'Whatever it was.', 'Not twice.']] },
+            { setFlag: 'ch5Done' },
+            { addCoins: 800 },
+            { sfx: 'coin' },
+            { music: 'victory' },
+            { endScreen: true },
+          ],
+          else: [
+            {
+              if: { flag: 'ch4Done' },
+              then: [
+                // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
+                { setFlag: 'ch5Briefed' },
+                {
+                  say: [
+                    ['GIOVANNI:', 'LIEUTENANT. A', 'quiet job next.'],
+                    ['LAVENDAR TOWER.', 'South door of', 'CERULEUN EDGE.'],
+                    ['A bone mask on', 'the top floor.', 'Priceless.'],
+                    ['Mourners. Fog.', 'Ghosts, they say.', 'Bring a light.'],
+                  ],
+                },
+                { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
+              ],
+              else: [
         {
           if: { flag: 'ch3Done' },
           then: [
@@ -120,6 +149,10 @@ export const hqScripts: Record<string, ScriptStep[]> = {
       },
     ],
     },
+              ],
+            },
+          ],
+        },
   ],
   // SIDE.5 (re-cut 2026-08-15 after Lyall's playtest): the sparring drill is
   // available from the FIRST talk — training must land BEFORE the guard
@@ -251,6 +284,22 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   // costs two steps). Mid-heist he keeps the original guidance.
   'npc:myowth': [
     { addEgg: 'myowth' },
+    // CH5 (Lyall, 2026-08-29): once he's ALSO in the party, the HQ Myowth
+    // stays — drills and the tour need him — and owns it, fourth-wall
+    // style, once. Then straight on to whatever he was going to say.
+    {
+      if: { all: [{ flag: 'ch5Myowth' }, { notFlag: 'myowthGagSeen' }] },
+      then: [
+        { setFlag: 'myowthGagSeen' },
+        {
+          say: [
+            ["MYOWTH: Yes, I'm", 'also in your', 'party. Two of me.'],
+            ["Don't think", 'about it too', 'hard, see?'],
+            ['Budget cuts.', 'One sprite has', 'to work twice.'],
+          ],
+        },
+      ],
+    },
     {
       if: { notFlag: 'missionDone' },
       then: [

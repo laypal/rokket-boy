@@ -9,7 +9,7 @@ import { quest, currentObjective, formatPlayTime } from './quest';
 import { SPECIES } from '../data/mons';
 import { EGG_TOTAL } from '../data/eggs';
 import { MOVES } from '../data/moves';
-import { maxHp, dexCount, xpProgress, hpBand, LEVEL_CAP } from './mon';
+import { maxHp, dexCount, dexTotal, xpProgress, hpBand, LEVEL_CAP } from './mon';
 import { useLevelCandy } from './levelUpScene';
 import { itemDef, applyHeal, usableOutOfBattle, packCounts } from './inventory';
 import { PARTY_CAP } from './locker';
@@ -291,7 +291,7 @@ export function menuDraw(pal: Palette): void {
     text('JOB:', 14, 22, pal[0]);
     text(currentObjective(), 14, 32, pal[0]);
     text('COINS: ' + quest.coins, 14, 44, pal[0]);
-    text('DEX: ' + dexCount([...G.party, ...G.box], SPECIES) + '/' + Object.keys(SPECIES).length, 14, 56, pal[0]);
+    text('DEX: ' + dexCount([...G.party, ...G.box], SPECIES) + '/' + dexTotal(SPECIES), 14, 56, pal[0]);
     text('EGGS: ' + quest.eggs.size + '/' + EGG_TOTAL, 14, 68, pal[0]);
     text('TIME: ' + formatPlayTime(G.playSeconds), 14, 80, pal[0]);
     text('PARTY: ' + G.party.length + '/4', 14, 92, pal[0]);

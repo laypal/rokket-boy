@@ -31,11 +31,13 @@ export function packCounts(items: string[]): { id: string; count: number }[] {
   return order.map((id) => ({ id, count: counts.get(id)! }));
 }
 
-/** Usable from the in-battle PACK menu: heals and the guaranteed-flee key
- *  item. Balls are thrown via SWIPE, not the pack; quest items never apply. */
-export function usableInBattle(id: string): boolean {
-  const kind = itemDef(id).kind;
-  return kind === 'heal' || kind === 'key';
+/** Usable from the in-battle PACK menu: heals, plus whichever key items
+ *  THIS fight answers to — SMOKE BALL by default; an unwinnable fight swaps
+ *  in its charm instead (CH5.0 §2), so no other key item (the SILF SCOPE)
+ *  ever clutters the list. Balls are thrown via SWIPE, not the pack; quest
+ *  items never apply. */
+export function usableInBattle(id: string, keys: readonly string[] = ['SMOKE BALL']): boolean {
+  return itemDef(id).kind === 'heal' || keys.includes(id);
 }
 
 /** Usable from the overworld PACK menu. Heals always; the key-item SMOKE

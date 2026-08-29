@@ -96,6 +96,14 @@ export function dexCount(mons: { species: string }[], species: Record<string, Mo
   return seen.size;
 }
 
+/** CH5.0 §5: the dex denominator — the registry minus boss-only species
+ *  (MAROWL; MYOOTOO-0 later), which no ball can ever hold. Both readers
+ *  (STATUS `DEX n/n`, the `dexComplete` Cond) divide by this, never by the
+ *  raw key count. */
+export function dexTotal(species: Record<string, MonSpecies>): number {
+  return Object.values(species).filter((s) => !s.bossOnly).length;
+}
+
 /**
  * Apply an evolution in place (SPR.0). Hp carries by the max-hp delta (the
  * damage-kept policy level-ups use), clamped to [1, new max]. Moves are NOT

@@ -18,7 +18,7 @@ import { cardFlipUpdate, cardFlipDraw, openCardFlip } from './systems/cardFlipSc
 import { levelUpUpdate, levelUpDraw, useLevelCandy } from './systems/levelUpScene';
 import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered, endIntro } from './systems/scenes';
 import { install as installDiagnostics, rokketApi } from './engine/diagnostics';
-import { quest, setDexMons } from './systems/quest';
+import { quest, setDexMons, setPartySize } from './systems/quest';
 import { runScript } from './systems/script';
 import { worldHooks } from './systems/world';
 import { setEncounterRng } from './systems/encounter';
@@ -109,6 +109,7 @@ registerState('cardflip', () => {
 // SIDE.4: the `{ dexComplete: true }` Cond reads the live collection through
 // this provider (quest.ts stays engine-free — it can't import state.ts).
 setDexMons(() => [...G.party, ...G.box]);
+setPartySize(() => G.party.length); // CH5.3: the `partyFull` Cond's live reader
 // SIDE.7: LEVEL CANDY's level-up scene — the battle's own pipeline, no foe
 registerState('levelup', () => {
   levelUpUpdate();
@@ -257,6 +258,22 @@ if (import.meta.env.DEV) {
       if (quest.coins < 300) quest.coins = 300;
       runScript([{ warp: ['dock', 3, 6, 'right'] }], worldHooks);
       console.error('[__debug.ch4] CH1–3 done, OPERATIVE, at the dock — Jessika is one tile east');
+    },
+    // CH5: the same seed one chapter on — CH1–4 done, LIEUTENANT, the CH5
+    // briefing heard — and a fade-warp to the tower's 1F door. The fog is on
+    // until the SILF SCOPE (2F mist room); pair with party(4, 18).
+    ch5: () => {
+      for (const f of [
+        'briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone',
+        'fossilsTaken', 'bradBeaten', 'ch2Done',
+        'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done',
+        'introSeen', 'introToured', 'ch2Briefed', 'ch3Briefed', 'ch4Briefed',
+        'ch4Suit', 'ch4Safe', 'ch4Done', 'ch5Briefed',
+      ] as const) quest.flags[f] = true;
+      quest.rank = 'LIEUTENANT';
+      if (quest.coins < 300) quest.coins = 300;
+      runScript([{ warp: ['lav1', 9, 10, 'up'] }], worldHooks);
+      console.error('[__debug.ch5] CH1–4 done, LIEUTENANT, inside LAVENDAR 1F — fog on, stairs at (18,7)');
     },
   };
 }

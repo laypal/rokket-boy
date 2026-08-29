@@ -30,6 +30,7 @@ export const BG_PAL: Record<string, Palette> = {
   span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8', ALERT],   // NUGGET SPAN — daylight river teal (CH3.2)
   tower:  ['#080810', '#22304a', '#46608a', '#e8d24a', ALERT],   // ONB.8 — Rokket Corp at night; shade 3 is a lit window
   ship:   ['#06101c', '#1c3a5c', '#4a86b0', '#d8ecf8', ALERT],   // CH4.2 — S.S. ANN, night sea
+  lavendar: ['#0c0814', '#3a2458', '#7a58a8', '#e0d0f0', ALERT], // CH5.0 §11 — LAVENDAR TOWER, purple; shade 0 is the fog
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -67,6 +68,10 @@ export const OBJ_PAL: Record<string, Palette> = {
   // security chief (black suit, cool grey accents).
   captain: ['#0c0c14', '#1c2c60', '#e8b088', '#f0e0a0'],
   chief:   ['#0c0c14', '#303040', '#e8b088', '#c8c8d0'],
+  // SPR.C / CH5 — GASTLEE/HAUNTOR line, violet-black ghost ramp.
+  gastlee: ['#0c0814', '#3a2060', '#8a68b8', '#e8e0f8'],
+  // SPR.C / CH5 — MAROWL (bossOnly), bone-white on brown.
+  marowl:  ['#1c1408', '#7a5a30', '#c8a870', '#f4ecd8'],
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────
