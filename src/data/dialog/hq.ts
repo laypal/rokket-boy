@@ -3,34 +3,52 @@ import type { ScriptStep } from '../../types';
 import { EGG_TOTAL } from '../eggs';
 
 export const hqScripts: Record<string, ScriptStep[]> = {
-  // CH2.4/CH3.3: outermost branches first — ch3Done afterglow, then the
-  // ch3 briefing (replacing the old ch2Done afterglow line, the same way
-  // CH2.4 replaced ch1's "rest up" slot), then the untouched ch2/ch1 chain.
-  // KIRA runs the span and promotes the player herself (span_kira's onWin),
-  // so there is no CH3 hand-in branch here — just the briefing and the
-  // afterglow that bookend it.
+  // CH2.4/CH3.3/CH4.3: outermost branches first — the newest chapter's
+  // afterglow, then its briefing (replacing the PREVIOUS chapter's afterglow
+  // line in that slot, the same way CH3 replaced CH2's), then the untouched
+  // older chain. KIRA runs the span and promotes the player herself
+  // (span_kira's onWin), so there is no CH3 hand-in branch here — just the
+  // briefing and afterglow that bookend it. CH4 is the same shape: the
+  // chief's ss_chief2.onWin sets ch4Done and promotes directly, no hand-in.
   'npc:giovanni': [
     {
-      if: { flag: 'ch3Done' },
+      if: { flag: 'ch4Done' },
       then: [
-        { say: [['GIOVANNI: KIRA', 'says you passed.', 'Do not gloat.'], ['OPERATIVE suits', 'you. For now.']] },
+        { say: [['GIOVANNI: The', 'chief fell. Good.'], ['LIEUTENANT now.', 'Do not slow down.']] },
       ],
       else: [
         {
-          if: { flag: 'ch2Done' },
+          if: { flag: 'ch3Done' },
           then: [
             // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
-            { setFlag: 'ch3Briefed' },
-            { say: [['GIOVANNI: AGENT.', 'A new racket.', 'The NUGGET SPAN.'], ['East of MT. MOON.', 'We run a "prize', 'bridge" there.'], ['Five marks paid', 'to cross. Beat', 'them. Keep it.'], ['AGENT KIRA runs', 'the span. Do as', 'she says.']] },
-            // QA.5: last step in the branch — surfaces once the dialog
-            // closes (sysMsg only ticks in worldDraw), telling the player
-            // STATUS just moved on.
+            { setFlag: 'ch4Briefed' },
+            {
+              say: [
+                ['GIOVANNI:', 'OPERATIVE. New', 'job tonight.'],
+                ['The S.S. ANN', 'gala. Their', "captain's safe."],
+                ['Jessika waits', 'at the dock, east', 'of CERULEUN EDGE.'],
+                ["Walk in, don't", 'run. Sailors', "don't sprint."],
+              ],
+            },
+            // QA.5: last step — surfaces once the dialog closes.
             { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
           ],
           else: [
             {
-              if: { flag: 'bradBeaten' },
+              if: { flag: 'ch2Done' },
               then: [
+                // ONB.3: heard — Giovanni's `!` goes out (todoIf in maps/hq.ts)
+                { setFlag: 'ch3Briefed' },
+                { say: [['GIOVANNI: AGENT.', 'A new racket.', 'The NUGGET SPAN.'], ['East of MT. MOON.', 'We run a "prize', 'bridge" there.'], ['Five marks paid', 'to cross. Beat', 'them. Keep it.'], ['AGENT KIRA runs', 'the span. Do as', 'she says.']] },
+                // QA.5: last step in the branch — surfaces once the dialog
+                // closes (sysMsg only ticks in worldDraw), telling the player
+                // STATUS just moved on.
+                { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
+              ],
+              else: [
+                {
+                  if: { flag: 'bradBeaten' },
+                  then: [
                 {
                   say: [
                     ['GIOVANNI: The', 'pair of fossils.', 'Intact. Good.'],
@@ -92,13 +110,15 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                         },
                       ],
                     },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
     },
   ],
   // SIDE.5 (re-cut 2026-08-15 after Lyall's playtest): the sparring drill is

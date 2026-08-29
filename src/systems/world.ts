@@ -24,7 +24,8 @@ import { openShop } from './shop';
 import { openJobs } from './jobsScreen';
 import { openCardFlip } from './cardFlipScreen';
 import { writeSave, sessionOnlyWarning } from './save';
-import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward } from './heat';
+import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward, heatKey } from './heat';
+import { disguiseCovers, toggleDisguise, dropDisguise } from './disguise';
 import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
@@ -103,9 +104,10 @@ export const worldHooks: ScriptHooks = {
   // decay timer and starts/cancels lockdown. The tick / face-scan / pathing /
   // draw that consume G.heatState arrive in 1f.6; this is just the setter.
   heat: (n) => {
-    const id = G.map.id;
+    const id = heatKey(G.map); // CH4.0 §1: a zone shares one record
     const prev = G.heatState[id]?.stage ?? 0;
-    G.heatState[id] = setHeat(G.heatState[id] ?? calmHeat(), n, G.playSeconds);
+    const ld = G.map.lockdown; // CH4.0 §2: the map's own clock, if it has one
+    G.heatState[id] = setHeat(G.heatState[id] ?? calmHeat(), n, G.playSeconds, ld ? { lockdown: ld } : undefined);
     // 1f.10 alert cue: a stage RAISE briefly boosts the vignette (draw-only)
     if ((G.heatState[id]?.stage ?? 0) > prev) alertT = ALERT_FRAMES;
   },
@@ -170,7 +172,7 @@ let npcRunState: { npc: NpcDef; done: () => void; steps: number } | null = null;
  *  during the ambush cutscene (npcRun holds state 'world'), not under HEAT
  *  (the alarm owns the screen), not mid-fade or in the cold open. */
 export function todoMarkersActive(): boolean {
-  return G.state === 'world' && npcRunState === null && (G.heatState[G.map.id]?.stage ?? 0) === 0;
+  return G.state === 'world' && npcRunState === null && (G.heatState[heatKey(G.map)]?.stage ?? 0) === 0;
 }
 
 function npcRunAdjacent(npc: NpcDef): boolean {
@@ -242,6 +244,7 @@ let pendingCaught: string[][] | null = null;
 export function landAt(w: WarpDef): void {
   const [mapId, x, y, dir] = w;
   G.map = MAPS[mapId];
+  dropDisguise(quest.flags, G.map); // CH4.1: the suit comes off anywhere it isn't declared
   const p = G.player;
   p.x = x;
   p.y = y;
@@ -258,7 +261,9 @@ export function performWarp(w: WarpDef, after?: () => void): void {
   const [mapId] = w;
   // §4.8 warp escape: leaving a map clears its HEAT + guard runtime, BEFORE
   // the fade so the autosave inside it never carries departed heat.
-  delete G.heatState[G.map.id];
+  // CH4.0 §1: unless the destination shares the zone — a deck-to-deck warp
+  // keeps the ship's clock running; only the gangway OFF it is the escape.
+  if (heatKey(MAPS[mapId]) !== heatKey(G.map)) delete G.heatState[heatKey(G.map)];
   clearMapGuardRuntime(G.map.id);
   Audio2.sfx(mapId === 'vault' || G.map.id === 'vault' ? 'stairs' : 'door');
   G.state = 'worldwait';
@@ -352,6 +357,19 @@ function stepFaceDir(dx: number, dy: number): Dir {
   return dy > 0 ? 'down' : 'up';
 }
 
+/** CH4.1 disguise gate at every sighting point. Covered (suit on, not
+ *  running, no loot) = not seen at all. Suit on but NOT covering = blown on
+ *  the spot — off it comes, one sfx — and the normal 1f escalation follows.
+ *  Called only where a sighting would otherwise land. */
+function disguiseHides(): boolean {
+  const f = quest.flags;
+  if (!f.disguised) return false;
+  if (disguiseCovers(f, Input.held('b'))) return true;
+  f.disguised = false;
+  Audio2.sfx('disguise');
+  return false;
+}
+
 /** HEAT tick — top of worldUpdate (after enter scripts, before input).
  *  Returns true when it consumed the frame (whiteout or contact battle).
  *  Menus/battles never pause this clock: playSeconds keeps running there, so
@@ -359,7 +377,8 @@ function stepFaceDir(dx: number, dy: number): Dir {
  *  Runs even on a calm map (1f.11): returning guards keep walking home. */
 export function heatTick(): boolean {
   const mapId = G.map.id;
-  const hs = G.heatState[mapId];
+  const hk = heatKey(G.map); // CH4.0 §1: heat is per ZONE, guard runtime per map
+  const hs = G.heatState[hk];
   if (hs && hs.stage > 0) {
     const ticked = tickHeat(hs, G.playSeconds);
     if (ticked.locked && G.map.drill) {
@@ -367,7 +386,7 @@ export function heatTick(): boolean {
       // alerted (stage 1, lockdown disarmed), guards forget, player back on
       // the drill start tile; the caught dialog reuses the 1f.14 pending
       // idiom and opens on the next world tick (no fade to wait for).
-      G.heatState[mapId] = setHeat(calmHeat(), 1, G.playSeconds);
+      G.heatState[hk] = setHeat(calmHeat(), 1, G.playSeconds);
       clearMapGuardRuntime(mapId);
       G.player.x = G.map.drill.x;
       G.player.y = G.map.drill.y;
@@ -381,7 +400,7 @@ export function heatTick(): boolean {
       // semantics as a warp-out, then the shared §4.3 penalty. The caught
       // dialog (1f.14) waits for the fade like an enter script, so the
       // bust explains itself once the player is standing at HQ.
-      delete G.heatState[mapId];
+      delete G.heatState[hk];
       clearMapGuardRuntime(mapId);
       const lost = Math.floor(quest.coins * 0.1);
       pendingCaught = [['THE GUARDS', 'CAUGHT YOU!']];
@@ -391,8 +410,8 @@ export function heatTick(): boolean {
       sharedWhiteout(lost, () => {});
       return true;
     }
-    if (ticked.state.stage === 0) delete G.heatState[mapId]; // absent = calm
-    else G.heatState[mapId] = ticked.state;
+    if (ticked.state.stage === 0) delete G.heatState[hk]; // absent = calm
+    else G.heatState[hk] = ticked.state;
   }
   const p = G.player;
   for (const n of G.map.npcs) {
@@ -403,7 +422,7 @@ export function heatTick(): boolean {
       rt.cooldown--; // recovering: no scan, no step, no re-engage
       continue;
     }
-    const stage = G.heatState[mapId]?.stage ?? 0;
+    const stage = G.heatState[hk]?.stage ?? 0;
     // self-heal: a "posted" guard found off his tile (warp wiped the alert
     // state mid-chase) walks back
     if (rt.mode === 'post' && (n.x !== rt.homeX || n.y !== rt.homeY)) rt.mode = 'return';
@@ -415,11 +434,12 @@ export function heatTick(): boolean {
       if (!rt.tracking) {
         n.faceDir = GAZE_CYCLE[Math.floor(G.frame / GAZE_TURN_EVERY) % 4];
       }
-      if (stage >= 1 && G.frame % GAZE_CHECK_EVERY === 0) {
+      // CH4.0 §1b: a `watch` map's guards scan even when calm (gala security)
+      if ((stage >= 1 || G.map.watch) && G.frame % GAZE_CHECK_EVERY === 0) {
         const facing = n.faceDir ?? n.dir;
         const seen = visibleTiles(facing, n.x, n.y, G.map).some(
           (t) => t.x === p.x && t.y === p.y,
-        );
+        ) && !disguiseHides(); // CH4.1: a covered sailor is furniture
         if (seen) {
           if (!rt.tracking) {
             // NEW acquisition (1f.10): startle wind-up + one stage, once. The
@@ -429,7 +449,7 @@ export function heatTick(): boolean {
             rt.spotFlash = STARTLE_FRAMES;
             worldHooks.heat(Math.min(3, stage + 1));
           }
-          if ((G.heatState[mapId]?.stage ?? 0) >= 2) rt.mode = 'chase';
+          if ((G.heatState[hk]?.stage ?? 0) >= 2) rt.mode = 'chase';
         } else {
           rt.tracking = false; // lost eye contact — next spot is a new acquisition
         }
@@ -470,7 +490,7 @@ export function heatTick(): boolean {
     // mode 'return' — walking back, but still half-alert (1f.11): a hot map
     // and a close player flip him straight back to chase, no wind-up.
     const dist = Math.max(Math.abs(p.x - n.x), Math.abs(p.y - n.y));
-    if (stage >= 2 && dist <= CHASE_LEASH) {
+    if (stage >= 2 && dist <= CHASE_LEASH && !disguiseHides()) {
       if (!rt.tracking) {
         rt.tracking = true; // fresh acquisition = +1 stage (sighting contract)
         worldHooks.heat(Math.min(3, stage + 1));
@@ -606,6 +626,8 @@ export function worldUpdate(): void {
     const d = Input.dirHeld();
     if (d) tryMove(d);
   }
+  // CH4.1: SELECT flips the SAILOR suit wherever the map declares a disguise
+  if (Input.hit('select') && toggleDisguise(quest.flags, G.map)) Audio2.sfx('disguise');
   if (Input.hit('a') && !p.moving) {
     interact();
     return;
@@ -714,7 +736,8 @@ export function worldDraw(): void {
         let f = 0;
         if (p.moving) f = p.prog < 8 ? (p.step ? 1 : 2) : 0;
         // RNK.5a: the player wears owned gear — no-op rebuild guard inside
-        ensurePlayerFrames(quest.items);
+        // CH4.1: the map's disguise palette while the suit is on
+        ensurePlayerFrames(quest.items, quest.flags.disguised && G.map.disguise ? G.map.disguise : 'player');
         ctx.drawImage(CHAR_FRAMES.player[p.dir][f], Math.round(ppx) - camX, Math.round(ppy) - camY - 4);
       },
     });
@@ -759,7 +782,7 @@ export function worldDraw(): void {
   // 1f.10 pulsing screen-edge vignette while the map is hot — draw-only.
   // Slow breathe at stage 1-2, fast heartbeat at 3; a stage raise adds a
   // brief decaying boost so "you've been made" reads instantly.
-  const hotNow = G.heatState[map.id];
+  const hotNow = G.heatState[heatKey(map)];
   if (hotNow && hotNow.stage > 0) {
     if (alertT > 0) alertT--;
     const speed = hotNow.stage === 3 ? 0.25 : 0.08;
@@ -774,7 +797,7 @@ export function worldDraw(): void {
   } else if (alertT > 0) alertT = 0;
   // §4.8 stage-3 lockdown countdown, compact top-right (player-facing label
   // is ALARM per 1f.13; the system keeps its HEAT name internally)
-  const heat = G.heatState[map.id];
+  const heat = G.heatState[heatKey(map)];
   if (heat && heat.stage === 3 && heat.lockdownAt !== null) {
     const remain = Math.max(0, Math.ceil(heat.lockdownAt - G.playSeconds));
     const label = 'ALARM ' + remain + 's';

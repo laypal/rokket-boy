@@ -180,6 +180,8 @@ function sfx(name: string): void {
     case 'hurt': playNote(t, 220, 0.08, 'pulse', 0.28, 0.5); playNote(t + 0.08, 165, 0.12, 'pulse', 0.26, 0.5); break;
     case 'coin': playNote(t, 1319, 0.05, 'pulse', 0.2, 0.5); playNote(t + 0.06, 1760, 0.14, 'pulse', 0.2, 0.5); break;
     case 'switch': playNote(t, 523, 0.04, 'pulse', 0.2, 0.25); playNote(t + 0.05, 523, 0.04, 'pulse', 0.2, 0.25); break;
+    // CH4.1 disguise on/off — a quick rising zip (plan §7 SFX list)
+    case 'disguise': playNote(t, 392, 0.05, 'pulse', 0.18, 0.25); playNote(t + 0.05, 523, 0.05, 'pulse', 0.18, 0.25); playNote(t + 0.1, 784, 0.1, 'pulse', 0.18, 0.25); break;
     case 'alarm': for (let i = 0; i < 3; i++) { playNote(t + i * 0.16, 880, 0.08, 'pulse', 0.26, 0.5); playNote(t + i * 0.16 + 0.08, 660, 0.08, 'pulse', 0.26, 0.5); } break;
     case 'item': { const ns = [523, 659, 784, 1047]; ns.forEach((f, i) => playNote(t + i * 0.09, f, i === 3 ? 0.3 : 0.09, 'pulse', 0.24, 0.5)); break; }
     case 'faint': for (let i = 0; i < 5; i++) playNote(t + i * 0.06, 440 - i * 70, 0.06, 'pulse', 0.24, 0.5); break;

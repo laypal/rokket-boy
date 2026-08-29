@@ -35,6 +35,7 @@ export const hqMap: MapDef = makeMap({
         { all: [{ flag: 'missionDone' }, { notFlag: 'ch2Briefed' }, { notFlag: 'ch2Done' }] }, // CH2 briefing
         { all: [{ flag: 'bradBeaten' }, { notFlag: 'ch2Done' }] },                           // CH2 hand-in
         { all: [{ flag: 'ch2Done' }, { notFlag: 'ch3Briefed' }, { notFlag: 'ch3Done' }] },   // CH3 briefing
+        { all: [{ flag: 'ch3Done' }, { notFlag: 'ch4Briefed' }, { notFlag: 'ch4Done' }] },   // CH4 briefing
       ] } },
     { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down', todoIf: { notFlag: 'drillBattleDone' } }, // ONB.3: until her spar is won once
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },

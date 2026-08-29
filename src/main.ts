@@ -25,7 +25,7 @@ import { setEncounterRng } from './systems/encounter';
 import { mulberry32 } from './engine/rng';
 import { ITEMS } from './data/items';
 import { SPECIES } from './data/mons';
-import { maxHp } from './systems/mon';
+import { maxHp, makeMon } from './systems/mon';
 import { findPartyMon, xpToReach, hpFromArg } from './systems/debugResolve';
 import { requestPersist } from './engine/storage';
 import type { WarpDef } from './types';
@@ -231,6 +231,32 @@ if (import.meta.env.DEV) {
         return;
       }
       if (!useLevelCandy(mon)) console.error('[__debug.levelCandy] MAXED OUT.');
+    },
+    // CH4 (Lyall's ask, 2026-08-29): a chapter-shaped party without the grind.
+    // party(n, lv) REPLACES G.party with n fresh mons at lv — the CH4 target
+    // is lv 12–16, so the defaults are four at 14. makeMon is the real
+    // constructor (moves from the learnset, full hp); nothing here is a
+    // shortcut past the mon model. The starter is slot 0 so the seeded run
+    // still opens on KOFFINK.
+    party: (n = 4, lv = 14) => {
+      const pool = ['koffink', 'ekanzz', 'zubatt', 'geodood', 'ratikatt', 'voltorbb'];
+      G.party = pool.slice(0, Math.max(1, Math.min(4, n))).map((s) => makeMon(SPECIES[s], lv));
+      console.error(`[__debug.party] ${G.party.map((m) => `${m.species} lv${m.lv}`).join(', ')}`);
+    },
+    // CH4: seed a finished CH1–3 (the same flags chapter4.spec.ts sets), rank
+    // OPERATIVE, the briefing heard, and fade-warp to the dock beside Jessika
+    // — through the REAL warp hook. Party is untouched: pair with party().
+    ch4: () => {
+      for (const f of [
+        'briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone',
+        'fossilsTaken', 'bradBeaten', 'ch2Done',
+        'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done',
+        'introSeen', 'introToured', 'ch2Briefed', 'ch3Briefed', 'ch4Briefed',
+      ] as const) quest.flags[f] = true;
+      quest.rank = 'OPERATIVE';
+      if (quest.coins < 300) quest.coins = 300;
+      runScript([{ warp: ['dock', 3, 6, 'right'] }], worldHooks);
+      console.error('[__debug.ch4] CH1–3 done, OPERATIVE, at the dock — Jessika is one tile east');
     },
   };
 }

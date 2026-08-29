@@ -5,7 +5,7 @@ import type { SpriteRows } from './data/sprites';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -54,6 +54,12 @@ export interface Flags {
   // tour starts so a skip — or a reload mid-tour — never replays it. No
   // save bump (missing key reads false, the introSeen precedent).
   introToured: boolean;
+  // CH4 (S.S. ANN) — contract in .paul/PLAN.md CH4.0 §3/§4. No save bump.
+  ch4Briefed: boolean; // Giovanni's CH4 briefing heard (ONB.3 marker pattern)
+  ch4Suit: boolean;    // Jessika handed over the SAILOR SUIT — SELECT works
+  ch4Safe: boolean;    // the captain's safe is cracked: loot in hand, clock running
+  ch4Done: boolean;    // the security chief fell — LIEUTENANT
+  disguised: boolean;  // the suit is ON right now (dropped on landing off-ship)
 }
 export type FlagName = keyof Flags;
 
@@ -174,6 +180,21 @@ export interface MapDef {
   /** SIDE.5: training-room map — a stage-3 lockdown resets the player to
    *  this tile (heat back to 1, no coin loss) instead of the whiteout. */
   drill?: { x: number; y: number };
+  /** CH4.0 §1: maps sharing a zone share ONE heat record (keyed by the zone,
+   *  not the map id), so a lockdown follows the player between them and only
+   *  a warp to a map OUTSIDE the zone clears it. */
+  heatZone?: string;
+  /** CH4.0 §1b: guards here scan for eye contact even at stage 0 (gala
+   *  security — the ship is never "calm"), so the disguise is always live
+   *  and a slow player can't wait the alert out. Escalation is unchanged:
+   *  a sighting at 0 raises to 1, the next to 2 (chase). */
+  watch?: boolean;
+  /** CH4.0 §2: stage-3 lockdown length in seconds for this map (default 20).
+   *  A map-defined clock never extends once armed and holds decay off. */
+  lockdown?: number;
+  /** CH4.0 §3: OBJ_PAL key the player is drawn in while disguised here.
+   *  Absent = no disguise possible on this map; landing here takes it off. */
+  disguise?: string;
 }
 
 // ── Phase 1 mon/move data model (plan §4.1) ────────────────────────────────

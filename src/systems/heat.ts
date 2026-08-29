@@ -2,7 +2,7 @@
 // Data in, data out: no imports from state/world/battle/renderer, so it unit
 // tests in Node. All timestamps are G.playSeconds values (gameplay seconds),
 // never wall-clock; the world integration (1f.6) supplies them.
-import type { Dir, MapDef, MapId } from '../types';
+import type { Dir, MapDef } from '../types';
 import { WALKABLE } from '../data/tiles';
 
 export const DECAY_SECONDS = 30;
@@ -25,16 +25,34 @@ export function calmHeat(): HeatState {
   return { stage: 0, decayAt: 0, lockdownAt: null };
 }
 
+/** CH4.0 §1: maps in a zone (MapDef.heatZone) share one heat record, so a
+ *  stage-3 timer follows the player across the S.S. ANN's decks and only the
+ *  gangway warp OFF the ship clears it. No zone = the map's own id. */
+export function heatKey(map: Pick<MapDef, 'id' | 'heatZone'>): string {
+  return map.heatZone ?? map.id;
+}
+
 /** Absolute stage set (the { heat: n } contract). Resets the decay timer;
  *  starts/resets the lockdown timer at stage 3, cancels it below (3→2 via
- *  SMOKE BALL cancels lockdown). */
-export function setHeat(_state: HeatState, stage: number, now: number): HeatState {
+ *  SMOKE BALL cancels lockdown).
+ *
+ *  CH4.0 §2: `opts.lockdown` (MapDef.lockdown, the ship's 5-minute heist
+ *  clock) changes two things and only at stage 3 — an already-armed
+ *  deadline is KEPT (a glimpse on the way out never resets the clock) and
+ *  decay is parked on the deadline so the 30 s quiet-decay can't cancel the
+ *  timer from under it. No opts = the 1f contract, untouched. */
+export function setHeat(
+  state: HeatState,
+  stage: number,
+  now: number,
+  opts?: { lockdown: number },
+): HeatState {
   const clamped = Math.max(0, Math.min(3, Math.floor(stage))) as HeatStage;
-  return {
-    stage: clamped,
-    decayAt: now + DECAY_SECONDS,
-    lockdownAt: clamped === 3 ? now + LOCKDOWN_SECONDS : null,
-  };
+  if (clamped !== 3) return { stage: clamped, decayAt: now + DECAY_SECONDS, lockdownAt: null };
+  if (!opts) return { stage: 3, decayAt: now + DECAY_SECONDS, lockdownAt: now + LOCKDOWN_SECONDS };
+  const lockdownAt =
+    state.stage === 3 && state.lockdownAt !== null ? state.lockdownAt : now + opts.lockdown;
+  return { stage: 3, decayAt: Math.max(now + DECAY_SECONDS, lockdownAt), lockdownAt };
 }
 
 /** Called every world tick. Lockdown expiry wins over decay and returns the
@@ -66,17 +84,17 @@ export function tickHeat(state: HeatState, now: number): { state: HeatState; loc
  *  matching the 1f.6 decay). setHeat does the rest: decay window reset,
  *  3→2 nulls lockdownAt — the "cancels lockdown" contract. */
 export function reduceHeat(
-  heat: Partial<Record<MapId, HeatState>>,
-  mapId: MapId,
+  heat: Partial<Record<string, HeatState>>,
+  key: string,
   now: number,
 ): void {
-  const state = heat[mapId];
+  const state = heat[key];
   if (!state || state.stage === 0) return;
   if (state.stage === 1) {
-    delete heat[mapId];
+    delete heat[key];
     return;
   }
-  heat[mapId] = setHeat(state, state.stage - 1, now);
+  heat[key] = setHeat(state, state.stage - 1, now);
 }
 
 const DIRV: Record<Dir, [number, number]> = {

@@ -23,6 +23,7 @@ import { TILES } from '../src/data/tiles';
 const SFX_NAMES = new Set([
   'blip', 'beep', 'confirm', 'cancel', 'bump', 'door', 'stairs', 'hit',
   'hurt', 'coin', 'switch', 'alarm', 'item', 'faint', 'evolve',
+  'disguise', // CH4.1
 ]);
 
 // The full ScriptStep discriminant set (src/types.ts:43-67), same order as

@@ -48,7 +48,9 @@ export interface HeatSaveEntry {
 
 export type SaveV2 = Omit<SaveV1, 'version'> & {
   version: 2;
-  heat: Partial<Record<MapId, HeatSaveEntry>>;
+  /** Keyed by heatKey(map) — a map id, or a zone name since CH4.0 §1. A
+   *  string key was always what the JSON held, so no version bump. */
+  heat: Partial<Record<string, HeatSaveEntry>>;
 };
 
 /** V3 (SIDE.1): the active job-board contract rides the save so a reload
@@ -129,7 +131,7 @@ export function snapshot(): SaveV4 {
   // is NOT emitted here — it needs moving guards (1f.6); the field stays
   // optional. Empty G.heatState → {}, so calm saves are byte-identical to 1f.2.
   const heat: SaveV2['heat'] = {};
-  for (const id of Object.keys(G.heatState) as MapId[]) {
+  for (const id of Object.keys(G.heatState)) {
     const h = G.heatState[id];
     if (!h) continue;
     heat[id] = { stage: h.stage, decayAt: h.decayAt, lockdownAt: h.lockdownAt };
@@ -330,8 +332,8 @@ export function applySave(save: SaveV4): void {
   G.party = save.party.map((m) => ({ ...m, moves: [...m.moves] }));
   G.box = save.box.map((m) => ({ ...m, moves: [...m.moves] }));
   G.playSeconds = save.playSeconds;
-  const heat: Partial<Record<MapId, HeatState>> = {};
-  for (const id of Object.keys(save.heat) as MapId[]) {
+  const heat: Partial<Record<string, HeatState>> = {};
+  for (const id of Object.keys(save.heat)) {
     const e = save.heat[id];
     if (!e) continue;
     heat[id] = { stage: e.stage, decayAt: e.decayAt, lockdownAt: e.lockdownAt };

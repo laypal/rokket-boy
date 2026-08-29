@@ -117,6 +117,25 @@ export const TRACKS: Record<string, Track> = {
           C2 -  C2 -  C2 -  G1 -  C2 -  C2 -  C2 -  G1 -`,
     dr: `k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.h.h.h.`,
   },
+  // CH4 — S.S. ANN: a shanty lilt in G, the gala band heard from the pier
+  // (plan §7). Same 4-bar shape as `bridge`; the dock and all three decks
+  // play it, so the ship sounds like one place.
+  ship: {
+    bpm: 118,
+    p1: `G4 -  B4 -  D5 -  B4 -  G4 -  A4 -  B4 -  D4 -
+         E4 -  G4 -  B4 -  G4 -  E4 -  F#4 - G4 -  D4 -
+         C4 -  E4 -  G4 -  E4 -  C4 -  D4 -  E4 -  G4 -
+         D4 =  =  =  -  -  F#4 - G4 =  =  =  =  =  -  -`,
+    p2: `-  -  G3 =  -  -  G3 =  -  -  D3 =  -  -  D3 =
+         -  -  E3 =  -  -  E3 =  -  -  B2 =  -  -  B2 =
+         -  -  C3 =  -  -  C3 =  -  -  G2 =  -  -  G2 =
+         D3 =  =  =  -  -  D3 =  G3 =  =  =  =  =  -  -`,
+    tri: `G2 -  G2 -  D2 -  D2 -  G2 -  G2 -  D2 -  D2 -
+          E2 -  E2 -  B1 -  B1 -  E2 -  E2 -  B1 -  B1 -
+          C2 -  C2 -  G1 -  G1 -  C2 -  C2 -  G1 -  G1 -
+          D2 -  D2 -  D2 -  D2 -  G2 -  G2 -  G2 -  G2 -`,
+    dr: `k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.s.s.s.`,
+  },
   // Cold open — upbeat GB-fanfare energy, G major (ONB.9-FB: was too slow/minor)
   intro: {
     bpm: 150,

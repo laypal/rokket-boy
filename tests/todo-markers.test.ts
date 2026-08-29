@@ -51,13 +51,15 @@ const marked = () => MAPS.hq.npcs.filter(npcTodo).map((n) => n.id).sort();
 beforeEach(() => resetQuest());
 
 describe('placement (D5 — nothing else wears a marker)', () => {
-  it('todoIf is set on exactly giovanni/jessika/myowth, all on map hq', () => {
+  // CH4.2 adds one more: the dock's jessika wears the SAILOR SUIT hint
+  // (todoIf: notFlag ch4Suit) — the no-softlock hint NPC for the whole ship.
+  it('todoIf is set on exactly giovanni/jessika/myowth on hq, plus jessika on the CH4 dock', () => {
     const withTodo: { mapId: string; id: string }[] = [];
     for (const [mapId, map] of Object.entries(MAPS)) {
       for (const npc of map.npcs) if (npc.todoIf) withTodo.push({ mapId, id: npc.id });
     }
-    expect(withTodo.map((n) => n.id).sort()).toEqual(['giovanni', 'jessika', 'myowth']);
-    expect(withTodo.every((n) => n.mapId === 'hq')).toBe(true);
+    expect(withTodo.map((n) => n.id).sort()).toEqual(['giovanni', 'jessika', 'jessika', 'myowth']);
+    expect(withTodo.filter((n) => n.mapId !== 'hq')).toEqual([{ mapId: 'dock', id: 'jessika' }]);
   });
 });
 
@@ -81,6 +83,8 @@ describe('progression (BDD): the ! tracks the frozen flag order', () => {
     quest.flags.ch3Briefed = true;
     expect(marked()).toEqual(['jessika', 'myowth']);
     quest.flags.ch3Done = true;
+    expect(marked()).toEqual(['giovanni', 'jessika', 'myowth']); // CH4 briefing waiting
+    quest.flags.ch4Briefed = true;
     expect(marked()).toEqual(['jessika', 'myowth']);
     quest.flags.drillBattleDone = true;
     expect(marked()).toEqual(['myowth']);
@@ -89,18 +93,20 @@ describe('progression (BDD): the ! tracks the frozen flag order', () => {
     expect(marked()).toEqual([]);
   });
 
-  it('skip path (a): CH2 briefing never heard — giovanni is marked only for the CH3 briefing, and clears once ch3Done lands unheard too', () => {
+  it('skip path (a): CH2 briefing never heard — giovanni is marked for the CH3 briefing, then the CH4 briefing once ch3Done lands unheard too', () => {
     Object.assign(quest.flags, {
       briefed: true, lootTaken: true, missionDone: true, bradBeaten: true, ch2Done: true,
     }); // ch2Briefed left false on purpose
     expect(marked()).toContain('giovanni');
     quest.flags.ch3Done = true; // ch3Briefed still false
-    expect(marked()).not.toContain('giovanni'); // no permanent ! once the chapter is over anyway
+    expect(marked()).toContain('giovanni'); // CH4 briefing now waiting — a new need, not a lie
+    quest.flags.ch4Briefed = true;
+    expect(marked()).not.toContain('giovanni'); // no permanent ! once every chapter is over anyway
   });
 
-  it('skip path (b): every briefing skipped clean through ch3Done — no permanent !', () => {
+  it('skip path (b): every briefing skipped clean through ch4Briefed — no permanent !', () => {
     Object.assign(quest.flags, {
-      briefed: true, lootTaken: true, missionDone: true, bradBeaten: true, ch2Done: true, ch3Done: true,
+      briefed: true, lootTaken: true, missionDone: true, bradBeaten: true, ch2Done: true, ch3Done: true, ch4Briefed: true,
     }); // ch2Briefed and ch3Briefed both left false
     expect(marked()).not.toContain('giovanni');
   });
@@ -208,10 +214,18 @@ describe('briefing text untouched (D4 ordering)', () => {
     expect(events).toContain('say');
   });
 
-  it('pins setFlag-before-say ordering in both briefing branches, reading the data directly', () => {
+  it('pins setFlag-before-say ordering in the CH2/CH3/CH4 briefing branches, reading the data directly', () => {
     const top = hqScripts['npc:giovanni'][0];
     if (!('if' in top) || !top.else) throw new Error('unexpected giovanni script shape');
-    const ch2DoneIf = top.else[0]; // else[0] of the top `if ch3Done`
+    const ch3DoneIf = top.else[0]; // else[0] of the top `if ch4Done`
+    if (!('if' in ch3DoneIf) || !ch3DoneIf.else) throw new Error('unexpected shape (ch3Done)');
+    const ch4Briefing = ch3DoneIf.then; // CH4 briefing `then`
+    expect(ch4Briefing[0]).toEqual({ setFlag: 'ch4Briefed' });
+    const ch4Say = ch4Briefing[1];
+    if (!('say' in ch4Say)) throw new Error('expected a say as the CH4 briefing 2nd step');
+    expect(ch4Say.say[0][0]).toBe('GIOVANNI:');
+
+    const ch2DoneIf = ch3DoneIf.else[0]; // else[0] of `if ch3Done`
     if (!('if' in ch2DoneIf) || !ch2DoneIf.else) throw new Error('unexpected shape (ch2Done)');
     const ch3Briefing = ch2DoneIf.then; // CH3 briefing `then`
     expect(ch3Briefing[0]).toEqual({ setFlag: 'ch3Briefed' });

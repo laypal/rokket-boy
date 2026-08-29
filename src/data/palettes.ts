@@ -29,6 +29,7 @@ export const BG_PAL: Record<string, Palette> = {
   moon:   ['#050810', '#16294e', '#3e6496', '#a8c4e0', ALERT],   // Mt. Möön caves — dark blue
   span:   ['#081418', '#1a5a58', '#3aa89c', '#d0f0e8', ALERT],   // NUGGET SPAN — daylight river teal (CH3.2)
   tower:  ['#080810', '#22304a', '#46608a', '#e8d24a', ALERT],   // ONB.8 — Rokket Corp at night; shade 3 is a lit window
+  ship:   ['#06101c', '#1c3a5c', '#4a86b0', '#d8ecf8', ALERT],   // CH4.2 — S.S. ANN, night sea
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -58,6 +59,14 @@ export const OBJ_PAL: Record<string, Palette> = {
   ekanzz:  ['#140a1c', '#3a6e2c', '#6e3a8e', '#c8e0a8'], // SPR.B — EKANZZ/ARBÖK line, venom green-violet
   kira:    ['#0c0c14', '#8a3fa0', '#e8b088', '#f0f0f8'], // CH3.2 — AGENT KIRA, violet/plum accent
   medic:   ['#0c0c14', '#c81e3c', '#e8b088', '#f8f8f8'], // ONB.7 — bunk healer, grunt dark/red/skin + a lifted shade-3 so the cap reads clinic-white
+  // CH4.1 — the SAILOR disguise: the player palette with the Rokket red
+  // swapped for navy. Five shades on purpose: it decodes CHAR_FRAMES.player
+  // (gear gold in slot 4) as well as the ship's sailor NPCs.
+  sailor:  ['#0c0c14', '#2850c8', '#e8b088', '#f0f0f8', '#e0b840'],
+  // CH4.2 — S.S. ANN crew: the captain (navy + cream trim) and the
+  // security chief (black suit, cool grey accents).
+  captain: ['#0c0c14', '#1c2c60', '#e8b088', '#f0e0a0'],
+  chief:   ['#0c0c14', '#303040', '#e8b088', '#c8c8d0'],
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────

@@ -210,7 +210,7 @@ describe('span_kira (CH3.3 loyalty test + OPERATIVE rank beat)', () => {
 });
 
 describe('chapter derivation across CH3 (integration; quest.test.ts owns the exhaustive cases)', () => {
-  it('ch1+ch2 flags done → WORK THE SPAN; +spanLass → BEAT KIRA; +ch3Done → AWAIT ORDERS.', () => {
+  it('ch1+ch2 flags done → WORK THE SPAN; +spanLass → BEAT KIRA; +ch3Done → SUIT UP (CH4 is authored now)', () => {
     quest.flags.briefed = true;
     quest.flags.guardBeaten = true;
     quest.flags.switchFound = true;
@@ -229,7 +229,7 @@ describe('chapter derivation across CH3 (integration; quest.test.ts owns the exh
     expect(currentObjective()).toBe('BEAT KIRA');
 
     quest.flags.ch3Done = true;
-    expect(currentObjective()).toBe('AWAIT ORDERS.');
+    expect(currentObjective()).toBe('SUIT UP');
   });
 });
 
@@ -255,7 +255,12 @@ describe('Giovanni CH3 branches (npc:giovanni)', () => {
     expect(quest.flags.ch3Done).toBe(false);
   });
 
-  it('ch3Done: the 2-page afterglow runs', () => {
+  // CH4.3: ch3Done no longer shows a terminal afterglow — it now surfaces
+  // the CH4 briefing (the same slot the old CH2→CH3 transition replaced,
+  // CH4.0 §7). The full CH4 briefing text is pinned in ship-content.test.ts;
+  // this just proves ch3Done alone (CH2's afterglow test already covers the
+  // ch3Done && !ch4Briefed case one level up).
+  it('ch3Done && !ch4Briefed: the CH4 briefing runs, not the old ch3Done afterglow', () => {
     quest.flags.missionDone = true;
     quest.flags.fossilsTaken = true;
     quest.flags.bradBeaten = true;
@@ -266,8 +271,8 @@ describe('Giovanni CH3 branches (npc:giovanni)', () => {
 
     expect(says.length).toBe(1);
     const pages = says[0];
-    expect(pages.length).toBe(2);
-    expect(pages[0][0]).toBe('GIOVANNI: KIRA');
-    expectFitsBox(pages, 'giovanni ch3 afterglow');
+    expect(pages[0][0]).toBe('GIOVANNI:');
+    expectFitsBox(pages, 'giovanni ch4 briefing');
+    expect(quest.flags.ch4Briefed).toBe(true);
   });
 });

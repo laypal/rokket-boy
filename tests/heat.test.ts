@@ -3,6 +3,7 @@ import {
   DECAY_SECONDS,
   LOCKDOWN_SECONDS,
   calmHeat,
+  heatKey,
   setHeat,
   tickHeat,
   reduceHeat,
@@ -55,6 +56,51 @@ describe('setHeat', () => {
     const before: HeatState = calmHeat();
     setHeat(before, 3, 0);
     expect(before).toEqual(calmHeat());
+  });
+});
+
+// CH4.0 §2: a map-defined lockdown (MapDef.lockdown, the S.S. ANN's 5-minute
+// heist clock) is passed as opts. It never extends once armed — a glimpse on
+// the way out must not reset the clock — and it holds decay off until it
+// expires, so the 30 s quiet-decay can't cancel the timer from under it.
+describe('setHeat with a map lockdown (CH4.0)', () => {
+  const opts = { lockdown: 300 };
+
+  it('arms a fresh stage 3 for the map duration and parks decay on the deadline', () => {
+    const s = setHeat(calmHeat(), 3, 10, opts);
+    expect(s.lockdownAt).toBe(310);
+    expect(s.decayAt).toBe(310);
+  });
+
+  it('re-triggering stage 3 keeps the EXISTING deadline (never extends)', () => {
+    const armed = setHeat(calmHeat(), 3, 0, opts); // 300
+    const again = setHeat(armed, 3, 100, opts);
+    expect(again.lockdownAt).toBe(300);
+    expect(again.decayAt).toBe(300);
+  });
+
+  it('does not decay before the deadline, then reports locked at it', () => {
+    const armed = setHeat(calmHeat(), 3, 0, opts);
+    expect(tickHeat(armed, 250)).toEqual({ state: armed, locked: false });
+    expect(tickHeat(armed, 300).locked).toBe(true);
+  });
+
+  it('below stage 3 behaves like the default contract (no lockdown, 30 s decay)', () => {
+    const s = setHeat(setHeat(calmHeat(), 3, 0, opts), 2, 5, opts);
+    expect(s.lockdownAt).toBeNull();
+    expect(s.decayAt).toBe(5 + DECAY_SECONDS);
+  });
+
+  it('leaves the default 1f contract untouched when no opts are passed', () => {
+    const armed = setHeat(calmHeat(), 3, 0, opts); // 300
+    expect(setHeat(armed, 3, 100).lockdownAt).toBe(100 + LOCKDOWN_SECONDS);
+  });
+});
+
+describe('heatKey (CH4.0 §1 zones)', () => {
+  it('is the map id unless the map names a zone', () => {
+    expect(heatKey({ id: 'corner' })).toBe('corner');
+    expect(heatKey({ id: 'corner', heatZone: 'ship' })).toBe('ship');
   });
 });
 

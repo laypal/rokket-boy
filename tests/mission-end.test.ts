@@ -9,7 +9,7 @@ import { MAPS } from '../src/data/maps';
 import { WALKABLE } from '../src/data/tiles';
 import type { ScriptStep } from '../src/types';
 
-const MISSION_CLOSERS = ['brad_ratikatt', 'span_kira'] as const;
+const MISSION_CLOSERS = ['brad_ratikatt', 'span_kira', 'ss_chief2'] as const;
 
 /** Narrows a step to the `{ choice }` variant (mirrors the `'choice' in
  *  step` idiom used by egg-lint.test.ts / content-lint.test.ts). */

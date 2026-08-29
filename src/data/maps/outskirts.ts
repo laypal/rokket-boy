@@ -4,6 +4,7 @@
 // from the open floor; the sign says the same, louder. `w`/`B` scenery
 // (river glimpse + fence posts) previews the bridge before you reach it.
 // Palette 'span' + the 'bridge' track (CH3.2) carry over from the span itself.
+// CH4.2: a second east door at (20,6) opens onto the ANN DOCK.
 import type { MapDef } from '../../types';
 import { outskirtsScripts } from '../dialog/outskirts';
 import { makeMap } from './make';
@@ -20,7 +21,7 @@ export const outskirtsMap: MapDef = makeMap({
     '#    b    P     b   #',
     '#  w             w  #',
     '#  B             B  #',
-    'o                   #',
+    'o                   o',
     '#                   #',
     '#####################',
   ],
@@ -43,6 +44,7 @@ export const outskirtsMap: MapDef = makeMap({
   warps: {
     '0,6': ['moon1', 18, 4, 'left'],
     '10,0': ['bridge', 6, 18, 'up'],
+    '20,6': ['dock', 1, 6, 'right'],
   },
   scripts: outskirtsScripts,
 });

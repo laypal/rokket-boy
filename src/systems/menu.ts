@@ -13,7 +13,7 @@ import { maxHp, dexCount, xpProgress, hpBand, LEVEL_CAP } from './mon';
 import { useLevelCandy } from './levelUpScene';
 import { itemDef, applyHeal, usableOutOfBattle, packCounts } from './inventory';
 import { PARTY_CAP } from './locker';
-import { reduceHeat } from './heat';
+import { reduceHeat, heatKey } from './heat';
 import { writeSave, sessionOnlyWarning } from './save';
 import { ALERT_IDX, type Palette } from '../data/palettes';
 import { listInput, flash, tickFlash } from './ui/listScreen';
@@ -210,14 +210,14 @@ function usePackItem(p: PackNav, id: string): void {
     flash(p, 'USE IN PARTY.'); // heals and candy need a mon target — PARTY owns that
     return;
   }
-  const stage = G.heatState[G.map.id]?.stage ?? 0;
+  const stage = G.heatState[heatKey(G.map)]?.stage ?? 0;
   if (!usableOutOfBattle(id, stage)) {
     flash(p, "CAN'T USE NOW.");
     return;
   }
   // SMOKE BALL with the map hot: one stage off, 3→2 cancels the lockdown
   consumeItem(id);
-  reduceHeat(G.heatState, G.map.id, G.playSeconds);
+  reduceHeat(G.heatState, heatKey(G.map), G.playSeconds);
   flash(p, 'HEAT DOWN!', true);
 }
 

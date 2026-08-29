@@ -924,6 +924,102 @@ HEADS.medic = {
   '...02222220.....'),
 };
 
+// CH4.2 — S.S. ANN crew heads. All three re-cut the grunt cap silhouette
+// (rows 5-7 are the grunt face untouched, so eyes stay at the grunt
+// positions: row6 cols 4/11 facing down, col4 facing left) per facings d/u/s.
+HEADS.sailor = { // white cap (shade3) + navy band (shade1); `u` is a plain cap back
+  d: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033311133330..',
+  '..033311133330..',
+  '..000000000000..',
+  '..022222222220..',
+  '..020222222020..',
+  '...0222222220...'),
+  u: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033333333330..',
+  '..033333333330..',
+  '..000000000000..',
+  '..000000000000..',
+  '..002222222200..',
+  '...0222222220...'),
+  s: S(
+  '....03333330....',
+  '...0333333330...',
+  '..031133333300..',
+  '..031133333300..',
+  '..000000000000..',
+  '..022222200000..',
+  '..0202222200....',
+  '...02222220.....'),
+};
+
+HEADS.captain = { // peaked cap: cream (shade3) crown, navy (shade1) peak/brim
+  // with a 2px cream badge — reuses the guard cap's badge row verbatim
+  // (navy fill + pale badge already matches this combo)
+  d: S(
+  '....03333330....',
+  '...0333333330...',
+  '..011113311110..',
+  '..011113311110..',
+  '..000000000000..',
+  '..022222222220..',
+  '..020222222020..',
+  '...0222222220...'),
+  u: S(
+  '....03333330....',
+  '...0333333330...',
+  '..033333333330..',
+  '..033333333330..',
+  '..000000000000..',
+  '..000000000000..',
+  '..002222222200..',
+  '...0222222220...'),
+  s: S(
+  '....03333330....',
+  '...0333333330...',
+  '..013311111100..',
+  '..013311111100..',
+  '..000000000000..',
+  '..022222200000..',
+  '..0202222200....',
+  '...02222220.....'),
+};
+
+HEADS.chief = { // flat dark (shade0) cap, shade3 badge, a wider/harder jaw
+  // on the last face row than the grunt taper
+  d: S(
+  '....00000000....',
+  '...0000000000...',
+  '..000003300000..',
+  '..000033030000..',
+  '..000003300000..',
+  '..022222222220..',
+  '..020222222020..',
+  '..022222222220..'),
+  u: S(
+  '....00000000....',
+  '...0000000000...',
+  '..000000000000..',
+  '..000000000000..',
+  '..000011110000..',
+  '..000000000000..',
+  '..002222222200..',
+  '...0222222220...'),
+  s: S(
+  '....00000000....',
+  '...0000000000...',
+  '..000330000000..',
+  '..003303000000..',
+  '..000330000000..',
+  '..022222200000..',
+  '..0202222200....',
+  '..022222220.....'),
+};
+
 // ── Trainer battle portraits (CH2.4) — 24×24, keyed by EncounterDef.trainer
 // label. Drawn 2× at the foe anchor during the 'slide' phase only; trainers
 // without an entry (GUARD) keep the label-only intro.
@@ -987,6 +1083,36 @@ export const PORTRAITS: Record<string, { rows: SpriteRows; pal: string[] }> = {
     '........................'),
     pal: OBJ_PAL.kira,
   },
+  // CH4.3 — security chief, the same 24×24 template again; a single navy
+  // pixel just inside the left silhouette edge (row 8) reads as an earpiece.
+  'SECURITY CHIEF': {
+    rows: S(
+    '........................',
+    '.......0111111110.......',
+    '......011111111110......',
+    '.....01111111111110.....',
+    '.....01111111111110.....',
+    '.....00011111111000.....',
+    '.....00222222222200.....',
+    '.....01222222222220.....',
+    '.....02222222222220.....',
+    '.....02222222222220.....',
+    '.....02222000022220.....',
+    '.....00222222222200.....',
+    '......002222222200......',
+    '.......0000220000.......',
+    '......000002200000......',
+    '....00000000000000000...',
+    '...0000000000000000000..',
+    '...0030000000000003000..',
+    '...0030001111000003000..',
+    '...0000011111100000000..',
+    '...0000011111100000000..',
+    '...0000001111000000000..',
+    '...0000000000000000000..',
+    '........................'),
+    pal: OBJ_PAL.chief,
+  },
 };
 
 // ── Character registry + composition ─────────────────────────────────────
@@ -999,6 +1125,11 @@ export const CHARSETS: Record<string, Charset> = {
   brad:    { head: HEADS.brad,    body: BODY_DARK, pal: OBJ_PAL.brad },
   kira:    { head: HEADS.kira,    body: BODY_DARK, pal: OBJ_PAL.kira },
   medic:   { head: HEADS.medic,   body: BODY_DARK, pal: OBJ_PAL.medic },
+  // CH4.2 — S.S. ANN crew: sailor doubles as the player's disguise charset
+  // (OBJ_PAL.sailor decodes CHAR_FRAMES.player too, per CH4.0 §3).
+  sailor:  { head: HEADS.sailor,  body: BODY_SUIT, pal: OBJ_PAL.sailor },
+  captain: { head: HEADS.captain, body: BODY_SUIT, pal: OBJ_PAL.captain },
+  chief:   { head: HEADS.chief,   body: BODY_SUIT, pal: OBJ_PAL.chief },
 };
 
 // ── RNK.5: worn gear overlays ────────────────────────────────────────────

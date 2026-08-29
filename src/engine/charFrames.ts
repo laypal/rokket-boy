@@ -52,16 +52,20 @@ export function buildCharFrames(): void {
 // keep drawing plain CHAR_FRAMES.grunt on purpose.
 let playerSig: string | null = null;
 
-export function buildPlayerFrames(ownedGearIds: string[]): void {
+/** `pal` is an OBJ_PAL key — 'player' by default; CH4.1's disguise passes
+ *  the map's `disguise` palette ('sailor') while the suit is on. A palette
+ *  swap is a second signature input, not a second charset: gear still
+ *  composes over the grunt rows and the gold slot (idx 4) still draws. */
+export function buildPlayerFrames(ownedGearIds: string[], pal = 'player'): void {
   // RNK.5c: decode with the five-shade PLAYER palette so gear rows may use
   // gold (digit 4); the grunt rows themselves only ever use 0–3, so with no
   // gear the result is pixel-identical to CHAR_FRAMES.grunt.
   const cs = composeCharset(CHARSETS.grunt, ownedGearIds);
-  CHAR_FRAMES.player = buildSet({ ...cs, pal: OBJ_PAL.player });
-  playerSig = wornGear(ownedGearIds).join('|');
+  CHAR_FRAMES.player = buildSet({ ...cs, pal: OBJ_PAL[pal] ?? OBJ_PAL.player });
+  playerSig = pal + '|' + wornGear(ownedGearIds).join('|');
 }
 
-export function ensurePlayerFrames(ownedGearIds: string[]): void {
-  if (wornGear(ownedGearIds).join('|') === playerSig) return;
-  buildPlayerFrames(ownedGearIds);
+export function ensurePlayerFrames(ownedGearIds: string[], pal = 'player'): void {
+  if (pal + '|' + wornGear(ownedGearIds).join('|') === playerSig) return;
+  buildPlayerFrames(ownedGearIds, pal);
 }

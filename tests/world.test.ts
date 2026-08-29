@@ -676,3 +676,121 @@ describe('drill map lockdown (SIDE.5 training exemption)', () => {
     expect(G.state).toBe('worldwait');
   });
 });
+
+// ── CH4.1: disguise gate + heat zones in heatTick ────────────────────────
+// Same fixture and beat table as the 1f.15 BDD test above: guard at (1,1),
+// player at (4,1) in the 'right' gaze window (frames 90..179), first
+// eye-contact check at frame 90.
+describe('heatTick — CH4.1 disguise gate and heat zones', () => {
+  const guardAt11 = (): NpcDef => ({ id: 'gD', char: 'guard', x: 1, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } });
+  function stage(map: MapDef, playerX = 4): void {
+    G.map = map;
+    G.player.x = playerX;
+    G.player.y = 1;
+    G.player.dir = DOWN;
+    G.player.moving = false;
+    G.player.prog = 0;
+  }
+  beforeEach(() => {
+    resetQuest();
+    G.heatState = {};
+    G.state = 'world';
+    G.frame = 0;
+    G.playSeconds = 0;
+    G.battle = null;
+    clearMapGuardRuntime('corner');
+  });
+  afterEach(() => {
+    G.map = MAPS.hq;
+    G.state = 'world';
+  });
+
+  it('a covered sailor (suit on, walking, no loot) is never sighted: no startle, no stage, suit stays on', () => {
+    const guard = guardAt11();
+    stage(makeHeatMap(['#########', '#       #', '#########'], [guard]));
+    quest.flags.ch4Suit = true;
+    quest.flags.disguised = true;
+    G.heatState.corner = setHeat(calmHeat(), 1, 0);
+    for (G.frame = 1; G.frame <= 191; G.frame++) heatTick();
+    expect(G.heatState.corner?.stage).toBe(1);
+    expect(guardRuntime('corner', guard).mode).toBe('post');
+    expect(guardRuntime('corner', guard).spotFlash).toBe(0);
+    expect(quest.flags.disguised).toBe(true);
+    expect(G.state).toBe('world');
+  });
+
+  it('carrying the loot blows the suit on the first eye contact, then the 1f escalation runs', () => {
+    const guard = guardAt11();
+    stage(makeHeatMap(['#########', '#       #', '#########'], [guard]));
+    quest.flags.ch4Suit = true;
+    quest.flags.disguised = true;
+    quest.flags.ch4Safe = true; // loot in hand, chief not beaten
+    G.heatState.corner = setHeat(calmHeat(), 1, 0);
+    for (G.frame = 1; G.frame <= 90; G.frame++) heatTick();
+    expect(quest.flags.disguised).toBe(false);
+    expect(G.heatState.corner?.stage).toBe(2);
+    expect(guardRuntime('corner', guard).spotFlash).toBeGreaterThan(0);
+  });
+
+  it('a zoned map reads and keeps its heat under the ZONE key, and a long clock is not decayed at 30 s', () => {
+    const map = makeHeatMap(['#####', '#   #', '#####'], []);
+    map.heatZone = 'ship';
+    map.lockdown = 300;
+    stage(map, 2);
+    G.heatState.ship = setHeat(calmHeat(), 3, 0, { lockdown: 300 });
+    G.playSeconds = 299;
+    G.frame = 1;
+    expect(heatTick()).toBe(false);
+    expect(G.heatState.ship).toEqual({ stage: 3, decayAt: 300, lockdownAt: 300 });
+    expect(G.heatState.corner).toBeUndefined();
+  });
+});
+
+// ── CH4.0 §1b: `watch` maps scan at stage 0 ──────────────────────────────
+describe('heatTick — CH4 watch maps (gala security scans even when calm)', () => {
+  beforeEach(() => {
+    resetQuest();
+    G.heatState = {};
+    G.state = 'world';
+    G.frame = 0;
+    G.playSeconds = 0;
+    G.battle = null;
+    clearMapGuardRuntime('corner');
+  });
+  afterEach(() => {
+    G.map = MAPS.hq;
+    G.state = 'world';
+  });
+
+  it('a calm watch map sights an undisguised player and raises to stage 1 on the first eye contact', () => {
+    const guard: NpcDef = { id: 'gW', char: 'guard', x: 1, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } };
+    const map = makeHeatMap(['#########', '#       #', '#########'], [guard]);
+    map.watch = true;
+    G.map = map;
+    Object.assign(G.player, { x: 4, y: 1, dir: DOWN, moving: false, prog: 0 });
+    for (G.frame = 1; G.frame <= 90; G.frame++) heatTick();
+    expect(G.heatState.corner?.stage).toBe(1);
+    expect(guardRuntime('corner', guard).spotFlash).toBeGreaterThan(0);
+  });
+
+  it('a calm NON-watch map never scans (the 1f contract holds elsewhere)', () => {
+    const guard: NpcDef = { id: 'gN', char: 'guard', x: 1, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } };
+    G.map = makeHeatMap(['#########', '#       #', '#########'], [guard]);
+    Object.assign(G.player, { x: 4, y: 1, dir: DOWN, moving: false, prog: 0 });
+    for (G.frame = 1; G.frame <= 200; G.frame++) heatTick();
+    expect(G.heatState.corner).toBeUndefined();
+  });
+
+  it('a covered sailor on a watch map is still furniture', () => {
+    const guard: NpcDef = { id: 'gWD', char: 'guard', x: 1, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } };
+    const map = makeHeatMap(['#########', '#       #', '#########'], [guard]);
+    map.watch = true;
+    G.map = map;
+    Object.assign(G.player, { x: 4, y: 1, dir: DOWN, moving: false, prog: 0 });
+    quest.flags.ch4Suit = true;
+    quest.flags.disguised = true;
+    for (G.frame = 1; G.frame <= 400; G.frame++) heatTick();
+    expect(G.heatState.corner).toBeUndefined();
+    expect(quest.flags.disguised).toBe(true);
+  });
+});

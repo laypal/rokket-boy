@@ -215,4 +215,54 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     onLose: [],
     onFlee: [{ say: [['KIRA: Cold feet?', 'The span will', "wait. I won't."]] }],
   },
+  // ── CH4 S.S. ANN ────────────────────────────────────────────────────────
+  // Posted watch guards (heatGuard contact, not a scripted ambush): a delay,
+  // not a payday — onWin/onLose are both empty by CH4.0 §1b's design (the
+  // gala is never "calm", so these fights are the cost of being spotted, not
+  // a reward). The chief is the real gate: a chained 2-mon boss like BRAD's
+  // onFlee, ratikate then arbok, winning the gangway back for the escape.
+  ship_watch: {
+    trainer: 'SHIP WATCH',
+    foe: { species: 'golbatt', lv: 13 },
+    winText: ['WATCH: Ugh...', 'caught me', 'napping.'],
+    onWin: [],
+    onLose: [],
+    onFlee: [],
+  },
+  ship_hold: {
+    trainer: 'HOLD WATCH',
+    foe: { species: 'gravlr', lv: 13 },
+    winText: ['WATCH: Fine,', 'go on then.', 'Nothing to see.'],
+    onWin: [],
+    onLose: [],
+    onFlee: [],
+  },
+  ss_chief1: {
+    trainer: 'SECURITY CHIEF',
+    foe: { species: 'ratikate', lv: 15 },
+    winText: ['CHIEF: Hah!', '...that was the', 'warm-up.'],
+    onWin: [{ battle: 'ss_chief2' }],
+    onLose: [],
+    onFlee: [{ say: [['CHIEF: Run. Fine.', "I'll be waiting."]] }],
+  },
+  ss_chief2: {
+    trainer: 'SECURITY CHIEF',
+    foe: { species: 'arbok', lv: 16 },
+    winText: ['CHIEF: ...Get', 'out of my sight.'],
+    onWin: [
+      { setFlag: 'ch4Done' },
+      {
+        say: [
+          ['CHIEF: ...Fine.', 'Go. Before I', 'change my mind.'],
+          ['A radio crackle:', 'LIEUTENANT,', 'confirmed.'],
+        ],
+      },
+      { music: 'victory' },
+      { rankUp: true },
+      RIDE_HOME, // FLW.4: after rankUp, before endScreen — see the ordering comment above
+      { endScreen: true },
+    ],
+    onLose: [],
+    onFlee: [{ say: [['CHIEF: Coward.', "I'm not chasing."]] }],
+  },
 };

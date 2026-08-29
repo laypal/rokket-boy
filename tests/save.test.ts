@@ -230,6 +230,19 @@ describe('migrate — V2 chain (1f.2)', () => {
     expect(out!.vars).toEqual({ slotSpins: 7 });
   });
 
+  it('CH4.0 §1: a ZONE heat key (not a map id) rides snapshot → migrate → applySave untouched', () => {
+    // The S.S. ANN's three maps share heatState.ship; a save mid-heist must
+    // bring the armed 5-minute clock back. No version bump — the JSON key
+    // was always a string.
+    G.heatState = { ship: { stage: 3, decayAt: 400, lockdownAt: 400 } };
+    const out = migrate(JSON.parse(JSON.stringify(snapshot())));
+    expect(out!.heat).toEqual({ ship: { stage: 3, decayAt: 400, lockdownAt: 400 } });
+    G.heatState = {};
+    applySave(out!);
+    expect(G.heatState.ship).toEqual({ stage: 3, decayAt: 400, lockdownAt: 400 });
+    G.heatState = {};
+  });
+
   it('preserves a populated V2 heat blob through migrate and a storage round-trip', () => {
     const entry: HeatSaveEntry = { stage: 2, decayAt: 45, lockdownAt: null };
     const heat: SaveV2['heat'] = { corner: entry };

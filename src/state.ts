@@ -71,7 +71,7 @@ export interface GameState {
   /** §4.8 HEAT: per-map alarm runtime. Absent key = calm. Set by the heat
    *  script hook (worldHooks.heat), ticked in worldUpdate (1f.6), serialized
    *  into SaveV2.heat. Timestamps are playSeconds-relative. */
-  heatState: Partial<Record<MapId, HeatState>>;
+  heatState: Partial<Record<string, HeatState>>; // keyed by heatKey(map) — a zone or the map id (CH4.0 §1)
   /** §4.7 rank card: set by the rankUp script hook, drawn by scenes.ts;
    *  after() resumes the suspended script on dismiss. */
   rankCard: { rank: string; after: () => void } | null;

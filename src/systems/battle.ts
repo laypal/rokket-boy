@@ -25,7 +25,7 @@ import { itemDef, applyHeal, usableInBattle, packCounts } from './inventory';
 import { quest, checkCond } from './quest';
 import { jobBattleWon } from './jobs';
 import { sharedWhiteout } from './recovery';
-import { reduceHeat } from './heat';
+import { reduceHeat, heatKey } from './heat';
 import { perkPct } from './perks';
 
 // Injectable RNG (plan §4.9): seeded-snapshot battle tests swap this out;
@@ -234,7 +234,7 @@ export function battleUpdate(): void {
     case 'slide':
       if (b.t > 40) {
         b.phase = 'open';
-        if (b.enc.trainer) say(b, [b.enc.trainer + ' sent out', spec(b.foe).name + '!']);
+        if (b.enc.trainer) say(b, wrapWords(b.enc.trainer + ' sent out ' + spec(b.foe).name + '!'));
         else say(b, ['Wild ' + spec(b.foe).name, 'appeared!']);
         say(b, ['Go! ' + monName(active(b)) + '!']);
         coach(b, 'firstTurn'); // ONB.5 — lands after "Go! …", before the menu
@@ -451,7 +451,7 @@ function useItem(b: BattleState, id: string): void {
   // key item — SMOKE BALL: guaranteed getaway; §4.8 also blows one stage off
   // the map's HEAT (3→2 cancels the lockdown) before the flee lands
   consume(id);
-  reduceHeat(G.heatState, G.map.id, G.playSeconds);
+  reduceHeat(G.heatState, heatKey(G.map), G.playSeconds);
   Audio2.sfx('item');
   b.phase = 'anim';
   say(b, ['Popped a', id + '!'], () => {
@@ -523,10 +523,28 @@ function pickSwitch(b: BattleState): void {
   say(b, ['Go! ' + monName(active(b)) + '!'], () => (wasForced ? toMenu(b) : enemyTurn(b)));
 }
 
+/** CH4 playtest: word-wrap a GENERATED battle line to the box's 17-glyph
+ *  cap. Trainer names are data — SECURITY CHIEF is 14 glyphs — so the old
+ *  hand-split templates ('...NAME is' / 'NAME sent out') clipped mid-word
+ *  the first time a name outgrew the GUARD/BRAD/KIRA it was split around.
+ *  Authored text (winText, say pages) is linted at 17 and never comes here. */
+export function wrapWords(text: string, w = 17): string[] {
+  const out: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    if (line && line.length + 1 + word.length > w) {
+      out.push(line);
+      line = word;
+    } else line = line ? line + ' ' + word : word;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
 function doFlee(b: BattleState): void {
   b.phase = 'anim';
   const lines = b.enc.trainer
-    ? ['Got away safely!', '...' + b.enc.trainer + ' is', 'still there.']
+    ? ['Got away safely!', ...wrapWords('...' + b.enc.trainer + ' is still there.')]
     : ['Got away safely!'];
   say(b, lines, () => endBattleFlee(b));
 }

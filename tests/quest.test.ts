@@ -174,7 +174,7 @@ describe('chapter state machine (§4.7)', () => {
     expect(currentObjective()).toBe('WORK THE SPAN');
   });
 
-  it('ch3 walks its two steps (spanLass gates the gauntlet, ch3Done ends it), then the tease', () => {
+  it('ch3 walks its two steps (spanLass gates the gauntlet, ch3Done ends it), then rolls into ch4', () => {
     for (const f of ['briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone', 'fossilsTaken', 'bradBeaten', 'ch2Done'] as const)
       quest.flags[f] = true;
     expect(currentObjective()).toBe('WORK THE SPAN');
@@ -184,6 +184,19 @@ describe('chapter state machine (§4.7)', () => {
     quest.flags.spanLass = true;
     expect(currentObjective()).toBe('BEAT KIRA');
     quest.flags.ch3Done = true;
+    // CH4 is authored now: the tease only shows once every chapter is met
+    expect(currentObjective()).toBe('SUIT UP');
+  });
+
+  it('ch4 walks its three steps (suit, safe, chief), then the tease', () => {
+    for (const f of ['briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone', 'fossilsTaken', 'bradBeaten', 'ch2Done', 'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done'] as const)
+      quest.flags[f] = true;
+    expect(currentObjective()).toBe('SUIT UP');
+    quest.flags.ch4Suit = true;
+    expect(currentObjective()).toBe('CRACK THE SAFE');
+    quest.flags.ch4Safe = true;
+    expect(currentObjective()).toBe('BEAT THE CHIEF');
+    quest.flags.ch4Done = true;
     expect(currentObjective()).toBe('AWAIT ORDERS.');
   });
 

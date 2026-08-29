@@ -1592,7 +1592,9 @@ describe('trainer-flee branch (battle.ts:597)', () => {
     tap('down'); tap('down'); tap('down'); tap('down'); // sel 4 = LEG IT
     tap('a');
     frame(); // shift the queued flee message into b.msg
-    expect(b().msg!.lines).toEqual(['Got away safely!', '...GUARD is', 'still there.']);
+    // CH4 playtest: word-wrapped at 17 now (wrapWords), not hand-split —
+    // same words, the break moved so SECURITY CHIEF can't clip mid-word.
+    expect(b().msg!.lines).toEqual(['Got away safely!', '...GUARD is still', 'there.']);
     settle();
     expect(G.battle).toBeNull();
     expect(follow).toBeNull(); // guard_voltorbb.onFlee is empty → null

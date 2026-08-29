@@ -45,6 +45,11 @@ function freshFlags(): Flags {
     ch2Briefed: false,
     ch3Briefed: false,
     introToured: false,
+    ch4Briefed: false,
+    ch4Suit: false,
+    ch4Safe: false,
+    ch4Done: false,
+    disguised: false,
   };
 }
 
@@ -179,6 +184,16 @@ export const CHAPTERS: ChapterDef[] = [
     steps: [
       { objective: 'WORK THE SPAN', done: { flag: 'spanLass' } },
       { objective: 'BEAT KIRA', done: { flag: 'ch3Done' } },
+    ],
+  },
+  // CH4 (S.S. ANN): suit up, crack the safe, then win the gangway back from
+  // the chief — ss_chief2's onWin sets ch4Done and promotes to LIEUTENANT.
+  {
+    id: 'ch4',
+    steps: [
+      { objective: 'SUIT UP', done: { flag: 'ch4Suit' } },
+      { objective: 'CRACK THE SAFE', done: { flag: 'ch4Safe' } },
+      { objective: 'BEAT THE CHIEF', done: { flag: 'ch4Done' } },
     ],
   },
 ];
