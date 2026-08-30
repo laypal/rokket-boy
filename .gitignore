@@ -21,3 +21,13 @@ test-results/
 
 # superpowers brainstorm companion (mockups + screenshots, session-scoped)
 .superpowers/
+
+# TOOL.1/TOOL.2 previews (sprite PNGs, WAVs) — never committed
+scratch/
+
+# Sprite Studio (sprite-maker) workspace scaffold — local tool state, never committed
+.sprite-studio/
+
+# Sprite Studio workspace outputs — chars.ts holds the imported truth; PNGs regenerate via npm run sprite
+/assets/
+/exports/

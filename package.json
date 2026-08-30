@@ -16,13 +16,16 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:prod": "playwright test --config playwright.prod.config.ts",
-    "test:e2e:dist": "playwright test --config playwright.dist.config.ts"
+    "test:e2e:dist": "playwright test --config playwright.dist.config.ts",
+    "sprite": "node scripts/sprite-io.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.0",
+    "@types/pngjs": "^6.0.5",
     "eslint": "^10.6.0",
+    "pngjs": "^7.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.63.0",
     "vite": "^8.1.3",
