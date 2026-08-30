@@ -50,6 +50,18 @@ describe('glyphRows', () => {
   });
   it('returns null outside ASCII 32..126', () => {
     expect(glyphRows('')).toBeNull();
-    expect(glyphRows('Ö')).toBeNull(); // Ö not in the 8×8 set
+    expect(glyphRows('é')).toBeNull(); // é has no bitmap; Ö gained one in CH6 (EXTRA_GLYPHS) — pinned below
+  });
+});
+
+// CH6 playtest (2026-08-30): the umlaut names had rendered with a gap since
+// SPR.B — glyphRows returned null for Ö. Pin the hand-drawn glyph: two dots,
+// a gap row, a squat O; anything else non-ASCII still falls out as null.
+describe('glyphRows — the Ö umlaut (EXTRA_GLYPHS)', () => {
+  it('draws Ö as 8 rows with the dots on top and nothing for other accents', () => {
+    const o = glyphRows('Ö');
+    expect(o).toEqual([0x36, 0x00, 0x1c, 0x36, 0x63, 0x63, 0x36, 0x1c]);
+    expect(glyphRows('é')).toBeNull();
+    expect(glyphRows('O')).not.toBeNull();
   });
 });

@@ -26,4 +26,12 @@ export const MOVES: Record<MoveId, MoveDef> = {
   shade:     { id: 'shade',     name: 'SHADE',     type: 'GHOST',  power: 70, acc: 0.85, anim: 'gas',   desc: 'SHADOWS SWALLOW.' },
   boneclub:  { id: 'boneclub',  name: 'BONE CLUB', type: 'GROUND', power: 65, acc: 0.85, anim: 'lob',   desc: 'A THROWN OLD BONE.' },
   payday:    { id: 'payday',    name: 'PAY DAY',   type: 'NORMAL', power: 40, acc: 1,    anim: 'lob',   desc: 'COINS FLY. YOURS.' },
+  // SPR.D / CH6 — the first PSYCHIC and FIGHTING moves (DROWZEY/HYPNÖZ,
+  // MACHOPP/MACHÖKE lines). Existing FxIds only; DREAM EAT drains like DRAIN.
+  confuse:   { id: 'confuse',   name: 'CONFUSION', type: 'PSYCHIC',  power: 50, acc: 1,    anim: 'rings', desc: 'A DIZZYING PULSE.' },
+  psybeam:   { id: 'psybeam',   name: 'PSYBEAM',   type: 'PSYCHIC',  power: 65, acc: 0.9,  anim: 'bolt',  desc: 'BENDS THE MIND.' },
+  dreameat:  { id: 'dreameat',  name: 'DREAM EAT', type: 'PSYCHIC',  power: 70, acc: 0.9,  anim: 'gas',   desc: 'EATS YOUR DREAMS.', effect: 'drain' },
+  lowkick:   { id: 'lowkick',   name: 'LOW KICK',  type: 'FIGHTING', power: 45, acc: 0.95, anim: 'lunge', desc: 'SWEEPS THE LEGS.' },
+  karate:    { id: 'karate',    name: 'KARATE',    type: 'FIGHTING', power: 50, acc: 1,    anim: 'lunge', desc: 'A FLAT-HAND CHOP.' },
+  submit:    { id: 'submit',    name: 'VICE GRIP', type: 'FIGHTING', power: 80, acc: 0.8,  anim: 'blast', desc: 'A CRUSHING HOLD.' },
 };

@@ -36,6 +36,10 @@ export const ITEMS: Record<string, ItemDef> = {
   [SCOPE_ITEM]: { id: SCOPE_ITEM, kind: 'key', price: 0, desc: 'SEES THROUGH FOG.' },
   'BONE CHARM': { id: 'BONE CHARM', kind: 'key', price: 0, desc: 'CALMS A SPIRIT.' },
   'BONE MASK': { id: 'BONE MASK', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // CH6 SYLPHCO TOWER — the CARD KEY opens every 'd' door (a 3F pickup,
+  // CH6.0 §2/§8), the BOSS BALL is the prize. Neither buyable nor sellable.
+  'CARD KEY': { id: 'CARD KEY', kind: 'key', price: 0, desc: 'OPENS THE DOORS.' },
+  'BOSS BALL': { id: 'BOSS BALL', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
   // SIDE.7: the Gamez Corner jackpot prize — never stocked, never bought;
   // only the special machine's tile script grants it (dialog/corner.ts).
   'LEVEL CANDY': { id: 'LEVEL CANDY', kind: 'candy', price: 0, desc: 'UP ONE LEVEL.' },

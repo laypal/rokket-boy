@@ -302,6 +302,98 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     onLose: [],
     onFlee: [],
   },
+  // ── CH6 SYLPHCO TOWER ───────────────────────────────────────────────────
+  // syl_watch is the stealth floors' contact fight (heatGuard on syl2/syl4):
+  // a delay, not a payday — onWin/onLose empty, the ship_watch shape (CH6.0
+  // §6). The trainers below are the chapter's once-only paydays: doorman +
+  // two clerks + exec each pay once behind their own flag; the bodyguard duo
+  // chains guard1 → guard2 with NO heal in between (CH6.0 §5), and only
+  // guard2's onWin sets ch6Duo — a wipe or flee between the two records
+  // nothing and leaves the office chest sealed.
+  syl_watch: {
+    trainer: 'SYLPH GUARD',
+    foe: { species: 'drowzey', lv: 21 },
+    winText: ['GUARD: Ugh.', 'Just... go.', "I didn't see you."],
+    onWin: [],
+    onLose: [],
+    onFlee: [],
+  },
+  syl_doorman: {
+    trainer: 'DOORMAN',
+    foe: { species: 'golbatt', lv: 21 },
+    winText: ['DOORMAN: Fine.', 'FINE. Take the', 'lift.'],
+    onWin: [
+      { setFlag: 'sylDoorman' },
+      { addCoins: 150 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 150 COINS!'] },
+      { say: [['He straightens', 'his tie and looks', 'at the ceiling.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  syl_clerk1: {
+    trainer: 'CLERK',
+    foe: { species: 'drowzey', lv: 22 },
+    winText: ['CLERK: Fine!', 'Records are', 'yours. Sort of.'],
+    onWin: [
+      { setFlag: 'sylClerkA' },
+      { addCoins: 180 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 180 COINS!'] },
+      { say: [['She goes back to', 'filing, slower', 'than before.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  syl_clerk2: {
+    trainer: 'CLERK',
+    foe: { species: 'gravlr', lv: 23 },
+    winText: ['CLERK: Ugh. The', 'cabinet. Go on.'],
+    onWin: [
+      { setFlag: 'sylClerkB' },
+      { addCoins: 200 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 200 COINS!'] },
+      // 'the way, muttering' is 18 chars — trimmed to fit the 17-char box
+      { say: [['He slides aside,', 'muttering about', 'overtime.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  syl_exec: {
+    trainer: 'EXEC',
+    foe: { species: 'hypnoz', lv: 25 },
+    winText: ['EXEC: Noted.', "I'll escalate", 'this.'],
+    onWin: [
+      { setFlag: 'sylExec' },
+      { addCoins: 300 },
+      { sfx: 'item' },
+      { sysMsg: ['GOT 300 COINS!'] },
+      { say: [['He types a memo', 'about you, very', 'fast.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  syl_guard1: {
+    trainer: 'BODYGUARD',
+    foe: { species: 'machopp', lv: 25 },
+    winText: ['GUARD: Tch.', 'PARTNER. Your', 'turn.'],
+    onWin: [{ battle: 'syl_guard2' }],
+    onLose: [],
+    onFlee: [{ say: [['GUARD: Run, then.', "We're not going", 'anywhere.']] }],
+  },
+  syl_guard2: {
+    trainer: 'BODYGUARD',
+    foe: { species: 'machoke', lv: 27 },
+    winText: ['GUARD: ...Fine.', "He's all yours."],
+    onWin: [
+      { setFlag: 'ch6Duo' },
+      { say: [['The bodyguards', 'limp off to call', 'someone.']] },
+    ],
+    onLose: [],
+    onFlee: [{ say: [['GUARD: Back to', 'square one, then.']] }],
+  },
   lav_spirit: {
     foe: { species: 'marowl', lv: 22 },
     uncatchable: true,

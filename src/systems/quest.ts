@@ -58,6 +58,16 @@ function freshFlags(): Flags {
     lavMedium1: false,
     lavMedium2: false,
     myowthGagSeen: false,
+    ch6Briefed: false,
+    ch6Rules: false,
+    ch6Smoke: false,
+    ch6Duo: false,
+    ch6Ball: false,
+    ch6Done: false,
+    sylDoorman: false,
+    sylClerkA: false,
+    sylClerkB: false,
+    sylExec: false,
   };
 }
 
@@ -228,6 +238,20 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'CALM THE SPIRIT', done: { flag: 'ch5Spirit' } },
       { objective: 'TAKE THE MASK', done: { flag: 'ch5Mask' } },
       { objective: 'REPORT TO BOSS', done: { flag: 'ch5Done' } },
+    ],
+  },
+  // CH6 (SYLPHCO TOWER): three hard gates keep these in order — DJames
+  // stands on the only lift pad up until he's taught the ALARM rules, the
+  // CARD KEY is the only way through the doors, and the bodyguards block
+  // the chest. The hand-in promotes to EXECUTIVE (CH6.0 assumption 1).
+  {
+    id: 'ch6',
+    steps: [
+      { objective: 'TALK TO DJAMES', done: { flag: 'ch6Rules' } },
+      { objective: 'FIND THE CARD KEY', done: { hasItem: 'CARD KEY' } },
+      { objective: 'BEAT THE GUARDS', done: { flag: 'ch6Duo' } },
+      { objective: 'STEAL BOSS BALL', done: { flag: 'ch6Ball' } },
+      { objective: 'REPORT TO BOSS', done: { flag: 'ch6Done' } },
     ],
   },
 ];

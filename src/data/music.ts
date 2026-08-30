@@ -170,6 +170,23 @@ export const TRACKS: Record<string, Track> = {
           D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2 D2 G#2`,
     dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.s.s.`,
   },
+  // CH6 — SYLPHCO TOWER, clipped corporate-muzak minor loop (area loop)
+  sylph: {
+    bpm: 120,
+    p1: `D4 -  F4 -  A4 -  F4 -  D4 -  -  -  C4 -  D4 -
+         A3 -  C4 -  E4 -  C4 -  A3 -  -  -  G3 -  A3 -
+         A#3 - D4 -  F4 -  D4 -  A#3 - -  -  A3 -  A#3 -
+         C4 -  E4 -  G4 -  E4 -  D4 -  C4 -  D4 -  -  -`,
+    p2: `-  F3 -  D3 -  F3 -  D3 -  F3 -  D3 -  F3 -  D3
+         -  E3 -  C3 -  E3 -  C3 -  E3 -  C3 -  E3 -  C3
+         -  F3 -  D3 -  F3 -  D3 -  F3 -  D3 -  F3 -  D3
+         -  E3 -  C3 -  E3 -  G3 -  E3 -  D3 -  C3 -  C3`,
+    tri: `D2 A1 D2 A1 D2 A1 D2 A1 D2 A1 D2 A1 D2 A1 D2 A1
+          A1 E2 A1 E2 A1 E2 A1 E2 A1 E2 A1 E2 A1 E2 A1 E2
+          A#1 F2 A#1 F2 A#1 F2 A#1 F2 A#1 F2 A#1 F2 A#1 F2 A#1 F2
+          C2 G1 C2 G1 C2 G1 C2 G1 C2 G1 C2 G1 C2 G1 C2 G1`,
+    dr: `k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.h. k.h.s.h.k.h.s.ss`,
+  },
   // Cold open — upbeat GB-fanfare energy, G major (ONB.9-FB: was too slow/minor)
   intro: {
     bpm: 150,

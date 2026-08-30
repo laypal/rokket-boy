@@ -606,7 +606,7 @@ export const TILES: Record<string, SpriteRows[]> = {
   '.': [T.VOID],
 };
 // tiles you can walk on
-export const WALKABLE: Set<string> = new Set([' ', '_', ',', '1', '2', '3', '4', 'o', '>', 'W', '~']);
+export const WALKABLE: Set<string> = new Set([' ', '_', ',', '1', '2', '3', '4', 'o', '>', 'W', '~', 'h']);
 
 // item ball on floor
 T.BALL = S(
@@ -873,3 +873,65 @@ T.CANDY_B = S(
 '0000000000000000',
 '1111111111111111');
 TILES['Q'] = [T.CANDY_A, T.CANDY_B];
+
+// CH6.0 §1 — card-key door, blocking (not in WALKABLE). The DOOR frame with
+// the opening filled by a shade-1 slab and a card-reader plate (shade-3
+// slot, shade-0 dot). `k` was the plan's letter, but ONB.8's facade took
+// it, so `d`. Scripts turn it into 'o' once the CARD KEY is held.
+T.LOCKDOOR = S(
+'0000000000000000',
+'0111111111111110',
+'0111111111111110',
+'0112222222222110',
+'0112222222222110',
+'0112222222222110',
+'0112222222222110',
+'0112222222222110',
+'0112222332222110',
+'0112222302222110',
+'0112222332222110',
+'0112222222222110',
+'0112222222222110',
+'0112222222222110',
+'0111111111111110',
+'0000000000000000');
+TILES['d'] = [T.LOCKDOOR];
+
+// CH6.0 §1/§4 — heal pad, walkable. The PAD ring with a cross glyph in the
+// well; frame B lifts the cross to shade 3 so it pulses on the shared
+// (G.frame>>5)&1 tile cycle (the J/Q idiom) and reads as interactive.
+T.HEALPAD_A = S(
+'1111111111111111',
+'1222222222222222',
+'1220000000000022',
+'1203333333333202',
+'1203111111113202',
+'1203112211213202',
+'1203112211213202',
+'1203122222213202',
+'1203122222213202',
+'1203112211213202',
+'1203112211213202',
+'1203111111113202',
+'1203333333333202',
+'1220000000000022',
+'1222222222222222',
+'1222222222222222');
+T.HEALPAD_B = S(
+'1111111111111111',
+'1222222222222222',
+'1220000000000022',
+'1203333333333202',
+'1203111111113202',
+'1203113311213202',
+'1203113311213202',
+'1203133333313202',
+'1203133333313202',
+'1203113311213202',
+'1203113311213202',
+'1203111111113202',
+'1203333333333202',
+'1220000000000022',
+'1222222222222222',
+'1222222222222222');
+TILES['h'] = [T.HEALPAD_A, T.HEALPAD_B];

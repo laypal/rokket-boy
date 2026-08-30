@@ -38,6 +38,8 @@ export const hqMap: MapDef = makeMap({
         { all: [{ flag: 'ch3Done' }, { notFlag: 'ch4Briefed' }, { notFlag: 'ch4Done' }] },   // CH4 briefing
         { all: [{ flag: 'ch4Done' }, { notFlag: 'ch5Briefed' }, { notFlag: 'ch5Done' }] },   // CH5 briefing
         { all: [{ flag: 'ch5Mask' }, { notFlag: 'ch5Done' }] },                              // CH5 hand-in
+        { all: [{ flag: 'ch5Done' }, { notFlag: 'ch6Briefed' }, { notFlag: 'ch6Done' }] },   // CH6 briefing
+        { all: [{ flag: 'ch6Ball' }, { notFlag: 'ch6Done' }] },                              // CH6 hand-in
       ] } },
     { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down', todoIf: { notFlag: 'drillBattleDone' } }, // ONB.3: until her spar is won once
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },

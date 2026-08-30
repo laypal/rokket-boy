@@ -181,7 +181,7 @@ describe('ch5 objectives (CH5.0 §9)', () => {
     quest.flags.ch5Mask = true;
     expect(currentObjective()).toBe('REPORT TO BOSS');
     quest.flags.ch5Done = true;
-    expect(currentObjective()).toBe('AWAIT ORDERS.');
+    expect(currentObjective()).toBe('TALK TO DJAMES'); // CH6's first objective takes over (the CH4→CH5 precedent)
   });
 });
 

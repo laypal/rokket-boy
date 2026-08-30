@@ -16,6 +16,11 @@ import { cabinMap } from './cabin';
 import { lav1Map } from './lav1';
 import { lav2Map } from './lav2';
 import { lav3Map } from './lav3';
+import { syl1Map } from './syl1';
+import { syl2Map } from './syl2';
+import { syl3Map } from './syl3';
+import { syl4Map } from './syl4';
+import { syl5Map } from './syl5';
 
 export const MAPS: Record<MapId, MapDef> = {
   hq: hqMap,
@@ -35,4 +40,9 @@ export const MAPS: Record<MapId, MapDef> = {
   lav1: lav1Map,
   lav2: lav2Map,
   lav3: lav3Map,
+  syl1: syl1Map,
+  syl2: syl2Map,
+  syl3: syl3Map,
+  syl4: syl4Map,
+  syl5: syl5Map,
 };

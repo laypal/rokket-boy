@@ -295,14 +295,17 @@ describe('the Giovanni hand-in (hq.ts, CH5.0 §9/§12 — no rankUp this chapter
     expect(events).toContain('sysMsg:NEW JOB!');
   });
 
-  it('ch5Done already: the afterglow line only, no re-payout', () => {
+  it('ch5Done already: the CH6 briefing replaces the CH5 afterglow, no re-payout', () => {
     quest.flags.ch5Mask = true;
     quest.flags.ch5Done = true;
     quest.coins = 0;
-    const { hooks, events } = eventHooks();
+    const { hooks, events, says } = eventHooks();
     runScript(hqScripts['npc:giovanni'], hooks);
 
+    expect(quest.flags.ch6Briefed).toBe(true);
     expect(quest.coins).toBe(0);
-    expect(events).toEqual(['say']);
+    expect(events.filter((e) => e === 'say').length).toBe(1); // one say STEP...
+    expect(says[0].length).toBe(5); // ...carrying 5 pages
+    expect(events).toContain('sysMsg:NEW JOB!');
   });
 });

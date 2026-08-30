@@ -31,6 +31,7 @@ export const BG_PAL: Record<string, Palette> = {
   tower:  ['#080810', '#22304a', '#46608a', '#e8d24a', ALERT],   // ONB.8 — Rokket Corp at night; shade 3 is a lit window
   ship:   ['#06101c', '#1c3a5c', '#4a86b0', '#d8ecf8', ALERT],   // CH4.2 — S.S. ANN, night sea
   lavendar: ['#0c0814', '#3a2458', '#7a58a8', '#e0d0f0', ALERT], // CH5.0 §11 — LAVENDAR TOWER, purple; shade 0 is the fog
+  sylph: ['#0a1418', '#1e4a58', '#4a9aa8', '#d8f0f0', ALERT],    // CH6.0 §12 — SYLPHCO TOWER, a cold corporate teal
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -72,6 +73,10 @@ export const OBJ_PAL: Record<string, Palette> = {
   gastlee: ['#0c0814', '#3a2060', '#8a68b8', '#e8e0f8'],
   // SPR.C / CH5 — MAROWL (bossOnly), bone-white on brown.
   marowl:  ['#1c1408', '#7a5a30', '#c8a870', '#f4ecd8'],
+  // SPR.D / CH6 — DROWZEY/HYPNÖZ line, tapir yellow-brown; MACHOPP/MACHÖKE
+  // line, blue-grey.
+  drowzey: ['#1c1408', '#a07828', '#e0c060', '#f8f0d0'],
+  machopp: ['#0c1018', '#3858a0', '#8098c8', '#e0e8f8'],
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────

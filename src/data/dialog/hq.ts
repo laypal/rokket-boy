@@ -3,22 +3,50 @@ import type { ScriptStep } from '../../types';
 import { EGG_TOTAL } from '../eggs';
 
 export const hqScripts: Record<string, ScriptStep[]> = {
-  // CH2.4/CH3.3/CH4.3/CH5.3: outermost branches first — the newest
+  // CH2.4/CH3.3/CH4.3/CH5.3/CH6.3: outermost branches first — the newest
   // chapter's afterglow, then its hand-in (if it has one), then its
   // briefing (replacing the PREVIOUS chapter's afterglow line in that slot,
-  // the same way CH4 replaced CH3's), then the untouched older chain. KIRA
+  // the same way CH5 replaced CH4's), then the untouched older chain. KIRA
   // runs the span and promotes the player herself (span_kira's onWin), so
   // there is no CH3 hand-in branch here — just the briefing and afterglow
   // that bookend it. CH4 is the same shape: the chief's ss_chief2.onWin sets
   // ch4Done and promotes directly, no hand-in. CH5 DOES hand in here — the
   // mask has no rank attached (CH5.0 assumption 1, no rankUp this chapter).
+  // CH6 hands in the BOSS BALL and DOES promote (rankUp before endScreen,
+  // the 1e rule; no addCoins — the rank's pay is the reward, CH6.0 §10).
   'npc:giovanni': [
     {
-      if: { flag: 'ch5Done' },
+      if: { flag: 'ch6Done' },
       then: [
-        { say: [['GIOVANNI: The', 'mask sold for', 'good money.'], ['SYLPHCO is', 'next. Rest while', 'you still can.']] },
+        { say: [['GIOVANNI: The', 'BOSS BALL. Ours.', 'EXECUTIVE.'], ['The POWER PLANT', 'is next. Rest', 'while you can.']] },
       ],
       else: [
+        {
+          if: { flag: 'ch6Ball' },
+          then: [
+            { say: [['GIOVANNI: The', 'BOSS BALL. Ours.', 'Sit down.'], ['You are done', 'being a grunt.', 'EXECUTIVE. Now.']] },
+            { setFlag: 'ch6Done' },
+            { music: 'victory' },
+            { rankUp: true },
+            { endScreen: true },
+          ],
+          else: [
+            {
+              if: { flag: 'ch5Done' },
+              then: [
+                { setFlag: 'ch6Briefed' },
+                {
+                  say: [
+                    ['GIOVANNI:', 'LIEUTENANT. The', 'big one. SYLPHCO.'],
+                    ['Their tower faces', 'the ANN DOCK,', 'across the quay.'],
+                    ['The BOSS BALL.', 'A prototype. Top', 'office. Ours now.'],
+                    ['DJAMES is inside', 'as our man. Talk', 'to him FIRST.'],
+                    ['Lift pads. Card', 'key doors. Guards', 'who watch. Go.'],
+                  ],
+                },
+                { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
+              ],
+              else: [
         {
           if: { flag: 'ch5Mask' },
           then: [
@@ -153,6 +181,10 @@ export const hqScripts: Record<string, ScriptStep[]> = {
             },
           ],
         },
+          ],   // close ch6Ball else
+        },     // close ch6Ball if object
+      ],       // close ch6Done else
+    },         // close ch6Done if object
   ],
   // SIDE.5 (re-cut 2026-08-15 after Lyall's playtest): the sparring drill is
   // available from the FIRST talk — training must land BEFORE the guard

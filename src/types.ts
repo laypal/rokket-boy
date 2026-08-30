@@ -5,7 +5,7 @@ import type { SpriteRows } from './data/sprites';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3' | 'syl1' | 'syl2' | 'syl3' | 'syl4' | 'syl5';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -69,6 +69,17 @@ export interface Flags {
   lavMedium1: boolean; // 2F MEDIUM beaten (one payday, no rematch)
   lavMedium2: boolean; // 3F MEDIUM beaten
   myowthGagSeen: boolean; // the HQ Myowth's "two of me" fourth-wall gag has played (Lyall, 2026-08-29)
+  // CH6 (SYLPHCO TOWER) — contract in .paul/PLAN.md CH6.0 §9. No save bump.
+  ch6Briefed: boolean; // Giovanni's CH6 briefing heard (ONB.3 marker pattern)
+  ch6Rules: boolean;   // DJames taught the ALARM rules — he steps off the 1F lift pad
+  ch6Smoke: boolean;   // DJames's one SMOKE BALL handed over (once)
+  ch6Duo: boolean;     // both BODYGUARDS fell back to back — the office chest is open to you
+  ch6Ball: boolean;    // the BOSS BALL is in the PACK
+  ch6Done: boolean;    // handed in at HQ — EXECUTIVE
+  sylDoorman: boolean; // once-only paydays: 1F DOORMAN, 3F CLERKs, 5F EXEC
+  sylClerkA: boolean;
+  sylClerkB: boolean;  // also the RECORDS alcove gate (goneIf) — the CARD KEY is behind him
+  sylExec: boolean;
 }
 export type FlagName = keyof Flags;
 

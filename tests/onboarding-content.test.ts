@@ -137,11 +137,12 @@ describe('ONB.6 — first rank-up points at the ladder', () => {
   // the CH1/CH2/CH3 briefings' "CHECK STATUS." toast. CH4.3 adds a fourth
   // (the CH4 briefing's own toast, same slot the CH3 briefing's replaced at
   // ch2Done). CH5.3 adds a fifth (the CH5 briefing's own toast, same slot
-  // the CH4 briefing's replaced at ch4Done). The invariant this test
-  // actually guards (one rankUp-adjacent toast, checked above) still holds;
-  // this one is retargeted to the new total so a stray extra toast still
-  // fails it.
-  it('the game-wide count of STATUS-mentioning sysMsg steps is exactly 6 (1 rank-ladder + 5 QA.5 briefings)', () => {
+  // the CH4 briefing's replaced at ch4Done). CH6.3 adds a sixth (the CH6
+  // briefing's own toast, same slot the CH5 briefing's replaced at ch5Done).
+  // The invariant this test actually guards (one rankUp-adjacent toast,
+  // checked above) still holds; this one is retargeted to the new total so a
+  // stray extra toast still fails it.
+  it('the game-wide count of STATUS-mentioning sysMsg steps is exactly 7 (1 rank-ladder + 6 QA.5 briefings)', () => {
     function countStatusToasts(steps: ScriptStep[]): number {
       let n = 0;
       for (const step of steps) {
@@ -167,7 +168,7 @@ describe('ONB.6 — first rank-up points at the ladder', () => {
       total += countStatusToasts(enc.onLose);
       total += countStatusToasts(enc.onFlee);
     }
-    expect(total).toBe(6);
+    expect(total).toBe(7);
   });
 
   it('the giovanni hand-in fires rankUp, then endScreen, then the STATUS toast, in that order', () => {

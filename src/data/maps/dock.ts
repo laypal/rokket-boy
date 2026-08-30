@@ -20,7 +20,7 @@ export const dockMap: MapDef = makeMap({
     '#BBBBBBBBBBBBBBBB B#',
     '#                  #',
     '#   X    s         #',
-    'o                  #',
+    'o                  o',
     '#   X       X      #',
     '#  P             P #',
     '####################',
@@ -40,6 +40,7 @@ export const dockMap: MapDef = makeMap({
   },
   items: {},
   warps: {
+    '19,6': ['syl1', 9, 10, 'up'], // CH6.2: SYLPHCO TOWER, across the quay
     '0,6': ['outskirts', 19, 6, 'left'],
     '17,2': ['deck1', 2, 9, 'up'],
   },

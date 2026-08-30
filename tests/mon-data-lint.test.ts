@@ -6,6 +6,7 @@ import { SPECIES } from '../src/data/mons';
 import { TYPE_IDS } from '../src/data/typeChart';
 import { movesAtLevel, LEVEL_CAP, makeMon } from '../src/systems/mon';
 import { detailPage, DEX_LINE_CAP, DETAIL_COL_CAP } from '../src/systems/monDetail';
+import { glyphRows } from '../src/engine/renderer';
 
 describe('move registry', () => {
   it('has at least the Ch.1 seed moves', () => {
@@ -16,6 +17,7 @@ describe('move registry', () => {
     for (const [key, mv] of Object.entries(MOVES)) {
       expect(mv.id, `key ${key}`).toBe(key);
       expect(mv.name.length, `${key} name fits the battle menu`).toBeLessThanOrEqual(10);
+      for (const ch of mv.name) expect(glyphRows(ch), `${key} name glyph "${ch}" has no bitmap`).not.toBeNull(); // CH6 playtest: Ö used to draw as nothing
       expect(TYPE_IDS, `${key} type`).toContain(mv.type);
       expect(mv.power, `${key} power`).toBeGreaterThanOrEqual(0);
       expect(mv.acc, `${key} acc`).toBeGreaterThan(0);
@@ -42,6 +44,7 @@ describe('species registry', () => {
     for (const [key, sp] of Object.entries(SPECIES)) {
       expect(sp.id, `key ${key}`).toBe(key);
       expect(sp.name.length, `${key} name fits battle boxes`).toBeLessThanOrEqual(10);
+      for (const ch of sp.name) expect(glyphRows(ch), `${key} name glyph "${ch}" has no bitmap`).not.toBeNull(); // CH6 playtest: ARBÖK drew as ARB K since SPR.B
       expect(sp.type.length, `${key} has 1–2 types`).toBeGreaterThanOrEqual(1);
       expect(sp.type.length, `${key} has 1–2 types`).toBeLessThanOrEqual(2);
       for (const t of sp.type) expect(TYPE_IDS, `${key} type`).toContain(t);

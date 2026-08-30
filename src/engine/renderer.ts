@@ -57,8 +57,21 @@ export function decode(rows: SpriteRows, pal: Palette, flip?: boolean): HTMLCanv
 }
 
 // ── Bitmap font ──────────────────────────────────────────────────────────
-/** Pure glyph bitmap: 8 rows of bytes, LSB = leftmost pixel. Null outside ASCII 32..126. */
+/** CH6 playtest (2026-08-30): the house-style umlaut names (ARBÖK, HYPNÖZ,
+ *  MACHÖKE) had been drawing as "ARB K" since SPR.B — U+00D6 is outside the
+ *  8×8 table and glyphRows returned null, so the letter was silently
+ *  skipped. One hand-drawn glyph, same LSB-left row format as FONT_HEX: the
+ *  two dots, a gap, then a squat O. Add a row here when a name needs another
+ *  accent; mon-data-lint refuses any name this table + FONT_HEX can't draw. */
+const EXTRA_GLYPHS: Record<string, number[]> = {
+  'Ö': [0x36, 0x00, 0x1c, 0x36, 0x63, 0x63, 0x36, 0x1c],
+};
+
+/** Pure glyph bitmap: 8 rows of bytes, LSB = leftmost pixel. Null outside
+ *  ASCII 32..126 and EXTRA_GLYPHS. */
 export function glyphRows(ch: string): number[] | null {
+  const extra = EXTRA_GLYPHS[ch];
+  if (extra) return extra;
   const code = ch.charCodeAt(0);
   if (code < 32 || code > 126) return null;
   const off = (code - 32) * 16;

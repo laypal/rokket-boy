@@ -275,6 +275,23 @@ if (import.meta.env.DEV) {
       runScript([{ warp: ['lav1', 9, 10, 'up'] }], worldHooks);
       console.error('[__debug.ch5] CH1–4 done, LIEUTENANT, inside LAVENDAR 1F — fog on, stairs at (18,7)');
     },
+    // CH6: one chapter on again — CH1–5 done, LIEUTENANT, the CH6 briefing
+    // heard — and a fade-warp to the SYLPHCO lobby door. DJames waits on the
+    // lift pad at (3,4); pair with party(4, 24).
+    ch6: () => {
+      for (const f of [
+        'briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone',
+        'fossilsTaken', 'bradBeaten', 'ch2Done',
+        'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done',
+        'introSeen', 'introToured', 'ch2Briefed', 'ch3Briefed', 'ch4Briefed',
+        'ch4Suit', 'ch4Safe', 'ch4Done', 'ch5Briefed',
+        'ch5Spirit', 'ch5Mask', 'ch5Myowth', 'ch5Done', 'ch6Briefed',
+      ] as const) quest.flags[f] = true;
+      quest.rank = 'LIEUTENANT';
+      if (quest.coins < 300) quest.coins = 300;
+      runScript([{ warp: ['syl1', 9, 10, 'up'] }], worldHooks);
+      console.error('[__debug.ch6] CH1–5 done, LIEUTENANT, inside SYLPHCO 1F — DJames on the lift pad at (3,4)');
+    },
   };
 }
 

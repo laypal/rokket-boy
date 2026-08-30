@@ -17,7 +17,7 @@ const m = (species: string) => ({ species });
  *  evolved form walks back to its base, koffink/voltorbb are standalone. */
 // CH5 (SPR.C): wheezink credits the KOFFINK line, hauntor the GASTLEE line; MAROWL is
 // bossOnly and outside the denominator (dexTotal), so no fixture ever holds it.
-const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth'].map(m);
+const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke'].map(m); // SPR.D: +2 lines
 
 describe('dexComplete (SIDE.4)', () => {
   it('is false for an empty collection', () => {
