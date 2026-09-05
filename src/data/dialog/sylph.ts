@@ -9,7 +9,7 @@ import type { ScriptStep } from '../../types';
 export function cardDoor(x: number, y: number): ScriptStep[] {
   return [{
     if: { hasItem: 'CARD KEY' },
-    then: [{ sfx: 'switch' }, { setTile: [x, y, 'o'] }, { say: [['The CARD KEY', 'blinks green.', 'The door slides.']] }],
+    then: [{ sfx: 'keycard' }, { setTile: [x, y, 'o'] }, { say: [['The CARD KEY', 'blinks green.', 'The door slides.']] }],
     else: [{ say: [['LOCKED. A card', 'reader blinks', 'red at you.'], ['The CARD KEY is', 'filed in RECORDS', 'on 3F.']] }],
   }];
 }

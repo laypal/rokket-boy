@@ -1,6 +1,7 @@
 // AUDIO — 4-channel chiptune (pulse×2, triangle, noise), lookahead scheduler.
 // Straight port of Audio2 from the monolith; sequencer parse() exported for tests.
 import { TRACKS, type Track } from '../data/music';
+import { SFX } from '../data/sfx';
 
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -164,43 +165,16 @@ function stop(): void {
 }
 
 // ── SFX ────────────────────────────────────────────────────────────────
+// Recipes live in data/sfx.ts (TOOL.2) — the same table the preview script
+// renders to WAV. Unknown names no-op, as the switch always did.
 function sfx(name: string): void {
-  if (!init()) return;
+  const steps = SFX[name];
+  if (!steps || !init()) return;
   resume();
   const t = ac!.currentTime;
-  switch (name) {
-    case 'blip': playNote(t, 1046, 0.03, 'pulse', 0.12, 0.5); break;
-    case 'beep': playNote(t, 784, 0.05, 'pulse', 0.2, 0.25); break;
-    case 'confirm': playNote(t, 660, 0.06, 'pulse', 0.22, 0.5); playNote(t + 0.06, 990, 0.08, 'pulse', 0.22, 0.5); break;
-    case 'cancel': playNote(t, 440, 0.06, 'pulse', 0.2, 0.5); playNote(t + 0.05, 330, 0.08, 'pulse', 0.18, 0.5); break;
-    case 'bump': playNote(t, 90, 0.08, 'triangle', 0.6, 0); break;
-    case 'door': playNote(t, 262, 0.07, 'pulse', 0.2, 0.25); playNote(t + 0.07, 392, 0.1, 'pulse', 0.2, 0.25); break;
-    case 'stairs': for (let i = 0; i < 4; i++) playNote(t + i * 0.05, 523 - i * 90, 0.05, 'pulse', 0.16, 0.25); break;
-    case 'hit': playDrum(t, 's'); playNote(t, 180, 0.1, 'pulse', 0.3, 0.5); break;
-    case 'hurt': playNote(t, 220, 0.08, 'pulse', 0.28, 0.5); playNote(t + 0.08, 165, 0.12, 'pulse', 0.26, 0.5); break;
-    case 'coin': playNote(t, 1319, 0.05, 'pulse', 0.2, 0.5); playNote(t + 0.06, 1760, 0.14, 'pulse', 0.2, 0.5); break;
-    case 'switch': playNote(t, 523, 0.04, 'pulse', 0.2, 0.25); playNote(t + 0.05, 523, 0.04, 'pulse', 0.2, 0.25); break;
-    // CH4.1 disguise on/off — a quick rising zip (plan §7 SFX list)
-    case 'disguise': playNote(t, 392, 0.05, 'pulse', 0.18, 0.25); playNote(t + 0.05, 523, 0.05, 'pulse', 0.18, 0.25); playNote(t + 0.1, 784, 0.1, 'pulse', 0.18, 0.25); break;
-    case 'alarm': for (let i = 0; i < 3; i++) { playNote(t + i * 0.16, 880, 0.08, 'pulse', 0.26, 0.5); playNote(t + i * 0.16 + 0.08, 660, 0.08, 'pulse', 0.26, 0.5); } break;
-    case 'item': { const ns = [523, 659, 784, 1047]; ns.forEach((f, i) => playNote(t + i * 0.09, f, i === 3 ? 0.3 : 0.09, 'pulse', 0.24, 0.5)); break; }
-    case 'faint': for (let i = 0; i < 5; i++) playNote(t + i * 0.06, 440 - i * 70, 0.06, 'pulse', 0.24, 0.5); break;
-    case 'evolve': {
-      // UX2.4: rises with the silhouette ramp — 16 notes over ~3.9s, pitch
-      // climbing and gaps shrinking to match EVO_FLIPS, then a held chord
-      // landing in the whiteout window (3.75-4.08s when fired at cinematic
-      // frame 0, which resolveEvolve does). Scheduled ahead in one call;
-      // nothing polls it.
-      const base = [262, 294, 330, 349, 392, 440, 494, 523, 587, 659, 698, 784, 880, 988, 1047, 1175];
-      let at = t;
-      base.forEach((f, i) => {
-        playNote(at, f, 0.12, 'pulse', 0.18, 0.5);
-        at += 0.4 - (0.4 - 0.09) * (i / (base.length - 1));
-      });
-      playNote(at, 1319, 0.5, 'pulse', 0.26, 0.5);
-      playNote(at, 659, 0.5, 'triangle', 0.3, 0);
-      break;
-    }
+  for (const s of steps) {
+    if (s.length === 2) playDrum(t + s[0], s[1]);
+    else playNote(t + s[0], s[1], s[2], s[4] ? 'pulse' : 'triangle', s[3], s[4]);
   }
 }
 

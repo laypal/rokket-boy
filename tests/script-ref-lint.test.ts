@@ -14,17 +14,10 @@ import { ITEMS } from '../src/data/items';
 import { SPECIES } from '../src/data/mons';
 import { TRACKS } from '../src/data/music';
 import { TILES } from '../src/data/tiles';
+import { SFX } from '../src/data/sfx';
 
-// The SFX registry has no exported list — engine/audio.ts's sfx() switches
-// on a literal name and silently no-ops on an unknown one (the exact bug
-// class this lint exists to catch). Mirror its case labels here; keep this
-// set in sync with that switch the way ITEMS/SHOPS/TRACKS are already kept
-// in sync with their consumers.
-const SFX_NAMES = new Set([
-  'blip', 'beep', 'confirm', 'cancel', 'bump', 'door', 'stairs', 'hit',
-  'hurt', 'coin', 'switch', 'alarm', 'item', 'faint', 'evolve',
-  'disguise', // CH4.1
-]);
+// TOOL.2: the SFX registry is data now — its keys ARE the lint set.
+const SFX_NAMES = new Set(Object.keys(SFX));
 
 // The full ScriptStep discriminant set (src/types.ts:43-67), same order as
 // the interpreter's if-chain (src/systems/script.ts:77-128). `then`/`else`

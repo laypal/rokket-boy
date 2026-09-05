@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:prod": "playwright test --config playwright.prod.config.ts",
     "test:e2e:dist": "playwright test --config playwright.dist.config.ts",
-    "sprite": "node scripts/sprite-io.mjs"
+    "sprite": "node scripts/sprite-io.mjs",
+    "sfx:preview": "node --disable-warning=ExperimentalWarning scripts/sfx-preview.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

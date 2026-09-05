@@ -181,7 +181,7 @@ describe('the card-key doors (CH6.0 §2 / sylph.ts cardDoor)', () => {
     quest.items.push('CARD KEY');
     const { hooks, events } = eventHooks();
     runScript(syl1Scripts['at:10,7'], hooks);
-    expect(events).toEqual(['sfx:switch', 'setTile:10,7,o', 'say']);
+    expect(events).toEqual(['sfx:keycard', 'setTile:10,7,o', 'say']);
   });
 });
 

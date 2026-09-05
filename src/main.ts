@@ -24,6 +24,8 @@ import { worldHooks } from './systems/world';
 import { setEncounterRng } from './systems/encounter';
 import { mulberry32 } from './engine/rng';
 import { ITEMS } from './data/items';
+import { SFX } from './data/sfx';
+import { TRACKS } from './data/music';
 import { SPECIES } from './data/mons';
 import { maxHp, makeMon } from './systems/mon';
 import { findPartyMon, xpToReach, hpFromArg } from './systems/debugResolve';
@@ -153,6 +155,19 @@ if (import.meta.env.DEV) {
     // UX2.1: drop straight into a registered encounter for visual QA — the
     // real startBattle (no shortcut); winBattle restores 'world' on exit.
     startBattle: (enc: string) => startBattle(enc, () => {}),
+    // TOOL.2: audition a sound or a track through the REAL entry points
+    // (Audio2.sfx / Audio2.play — the switch and the sequencer the game
+    // uses). Unknown ids log and no-op; play() stops first so re-typing
+    // the current track restarts it instead of being ignored.
+    sfx: (name: string) => {
+      if (!SFX[name]) { console.error(`[__debug.sfx] unknown sfx "${name}" — ids: ${Object.keys(SFX).join(' ')}`); return; }
+      Audio2.sfx(name);
+    },
+    play: (name: string) => {
+      if (!TRACKS[name]) { console.error(`[__debug.play] unknown track "${name}" — ids: ${Object.keys(TRACKS).join(' ')}`); return; }
+      Audio2.stop();
+      Audio2.play(name);
+    },
     // ONB.5-FB: rolling log of every coach beat fired/suppressed and every
     // SWIPE outcome. There to capture the "Nothing left to swipe!" report
     // that reading the code says cannot happen — if it recurs, this says why.
