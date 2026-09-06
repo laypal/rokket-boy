@@ -46,7 +46,13 @@ jobs:
         env:
           HOME: /root
       - name: Tag the proven build
+        # bash, not the container's default sh: ${SHA:0:7} is a bashism.
+        # safe.directory: inside a job container the checkout is owned by
+        # another uid and git refuses it ("fatal: not in a git directory" —
+        # the first run's failure, 2026-09-06).
+        shell: bash
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           TAG="prod/$(date -u +%F)-${SHA:0:7}"
