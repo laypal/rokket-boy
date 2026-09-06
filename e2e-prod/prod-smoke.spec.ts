@@ -37,6 +37,9 @@ test('prod deployment serves the game', async ({ page }) => {
   expect(csp).toContain("connect-src 'self'");
   // server_tokens off — nginx may name itself, but never with a version
   expect(headers['server'] ?? '').not.toMatch(/[0-9]/);
+  // DEP.4: the page is gzipped on the wire (the browser always accepts it)
+  expect(headers['content-encoding']).toBe('gzip');
+  expect(headers['vary'] ?? '').toContain('Accept-Encoding');
 
   // prod strips the debug hook — the build really must not ship it
   expect(await page.evaluate('typeof window.__debug')).toBe('undefined');

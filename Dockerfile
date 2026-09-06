@@ -26,3 +26,8 @@ FROM nginx:stable-alpine@sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 RUN mv /usr/share/nginx/html/team-rokket.html /usr/share/nginx/html/index.html
 COPY --from=build /app/security-headers.conf /etc/nginx/conf.d/security-headers.conf
+# DEP.2: Coolify's rolling update only swaps in a container that reports
+# healthy (a Dockerfile HEALTHCHECK takes precedence over the UI one), so an
+# nginx that starts but can't serve the page keeps the old build live.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -qO /dev/null http://127.0.0.1/ || exit 1

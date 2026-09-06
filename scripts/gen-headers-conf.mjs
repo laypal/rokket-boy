@@ -47,6 +47,14 @@ process.stdout.write(
     'add_header X-Content-Type-Options "nosniff";',
     'add_header Referrer-Policy "no-referrer";',
     'add_header Permissions-Policy "geolocation=(), camera=(), microphone=()";',
+    // DEP.4: the base image ships gzip off, so every load was the full
+    // ~223 KB. text/html is always in gzip_types (listing it is an nginx
+    // warning); the rest are the PWA statics. The CSP hash is over the
+    // decoded body, so compression doesn't touch it.
+    'gzip on;',
+    'gzip_types application/javascript application/manifest+json image/svg+xml;',
+    'gzip_min_length 1024;',
+    'gzip_vary on;',
     '',
   ].join('\n'),
 );

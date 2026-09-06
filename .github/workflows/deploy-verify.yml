@@ -1,0 +1,56 @@
+# DEP.2 — proves the deploy that landed is the commit CI proved green.
+# CI is a gate, not a pipeline (Coolify's webhook deploys every main push on
+# its own); this runs after a green CI on main, waits for production to
+# serve that commit's build stamp, runs the prod smoke against it, and tags
+# the commit prod/<date>-<sha7> — the list of builds proven live, which the
+# rollback runbook picks targets from. A timeout (Coolify build failed, or
+# SOURCE_COMMIT not injected) or a red smoke shows on the commit in GitHub.
+name: Deploy verify
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+# Two quick pushes: the older run can never see its stamp (production
+# moved on), so the newer run cancels it instead of leaving a false red.
+concurrency:
+  group: deploy-verify
+  cancel-in-progress: true
+
+permissions:
+  contents: write # the prod/* tag push; nothing else
+
+jobs:
+  verify:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    container:
+      # same pin as ci.yml's e2e job — the prod smoke is a Playwright run
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Wait for production to serve this commit
+        run: node scripts/deploy-verify.mjs "$SHA"
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+      - name: Prod smoke against the new build
+        run: npm run test:e2e:prod
+        env:
+          HOME: /root
+      - name: Tag the proven build
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          TAG="prod/$(date -u +%F)-${SHA:0:7}"
+          git tag "$TAG" "$SHA"
+          git push origin "refs/tags/$TAG"
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
