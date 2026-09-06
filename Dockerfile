@@ -9,6 +9,11 @@ COPY package.json package-lock.json ./
 # optionalDependencies, not postinstall downloads, so the build still works
 RUN npm ci --ignore-scripts
 COPY . .
+# DEP.1: .git is dockerignored, so the build stamp can't `git rev-parse`.
+# Coolify injects SOURCE_COMMIT as a build arg once "Include Source Commit
+# in Build" is enabled (off by default); vite.config.ts reads it first.
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=$SOURCE_COMMIT
 RUN npm run build
 # HRD.4: nginx header snippet with the inline-script CSP hash baked in —
 # must run after the build so the hash matches the artifact being served

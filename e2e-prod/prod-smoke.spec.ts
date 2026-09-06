@@ -45,6 +45,13 @@ test('prod deployment serves the game', async ({ page }) => {
   // this is also the CSP canary: a wrong script hash kills boot loudly
   await page.waitForTimeout(1_000);
   expect(errors).toEqual([]);
+
+  // DEP.1: the build stamp is a real short SHA + date, inlined by Vite's
+  // define. `unknown` means the Coolify build ran without SOURCE_COMMIT
+  // (the "Include Source Commit in Build" toggle) — verified against the
+  // artefact, never the dashboard.
+  const stamp = (await response!.text()).match(/\b[0-9a-f]{7} \d{4}-\d{2}-\d{2}\b/)?.[0];
+  expect(stamp, 'no build stamp in the served HTML — Coolify built without SOURCE_COMMIT').toBeDefined();
 });
 
 test('prod serves the PWA statics next to the game', async ({ request }) => {

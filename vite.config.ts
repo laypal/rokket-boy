@@ -3,11 +3,17 @@ import { defineConfig } from 'vitest/config';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
 // HRD.3 build stamp: short git SHA + date, rendered on the title screen and
-// returned by the staging report(). Falls back for a sourceless checkout.
+// returned by the staging report(). DEP.1: the Coolify build has no .git
+// (.dockerignore) — it passes the SHA as the SOURCE_COMMIT build arg instead
+// ("Include Source Commit in Build" must be ON in the app's General settings).
+// Falls back for a sourceless checkout with neither.
 function buildStamp(): string {
+  const date = new Date().toISOString().slice(0, 10);
+  const fromEnv = process.env.SOURCE_COMMIT?.trim().slice(0, 7);
+  if (fromEnv) return `${fromEnv} ${date}`;
   try {
     const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim();
-    return `${sha} ${new Date().toISOString().slice(0, 10)}`;
+    return `${sha} ${date}`;
   } catch {
     return 'unknown';
   }
