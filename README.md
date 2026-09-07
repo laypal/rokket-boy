@@ -4,21 +4,26 @@ A Game Boy-style heist RPG that runs in the browser, where you play the
 grunts rather than the hero. It is a parody game born from a childhood
 dream of an anti-hero, Team-Rocket-side Pokémon game. It started life as
 a single HTML file with a canvas in it, and I'm growing it into a modular
-TypeScript project one card deck at a time.
+TypeScript project one card deck at a time. Six of the planned ten
+chapters are playable, from the HQ heist to the Sylphco Tower takeover.
 
 **Play it:** <https://rokket-boy.uk> - a push to `main` is a
-production deploy, so merges are deliberate.
+production deploy, so merges are deliberate. On a phone, "Add to Home
+Screen" installs it as an app and it keeps working with the Wi-Fi off.
 
 <p align="center">
   <img src="docs/screenshots/title.png" width="320" alt="Title screen: RÖKKET BOY shell with the TEAM ROKKET title card">
   <img src="docs/screenshots/overworld.png" width="320" alt="The HQ overworld with the player and NPCs">
 </p>
 
-The whole game ships as one HTML file (currently about 142 KB, 44 KB
-gzipped) with the pixel art, maps and music all encoded as strings inside
-it. There is no backend and no build-time asset pipeline to speak of: the
-sprites are pixel strings, the tunes are token strings for a four-channel
-sequencer, and the maps are text.
+The whole game ships as one HTML file (currently about 220 KB, under
+80 KB on the wire) with the pixel art, maps and music all encoded as
+strings inside it: 23 maps, 13 tracks, every sprite and sound. There is
+no backend and no build-time asset pipeline to speak of: the sprites are
+pixel strings, the tunes are token strings for a four-channel sequencer,
+the sound effects are note lists, and the maps are text. The only things
+next to the HTML are the manifest, a small service worker and the icons
+that make it installable.
 
 ## Running it locally
 
@@ -37,10 +42,13 @@ before merging:
 | `npm test` | Vitest unit suite, including the data and content lints |
 | `npm run build` | Typecheck + Vite single-file build → `dist/team-rokket.html` |
 
-`npm run test:e2e` runs the Playwright specs in a real browser; CI runs
-them on every push to `main` as a post-deploy check (the deploy itself
-doesn't wait for them). `npm run test:e2e:prod` drives the live URL and
-is opt-in by design, so the normal gate never touches the network.
+`npm run test:e2e` runs the Playwright specs in a real browser, one per
+chapter plus the systems; CI runs them on every push to `main` (the
+deploy itself doesn't wait for them). Once CI is green a second workflow
+waits for the live site to serve the pushed commit, runs the production
+smoke against it and tags the commit, so every deploy either gets a tag
+or a red run. `npm run test:e2e:prod` drives the live URL by hand and is
+opt-in by design, so the normal gate never touches the network.
 
 ## What's in the repo
 
@@ -50,6 +58,8 @@ is opt-in by design, so the normal gate never touches the network.
 | `src/systems/` | Script interpreter, world, dialog, menu, battle, quest, save |
 | `src/data/` | Tiles, characters, music, maps, dialog scripts, encounters, species, items |
 | `src/state.ts` | The typed `GameState` |
+| `public/` | The web manifest, the service worker and the icons |
+| `scripts/` | Build helpers: the single-file post-build, favicon and icon generation, a sprite importer, a sound preview that renders any effect to WAV, the deploy check |
 | `tests/` · `e2e/` | Vitest units and lints; Playwright specs |
 | `ROADMAP.md` | What's shipped and what's planned, at feature level |
 

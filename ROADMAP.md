@@ -12,12 +12,17 @@ like.
 - **The engine.** 160×144 canvas renderer, four-channel chiptune
   sequencer, sprite frames, keyboard + on-screen buttons, seeded RNG, a
   script interpreter that runs all dialogue and cutscenes from data.
-- **Chapter 1: the HQ heist.** The opening job, the HQ hub, the first
-  guards, the first battle.
+- **Chapters 1 to 6.** The HQ heist; Mt. Möön (caves, wild encounters, a
+  dig); Nugget Span (a prize bridge that isn't); the S.S. Ann (a
+  disguise and a five-minute clock); Lavendar Tower (fog you can't see
+  past, a ghost you can't beat, and a cat who talks back); Sylphco Tower
+  (card-key doors, lift pads, and a boss fight that is really two).
 - **Mons and battles.** A mon model with nine types and a 9×9 chart, XP
   and levelling, move learning, evolution with a cinematic, party
   management, SWIPE (the catch mechanic), items in battle, whiteout, per-
-  move battle animations and hit feel.
+  move battle animations and hit feel, a mon detail page in the PARTY
+  screen. In August I redrew most of the roster's front and back sprites,
+  and kept the few originals that still read better.
 - **HEAT.** The alarm system: guards with sight cones, a heat meter that
   climbs and decays, lockdown, chases with a leash, and a shared whiteout
   penalty when it all goes wrong.
@@ -28,34 +33,46 @@ like.
   doing jobs, per-rank rewards (coins and gear), a BACK ROOM gear vendor,
   worn gear that shows on your sprite and gives perks (steal, job payout,
   shop discount) with per-surface caps.
-- **Chapter 2: Mt. Möön.** Cave maps, wild encounters, a dig sequence,
-  new species.
-- **Side content so far.** The HQ job board (seeded contracts) and HQ
-  training drills (a sparring bout and a stealth course, both safe to
-  fail).
+- **Onboarding.** A cold-open cinematic with its own score, Myowth's
+  guided tour of HQ, a coached first spar, and markers over whoever you
+  need to talk to next.
+- **Side content.** The HQ job board (seeded contracts), training drills
+  (a sparring bout and a stealth course, both safe to fail), the DEALER's
+  PICKPOCKET card table, map eggs and a GRUNTDEX clerk, hidden pickups,
+  and LEVEL CANDY.
+- **Sound.** Thirteen tracks across the chapters, and every sound effect
+  is data now, with a script that renders any of them to WAV so I can
+  hear a sound before it ships.
+- **Distribution.** You can install it as a phone app and play it
+  offline. The title screen shows which commit it is. After every deploy
+  a workflow checks the live site is serving the pushed commit and tags
+  it, and I have a written rollback path for when it isn't.
 - **Hardening.** Crash guard with a visible error line, security headers
-  and a hash-pinned CSP on the served page, CI as a gate, data and
+  and a hash-pinned CSP on the served page, gzip, CI as a gate, data and
   content lints, a 400 KB single-file ceiling.
+- **Overworld juice, started.** The world now has its own small
+  animation layer (a draw-only effect over any tile, driven from scripts
+  or the engine). The first card is in. The effects that use it are next.
 
 ## What's next, roughly in order
 
-1. **A dex-style mon detail screen** in the pause menu.
-2. **Chapter 3: Nugget Span.**
-3. **Chapters 4 and 5:** the S.S. Ann and Lavendar Tower.
-4. **Chapters 6 and 7:** Sylphco Tower (a two-part job) and the Kantoo
-   Power Plant.
-5. **Chapters 8 and 9:** Safari Zoon, which carries the game's moral
+1. **Overworld juice.** A catalogued set of sound effects, a heal
+   sparkle at the bunk and the heal pad, guard alerts that pop and shake
+   the screen, a flash on lift pads and chests, and a smoke puff when
+   someone leaves the scene.
+2. **Chapter 7: the Kantoo Power Plant**, the alarm system's showcase
+   chapter, with four new species.
+3. **Chapters 8 and 9:** Safari Zoon, which carries the game's moral
    branch, and Cindabar Lab. The rest of the species roster and eggs land
    alongside these.
-6. **Chapter 10: Viridiun Gym**, the finale, with endings and a balance
+4. **Chapter 10: Viridiun Gym**, the finale, with endings and a balance
    pass.
-7. **QA hardening** before calling it done: a balance harness, touch
-   controls, performance.
+5. **QA hardening** before calling it done: a balance harness, a
+   full-campaign Playwright run, a touch-device and short-screen pass,
+   and a performance audit.
 
 ## Also planned, slotted in where they fit
 
-- More side content: a casino, eggs and a dex egg, hidden items, level
-  candy.
 - Field skills (SMASH / DIG / SURF / FLY), a move tutor and a black
   market, all design-first.
 - Minigames (a grabber gallery, a bike race), gated on the audio budget.
