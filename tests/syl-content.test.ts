@@ -25,6 +25,7 @@ function eventHooks(choiceYes = true) {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (w, done) => { events.push('warp:' + w.join(',')); done(); },
     sfx: (id) => events.push('sfx:' + id),
+    fx: () => {},
     music: (n) => events.push('music:' + n),
     setTile: (x, y, ch) => events.push(`setTile:${x},${y},${ch}`),
     addWarp: () => {},

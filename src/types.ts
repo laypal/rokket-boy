@@ -2,6 +2,7 @@
 // (expansion plan §3.2/§3.3). No cross-module globals — game state lives in
 // src/state.ts, quest progress in src/systems/quest.ts.
 import type { SpriteRows } from './data/sprites';
+import type { WorldFxId } from './systems/worldFx';
 import type { TypeId } from './data/typeChart';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
@@ -130,7 +131,8 @@ export type ScriptStep =
   | { jobs: true }                                        // open the HQ job board (SIDE.1, suspends like locker/shop)
   | { choice: { say: string[][]; yes: ScriptStep[]; no?: ScriptStep[] } } // ask YES/NO on the last say page; branch runs nested like `if` (2026-08-15, suspends)
   | { cardFlip: true }                                    // open the DEALER's PICKPOCKET table (SIDE.2, suspends like jobs)
-  | { tour: { stops: TourStop[] } };                      // guided camera tour (ONB.2/FLW.5, suspends): pan stop to stop, A advances, B/START exits; camera always returns
+  | { tour: { stops: TourStop[] } }                       // guided camera tour (ONB.2/FLW.5, suspends): pan stop to stop, A advances, B/START exits; camera always returns
+  | { fx: { id: WorldFxId; at?: [number, number] } };     // draw-only world fx over a tile (F38 JCE.0, synchronous like sfx); `at` = absolute tile coords, absent = the player's tile
 
 /** ONB.2/FLW.5: one stop of a `{ tour }`. `cam` is a camera TARGET in
  *  PIXELS (tile*16 — the INTRO_CARDS convention; `cameraFor` clamps it at

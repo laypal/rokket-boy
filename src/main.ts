@@ -25,6 +25,7 @@ import { setEncounterRng } from './systems/encounter';
 import { mulberry32 } from './engine/rng';
 import { ITEMS } from './data/items';
 import { SFX } from './data/sfx';
+import { WORLD_FX_IDS, type WorldFxId } from './systems/worldFx';
 import { TRACKS } from './data/music';
 import { SPECIES } from './data/mons';
 import { maxHp, makeMon } from './systems/mon';
@@ -162,6 +163,13 @@ if (import.meta.env.DEV) {
     sfx: (name: string) => {
       if (!SFX[name]) { console.error(`[__debug.sfx] unknown sfx "${name}" — ids: ${Object.keys(SFX).join(' ')}`); return; }
       Audio2.sfx(name);
+    },
+    // F38 JCE.0: play a world fx through the REAL step (interpreter +
+    // worldHooks) — no x/y = over the player, the script default.
+    fx: (id: string, x?: number, y?: number) => {
+      if (!WORLD_FX_IDS.includes(id as WorldFxId)) { console.error(`[__debug.fx] unknown fx "${id}" — ids: ${WORLD_FX_IDS.join(' ')}`); return; }
+      const at: [number, number] | undefined = x !== undefined && y !== undefined ? [x, y] : undefined;
+      runScript([{ fx: { id: id as WorldFxId, at } }], worldHooks);
     },
     play: (name: string) => {
       if (!TRACKS[name]) { console.error(`[__debug.play] unknown track "${name}" — ids: ${Object.keys(TRACKS).join(' ')}`); return; }

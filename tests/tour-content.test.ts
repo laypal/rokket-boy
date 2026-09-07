@@ -21,6 +21,7 @@ function tourHooks() {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (_w, done) => done(),
     sfx: () => {},
+    fx: () => {},
     music: () => {},
     setTile: () => {},
     addWarp: () => {},

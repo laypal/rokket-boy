@@ -24,6 +24,7 @@ function eventHooks(answerYes: boolean) {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (w, done) => { events.push('warp:' + w.join(',')); done(); },
     sfx: () => {},
+    fx: () => {},
     music: (n) => events.push('music:' + n),
     setTile: () => {},
     addWarp: () => {},

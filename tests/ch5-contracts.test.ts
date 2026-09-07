@@ -55,7 +55,7 @@ describe('partyFull Cond (CH5.3 playtest fix)', () => {
     const noop = (): void => {};
     runScript(lav3Scripts['at:2,1'], {
       say: (pages, done) => { lines.push(...pages.map((p) => p.join(' '))); done(); },
-      battle: (_i, d) => d(null), warp: (_w, d) => d(), sfx: noop, music: noop, setTile: noop, addWarp: noop,
+      battle: (_i, d) => d(null), warp: (_w, d) => d(), sfx: noop, fx: noop, music: noop, setTile: noop, addWarp: noop,
       locker: (d) => { locker = true; d(); }, shop: (_i, d) => d(), endScreen: noop, rankUp: (_r, d) => d(), heat: noop, giveMon: noop,
       npcRun: (_i, d) => d(), healParty: noop, sysMsg: noop, jobs: (d) => d(), cardFlip: (d) => d(),
       tour: (_s, d) => d(), choice: (pages, d) => { lines.push(...pages.map((p) => p.join(' '))); d(yes); },
@@ -98,7 +98,7 @@ describe('HQ Myowth fourth-wall gag (Lyall, 2026-08-29)', () => {
       const noop = (): void => {};
       runScript(hqScripts['npc:myowth'], {
         say: (pages, done) => { lines.push(...pages.map((p) => p.join(' '))); done(); },
-        battle: (_i, d) => d(null), warp: (_w, d) => d(), sfx: noop, music: noop, setTile: noop, addWarp: noop,
+        battle: (_i, d) => d(null), warp: (_w, d) => d(), sfx: noop, fx: noop, music: noop, setTile: noop, addWarp: noop,
         locker: (d) => d(), shop: (_i, d) => d(), endScreen: noop, rankUp: (_r, d) => d(), heat: noop, giveMon: noop,
         npcRun: (_i, d) => d(), healParty: noop, sysMsg: noop, jobs: (d) => d(), cardFlip: (d) => d(),
         tour: (_s, d) => d(), choice: (_p, d) => d(false),

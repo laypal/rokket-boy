@@ -6,6 +6,7 @@ import { quest, resetQuest } from '../src/systems/quest';
 interface FakeLog {
   says: string[][][];
   sfx: string[];
+  fx: [string, [number, number] | undefined][];
   music: string[];
   tiles: [number, number, string][];
   warpsAdded: [string, unknown][];
@@ -24,12 +25,13 @@ interface FakeLog {
 }
 
 function makeHooks(opts?: { battleFollowUp?: ScriptStep[] | null }) {
-  const log: FakeLog = { says: [], sfx: [], music: [], tiles: [], warpsAdded: [], warps: [], battles: [], lockers: 0, shops: [], endScreens: 0, rankUps: [], heats: [], monsGiven: [], npcRuns: [], healPartys: 0, sysMsgs: [], jobsOpened: 0 };
+  const log: FakeLog = { says: [], sfx: [], fx: [], music: [], tiles: [], warpsAdded: [], warps: [], battles: [], lockers: 0, shops: [], endScreens: 0, rankUps: [], heats: [], monsGiven: [], npcRuns: [], healPartys: 0, sysMsgs: [], jobsOpened: 0 };
   const hooks: ScriptHooks = {
     say: (pages, done) => { log.says.push(pages); done(); },
     battle: (id, done) => { log.battles.push(id); done(opts?.battleFollowUp ?? null); },
     warp: (w, done) => { log.warps.push(w); done(); },
     sfx: (n) => log.sfx.push(n),
+    fx: (id, at) => log.fx.push([id, at]),
     music: (n) => log.music.push(n),
     setTile: (x, y, ch) => log.tiles.push([x, y, ch]),
     addWarp: (key, w) => log.warpsAdded.push([key, w]),
@@ -51,6 +53,22 @@ function makeHooks(opts?: { battleFollowUp?: ScriptStep[] | null }) {
 }
 
 beforeEach(() => resetQuest());
+
+describe('{ fx } step (F38 JCE.0)', () => {
+  it('dispatches synchronously in order — the sfx class — and passes `at` through verbatim', () => {
+    const { hooks, log } = makeHooks();
+    let done = false;
+    runScript(
+      [{ fx: { id: 'poof', at: [3, 4] } }, { sfx: 'poof' }, { fx: { id: 'heal' } }, { say: [['DONE']] }],
+      hooks,
+      () => { done = true; },
+    );
+    expect(done).toBe(true);
+    expect(log.fx).toEqual([['poof', [3, 4]], ['heal', undefined]]);
+    expect(log.sfx).toEqual(['poof']);
+    expect(log.says).toEqual([[['DONE']]]);
+  });
+});
 
 describe('{ sysMsg } step (CH2.10)', () => {
   it('dispatches synchronously, in order, only after the preceding say completes', () => {

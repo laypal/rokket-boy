@@ -32,6 +32,7 @@ function makeHooks(): { hooks: ScriptHooks; log: FakeLog } {
     battle: (_id, done) => done(null),
     warp: (_w, done) => done(),
     sfx: (n) => log.sfx.push(n),
+    fx: () => {},
     music: () => {},
     setTile: (x, y, ch) => log.tiles.push([x, y, ch]),
     addWarp: () => {},

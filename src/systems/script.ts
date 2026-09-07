@@ -2,6 +2,7 @@
 // map content is data (ScriptStep[]), engine effects go through an injected
 // hooks interface so the interpreter is unit-testable with fakes.
 import type { ScriptStep, TourStop, WarpDef } from '../types';
+import type { WorldFxId } from './worldFx';
 import { quest, checkCond, rankUp } from './quest';
 
 export interface ScriptHooks {
@@ -12,6 +13,11 @@ export interface ScriptHooks {
   /** Fade-warp the player; call done() once the new map is active. */
   warp(w: WarpDef, done: () => void): void;
   sfx(name: string): void;
+  /** Draw-only world fx over a tile (F38 JCE.0). Synchronous like sfx — the
+   *  interpreter falls straight through; the fx never gates anything. `at`
+   *  is absolute tile coords on the current map (the setTile convention);
+   *  absent = the player's tile, resolved by the world hook. */
+  fx(id: WorldFxId, at?: [number, number]): void;
   music(name: string): void;
   setTile(x: number, y: number, ch: string): void;
   addWarp(key: string, w: WarpDef): void;
@@ -122,6 +128,8 @@ export function runScript(steps: ScriptStep[], hooks: ScriptHooks, onDone?: () =
       if ('setTile' in step) { hooks.setTile(...step.setTile); continue; }
       if ('addWarp' in step) { hooks.addWarp(step.addWarp[0], step.addWarp[1]); continue; }
       if ('sfx' in step) { hooks.sfx(step.sfx); continue; }
+      // world fx (F38 JCE.0) — synchronous like sfx, never suspends
+      if ('fx' in step) { hooks.fx(step.fx.id, step.fx.at); continue; }
       if ('music' in step) { hooks.music(step.music); continue; }
       // absolute HEAT set (§4.8) — synchronous like setFlag/sfx, never suspends
       if ('heat' in step) { hooks.heat(step.heat); continue; }

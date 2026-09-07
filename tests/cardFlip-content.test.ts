@@ -41,6 +41,7 @@ function dealerHooks(answer: boolean) {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (w, done) => { events.push('warp:' + w[0]); done(); },
     sfx: () => {},
+    fx: () => {},
     music: () => {},
     setTile: () => {},
     addWarp: () => {},

@@ -23,6 +23,7 @@ function makeHooks(): { hooks: ScriptHooks; log: FakeLog } {
     battle: (id, done) => { log.battles.push(id); done(null); },
     warp: (_w, done) => done(),
     sfx: () => {},
+    fx: () => {},
     music: () => {},
     setTile: () => {},
     addWarp: () => {},

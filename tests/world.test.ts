@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
-  tileAt, isBlocked, warpAt, performWarp, worldUpdate,
+  tileAt, isBlocked, warpAt, performWarp, worldUpdate, landAt,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
   todoMarkersActive, TODO_BOB, npcTodo,
 } from '../src/systems/world';
+import { playWorldFx, activeWorldFx, clearWorldFx } from '../src/systems/worldFx';
 import { MAPS } from '../src/data/maps';
 import { WALKABLE } from '../src/data/tiles';
 import { quest, resetQuest } from '../src/systems/quest';
@@ -792,5 +793,26 @@ describe('heatTick — CH4 watch maps (gala security scans even when calm)', () 
     for (G.frame = 1; G.frame <= 400; G.frame++) heatTick();
     expect(G.heatState.corner).toBeUndefined();
     expect(quest.flags.disguised).toBe(true);
+  });
+});
+
+describe('world fx hook + map change (F38 JCE.0)', () => {
+  beforeEach(() => clearWorldFx());
+
+  it('worldHooks.fx without `at` queues the fx on the PLAYER tile; with `at`, at that tile', () => {
+    G.player.x = 5;
+    G.player.y = 6;
+    worldHooks.fx('heal');
+    worldHooks.fx('poof', [3, 4]);
+    expect(activeWorldFx()).toEqual([
+      { id: 'heal', x: 5, y: 6, t: 0 },
+      { id: 'poof', x: 3, y: 4, t: 0 },
+    ]);
+  });
+
+  it('landAt clears the queue so a warp never carries an fx onto the next map', () => {
+    playWorldFx('poof', 3, 4);
+    landAt(['corner', 9, 2, 'down']);
+    expect(activeWorldFx()).toEqual([]);
   });
 });

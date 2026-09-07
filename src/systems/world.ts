@@ -30,6 +30,7 @@ import { fogActive, fogVisible } from './fog';
 import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
+import { playWorldFx, clearWorldFx, drawWorldFx } from './worldFx';
 import { makeMon, maxHp } from './mon';
 import { SPECIES } from '../data/mons';
 
@@ -80,6 +81,8 @@ export const worldHooks: ScriptHooks = {
   battle: (id, done) => startBattle(id, done),
   warp: (w, done) => performWarp(w, done),
   sfx: (name) => Audio2.sfx(name),
+  // F38 JCE.0: draw-only world fx; no `at` = over the player
+  fx: (id, at) => playWorldFx(id, at ? at[0] : G.player.x, at ? at[1] : G.player.y),
   music: (name) => Audio2.play(name),
   setTile: (x, y, ch) => setTile(G.map, x, y, ch),
   addWarp: (key, w) => {
@@ -243,6 +246,7 @@ let pendingCaught: string[][] | null = null;
  *  NEW GAME is documented to keep, and the SESSION-ONLY toast still fires
  *  on the first real warp. */
 export function landAt(w: WarpDef): void {
+  clearWorldFx(); // JCE.0: an fx is a tile on THIS map — never carry it over
   const [mapId, x, y, dir] = w;
   G.map = MAPS[mapId];
   dropDisguise(quest.flags, G.map); // CH4.1: the suit comes off anywhere it isn't declared
@@ -780,6 +784,9 @@ export function worldDraw(): void {
       text('!', n.x * TILE - camX + 5, n.y * TILE - camY - 14, pal[3]);
     }
   }
+  // F38 JCE.0 world fx — world-space (scrolls with the map), over the
+  // sprites and every `!`, under the fog like everything else at this depth
+  drawWorldFx(camX, camY, pal);
   // CH5.0 §1 fog — a draw-time mask over everything world-space (tiles,
   // sprites, every `!`) and under everything screen-space (vignette, plates,
   // toasts). Centre is the player's TILE, so the ring snaps on arrival.

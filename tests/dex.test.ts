@@ -72,6 +72,7 @@ function dexclerkHooks() {
     battle: (_id, done) => done(null),
     warp: (_w, done) => done(),
     sfx: (name) => sfx.push(name),
+    fx: () => {},
     music: () => {},
     setTile: () => {},
     addWarp: () => {},

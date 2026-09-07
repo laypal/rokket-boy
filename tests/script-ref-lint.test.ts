@@ -15,9 +15,12 @@ import { SPECIES } from '../src/data/mons';
 import { TRACKS } from '../src/data/music';
 import { TILES } from '../src/data/tiles';
 import { SFX } from '../src/data/sfx';
+import { WORLD_FX_IDS } from '../src/systems/worldFx';
 
 // TOOL.2: the SFX registry is data now — its keys ARE the lint set.
 const SFX_NAMES = new Set(Object.keys(SFX));
+// F38 JCE.0: the world-fx table's id list is the lint set for {fx}.
+const FX_NAMES = new Set<string>(WORLD_FX_IDS);
 
 // The full ScriptStep discriminant set (src/types.ts:43-67), same order as
 // the interpreter's if-chain (src/systems/script.ts:77-128). `then`/`else`
@@ -26,13 +29,14 @@ const DISCRIMINANT_KEYS = new Set([
   'say', 'setFlag', 'if', 'giveItem', 'setTile', 'addWarp', 'battle', 'warp',
   'sfx', 'music', 'addCoins', 'addEgg', 'incVar', 'sayCycle', 'locker',
   'shop', 'endScreen', 'rankUp', 'heat', 'giveMon', 'npcRun', 'healParty',
-  'sysMsg', 'jobs', 'choice', 'cardFlip', 'tour',
+  'sysMsg', 'jobs', 'choice', 'cardFlip', 'tour', 'fx',
 ]);
 
 interface Ref { where: string }
 interface IdRef extends Ref { id: string }
 interface TileRef extends Ref { x: number; y: number; ch: string; dims?: { w: number; h: number } }
 interface WarpRef extends Ref { target: string; x: number; y: number }
+interface FxRef extends Ref { id: string; at?: [number, number]; dims?: { w: number; h: number } }
 interface KeyViolation extends Ref { keys: string[] }
 interface CounterRef extends Ref { counter: string }
 
@@ -43,6 +47,7 @@ interface Registry {
   giveMons: IdRef[];
   music: IdRef[];
   sfx: IdRef[];
+  fx: FxRef[];
   setTiles: TileRef[];
   warps: WarpRef[];
   keyViolations: KeyViolation[];
@@ -53,7 +58,7 @@ interface Registry {
 
 function newRegistry(): Registry {
   return {
-    battles: [], shops: [], giveItems: [], giveMons: [], music: [], sfx: [],
+    battles: [], shops: [], giveItems: [], giveMons: [], music: [], sfx: [], fx: [],
     setTiles: [], warps: [], keyViolations: [], sayCycles: [],
     incVars: new Set(), stepCount: 0,
   };
@@ -77,6 +82,7 @@ function walk(steps: ScriptStep[], dims: { w: number; h: number } | undefined, w
     if ('giveMon' in step) r.giveMons.push({ id: step.giveMon.species, where });
     if ('music' in step) r.music.push({ id: step.music, where });
     if ('sfx' in step) r.sfx.push({ id: step.sfx, where });
+    if ('fx' in step) r.fx.push({ id: step.fx.id, at: step.fx.at, where, dims });
     if ('setTile' in step) {
       const [x, y, ch] = step.setTile;
       r.setTiles.push({ x, y, ch, where, dims });
@@ -186,6 +192,20 @@ describe('script reference lints', () => {
       expect(SFX_NAMES.has(ref.id), `${ref.where}: unknown sfx id "${ref.id}"`).toBe(true);
     }
     expect(REG.sfx.length).toBeGreaterThan(0); // sanity: the walker found an {sfx} step
+  });
+
+  it('every {fx} id is a WorldFxId and its `at` (if any) is in bounds of its map', () => {
+    // No `> 0` sanity gate yet: JCE.0 ships the primitive with no content
+    // user — JCE.2 (heal) and CH6-FB.1 (DJames's poof) add the first steps
+    // and should flip this to `toBeGreaterThan(0)` when they do.
+    for (const f of REG.fx) {
+      expect(FX_NAMES.has(f.id), `${f.where}: unknown fx id "${f.id}"`).toBe(true);
+      if (f.at && f.dims) {
+        const [x, y] = f.at;
+        const inBounds = x >= 0 && x < f.dims.w && y >= 0 && y < f.dims.h;
+        expect(inBounds, `${f.where}: fx at (${x},${y}) is out of bounds for a ${f.dims.w}x${f.dims.h} map`).toBe(true);
+      }
+    }
   });
 
   it('every {setTile} uses a registered tile char, in bounds of its map', () => {
