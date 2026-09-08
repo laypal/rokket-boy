@@ -28,6 +28,8 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'voltorbb', lv: 4 },
     winText: ['GUARD: Fine!', 'FINE! Go on', 'then...'],
     onWin: [
+      { fx: { id: 'poof', at: [3, 2] } }, // JCE.6: the poster guard shuffles off his tile
+      { sfx: 'poof' },
       { setFlag: 'guardBeaten' },
       // v2 truncated 'The guard shuffles' to 17 chars at runtime; kept verbatim
       { say: [['The guard shuffle', 'away from the', 'poster wall...']] },
@@ -42,6 +44,8 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'ratikatt', lv: 6 },
     winText: ['BRAD: Tch!', 'Keep your dusty', 'rocks then!'],
     onWin: [
+      { fx: { id: 'poof', at: [8, 5] } }, // JCE.6: BRAD's storm-off
+      { sfx: 'poof' },
       { setFlag: 'bradBeaten' },
       { say: [['BRAD storms off', 'into the dark.']] },
       RIDE_HOME, // FLW.4: no rankUp/endScreen here — the hand-in is at HQ
@@ -132,10 +136,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'ratikatt', lv: 7 },
     winText: ['CAMPER: Whoa!', "Didn't think", 'the house wins.'],
     onWin: [
-      { setFlag: 'spanCamper' },
       { addCoins: 40 },
       { sfx: 'item' },
       { sysMsg: ['GOT 40 COINS!'] },
+      { fx: { id: 'poof', at: [5, 15] } }, // JCE.6: the mark pays, then packs up
+      { sfx: 'poof' },
+      { setFlag: 'spanCamper' },
       { say: [['The camper packs', 'up, muttering', 'about the odds.']] },
     ],
     onLose: [],
@@ -146,10 +152,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'zubatt', lv: 8 },
     winText: ['PICNICKER: Oh!', 'Well fought.', 'Take the pot.'],
     onWin: [
-      { setFlag: 'spanPicnicker' },
       { addCoins: 50 },
       { sfx: 'item' },
       { sysMsg: ['GOT 50 COINS!'] },
+      { fx: { id: 'poof', at: [5, 12] } }, // JCE.6: ditto
+      { sfx: 'poof' },
+      { setFlag: 'spanPicnicker' },
       { say: [['She folds up her', 'basket, still', 'smiling, though.']] },
     ],
     onLose: [],
@@ -160,10 +168,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'geodood', lv: 9 },
     winText: ['HIKER: Ha! Beat', 'by a rookie.', "Fair's fair."],
     onWin: [
-      { setFlag: 'spanHiker' },
       { addCoins: 60 },
       { sfx: 'item' },
       { sysMsg: ['GOT 60 COINS!'] },
+      { fx: { id: 'poof', at: [5, 9] } }, // JCE.6: ditto
+      { sfx: 'poof' },
+      { setFlag: 'spanHiker' },
       { say: [['The hiker shrugs', 'off the loss and', 'trudges onward.']] },
     ],
     onLose: [],
@@ -174,10 +184,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'ekanzz', lv: 10 },
     winText: ['YOUNGSTER: No', 'way! I trained', 'for weeks!'],
     onWin: [
-      { setFlag: 'spanYoungster' },
       { addCoins: 80 },
       { sfx: 'item' },
       { sysMsg: ['GOT 80 COINS!'] },
+      { fx: { id: 'poof', at: [5, 6] } }, // JCE.6: ditto
+      { sfx: 'poof' },
+      { setFlag: 'spanYoungster' },
       { say: [['The youngster', 'storms off mad,', 'kicking planks.']] },
     ],
     onLose: [],
@@ -188,10 +200,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'voltorbb', lv: 11 },
     winText: ['LASS: Hmph! You', 'got lucky, is', 'all. Take it.'],
     onWin: [
-      { setFlag: 'spanLass' },
       { addCoins: 100 },
       { sfx: 'item' },
       { sysMsg: ['GOT 100 COINS!'] },
+      { fx: { id: 'poof', at: [5, 3] } }, // JCE.6: ditto
+      { sfx: 'poof' },
+      { setFlag: 'spanLass' },
       { say: [['The lass flounces', 'off the bridge,', 'nose in the air.']] },
     ],
     onLose: [],
@@ -253,6 +267,8 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'arbok', lv: 16 },
     winText: ['CHIEF: ...Get', 'out of my sight.'],
     onWin: [
+      { fx: { id: 'poof', at: [17, 4] } }, // JCE.6: the chief stalks off
+      { sfx: 'poof' },
       { setFlag: 'ch4Done' },
       {
         say: [
@@ -351,10 +367,12 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'gravlr', lv: 23 },
     winText: ['CLERK: Ugh. The', 'cabinet. Go on.'],
     onWin: [
-      { setFlag: 'sylClerkB' },
       { addCoins: 200 },
       { sfx: 'item' },
       { sysMsg: ['GOT 200 COINS!'] },
+      { fx: { id: 'poof', at: [16, 9] } }, // JCE.6: clerk_b slides aside
+      { sfx: 'poof' },
+      { setFlag: 'sylClerkB' },
       // 'the way, muttering' is 18 chars — trimmed to fit the 17-char box
       { say: [['He slides aside,', 'muttering about', 'overtime.']] },
     ],
@@ -388,6 +406,9 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
     foe: { species: 'machoke', lv: 27 },
     winText: ['GUARD: ...Fine.', "He's all yours."],
     onWin: [
+      { fx: { id: 'poof', at: [9, 9] } }, // JCE.6: both bodyguards limp off
+      { sfx: 'poof' },
+      { fx: { id: 'poof', at: [10, 9] } },
       { setFlag: 'ch6Duo' },
       { say: [['The bodyguards', 'limp off to call', 'someone.']] },
     ],

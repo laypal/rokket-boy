@@ -647,7 +647,27 @@ T.GRAVE = S(
 '3301111111111033',
 '3300000000000033',
 '3333333333333333');
-TILES['t'] = [T.GRAVE];
+// JCE.6 — frame B: candlelight over the stone. The inscription deepens
+// (1 → 0) and one glint (3) catches the slab's shoulder; the (G.frame>>5)&1
+// tile idiom flickers it, same as `w`/`C`. No new tile, no new machinery.
+T.GRAVE_B = S(
+'3333333333333333',
+'3333300000033333',
+'3333022222203333',
+'3330222222220333',
+'3302322222222033',
+'3302233333322033',
+'3302230003322033',
+'3302233333322033',
+'3302230003322033',
+'3302233333322033',
+'3302222222222033',
+'3302222222222033',
+'3300000000000033',
+'3301111111111033',
+'3300000000000033',
+'3333333333333333');
+TILES['t'] = [T.GRAVE, T.GRAVE_B];
 
 // loose rubble — the walkable wild-encounter tile (CH2.1). Placeholder art:
 // floor field with scattered rock clusters; CH2.2 owns the real cave set.

@@ -81,6 +81,8 @@ export const lav3Scripts: Record<string, ScriptStep[]> = {
         {
           if: { partyFull: true },
           then: [
+            { fx: { id: 'poof', npc: 'myowth' } }, // JCE.6: his LIVE tile — he has already run to you
+            { sfx: 'poof' },
             { giveMon: { species: 'myowth', lv: 18 } },
             { sfx: 'item' },
             { setFlag: 'ch5Myowth' },
@@ -97,6 +99,8 @@ export const lav3Scripts: Record<string, ScriptStep[]> = {
             },
           ],
           else: [
+            { fx: { id: 'poof', npc: 'myowth' } }, // JCE.6: his LIVE tile — he has already run to you
+            { sfx: 'poof' },
             { giveMon: { species: 'myowth', lv: 18 } },
             { sfx: 'item' },
             { setFlag: 'ch5Myowth' },

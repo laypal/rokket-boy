@@ -810,6 +810,26 @@ describe('world fx hook + map change (F38 JCE.0)', () => {
     ]);
   });
 
+  it("worldHooks.fx with `npc` queues the fx on that NPC's LIVE tile, not his spawn tile (JCE.6 — Myowth after an npcRun)", () => {
+    G.map = MAPS.lav3;
+    const myowth = MAPS.lav3.npcs.find((n) => n.id === 'myowth')!;
+    const [sx, sy] = [myowth.x, myowth.y];
+    myowth.x = 3;
+    myowth.y = 2;
+    try {
+      worldHooks.fx('poof', undefined, 'myowth');
+      expect(activeWorldFx()).toEqual([{ id: 'poof', x: 3, y: 2, t: 0 }]);
+      // an unknown npc id falls back to the player tile — never throws
+      G.player.x = 7;
+      G.player.y = 8;
+      worldHooks.fx('poof', undefined, 'nobody');
+      expect(activeWorldFx()[1]).toEqual({ id: 'poof', x: 7, y: 8, t: 0 });
+    } finally {
+      myowth.x = sx;
+      myowth.y = sy;
+    }
+  });
+
   it('landAt clears the queue so a warp never carries an fx onto the next map', () => {
     playWorldFx('poof', 3, 4);
     landAt(['corner', 9, 2, 'down']);

@@ -186,10 +186,13 @@ describe('ch5 objectives (CH5.0 §9)', () => {
 });
 
 describe('GRAVE tile (CH5.0 §11)', () => {
-  it('`t` is registered, 16×16, and blocks', () => {
-    expect(TILES.t).toHaveLength(1);
-    expect(TILES.t[0]).toHaveLength(16);
-    for (const row of TILES.t[0]) expect(row).toHaveLength(16);
+  it('`t` is registered, two 16×16 frames (JCE.6 candle flicker), and blocks', () => {
+    expect(TILES.t).toHaveLength(2);
+    for (const frame of TILES.t) {
+      expect(frame).toHaveLength(16);
+      for (const row of frame) expect(row).toHaveLength(16);
+    }
+    expect(TILES.t[0]).not.toEqual(TILES.t[1]);
     expect(WALKABLE.has('t')).toBe(false);
   });
 });

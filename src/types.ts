@@ -132,7 +132,7 @@ export type ScriptStep =
   | { choice: { say: string[][]; yes: ScriptStep[]; no?: ScriptStep[] } } // ask YES/NO on the last say page; branch runs nested like `if` (2026-08-15, suspends)
   | { cardFlip: true }                                    // open the DEALER's PICKPOCKET table (SIDE.2, suspends like jobs)
   | { tour: { stops: TourStop[] } }                       // guided camera tour (ONB.2/FLW.5, suspends): pan stop to stop, A advances, B/START exits; camera always returns
-  | { fx: { id: WorldFxId; at?: [number, number] } };     // draw-only world fx over a tile (F38 JCE.0, synchronous like sfx); `at` = absolute tile coords, absent = the player's tile
+  | { fx: { id: WorldFxId; at?: [number, number]; npc?: string } }; // draw-only world fx over a tile (F38 JCE.0, synchronous like sfx); `at` = absolute tile coords; `npc` = that NPC's LIVE tile (JCE.6 — after an npcRun his spawn tile is stale); neither = the player's tile
 
 /** ONB.2/FLW.5: one stop of a `{ tour }`. `cam` is a camera TARGET in
  *  PIXELS (tile*16 — the INTRO_CARDS convention; `cameraFor` clamps it at

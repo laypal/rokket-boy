@@ -85,7 +85,11 @@ export const worldHooks: ScriptHooks = {
   warp: (w, done) => performWarp(w, done),
   sfx: (name) => Audio2.sfx(name),
   // F38 JCE.0: draw-only world fx; no `at` = over the player
-  fx: (id, at) => playWorldFx(id, at ? at[0] : G.player.x, at ? at[1] : G.player.y),
+  fx: (id, at, npc) => {
+    const n = npc ? G.map.npcs.find((m) => m.id === npc) : undefined; // JCE.6: live x/y, not the spawn tile
+    const p = at ?? (n ? [n.x, n.y] : [G.player.x, G.player.y]);
+    playWorldFx(id, p[0], p[1]);
+  },
   music: (name) => Audio2.play(name),
   setTile: (x, y, ch) => setTile(G.map, x, y, ch),
   addWarp: (key, w) => {
