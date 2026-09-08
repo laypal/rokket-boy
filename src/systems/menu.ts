@@ -165,7 +165,7 @@ export function menuUpdate(): void {
       if (m.sub === 'status') statusNav = { sel: 0 };
       if (m.sub === 'save') {
         writeSave();
-        Audio2.sfx('item');
+        Audio2.sfx('save'); // JCE.1
         saveMsg = sessionOnlyWarning() ? ['SAVED!', 'SESSION ONLY.'] : ['SAVED!'];
       }
     }

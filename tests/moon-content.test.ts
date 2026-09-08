@@ -13,6 +13,7 @@ import { MAPS } from '../src/data/maps';
 interface FakeLog {
   says: string[][][];
   sfx: string[];
+  fx: string[];
   tiles: [number, number, string][];
   monsGiven: [string, number][];
 }
@@ -20,13 +21,13 @@ interface FakeLog {
 // Same fake-hooks pattern as tests/script.test.ts, trimmed to what CH2.3's
 // scripts actually exercise (say/sfx/setTile/setFlag(via quest)/giveMon).
 function makeHooks(): { hooks: ScriptHooks; log: FakeLog } {
-  const log: FakeLog = { says: [], sfx: [], tiles: [], monsGiven: [] };
+  const log: FakeLog = { says: [], sfx: [], fx: [], tiles: [], monsGiven: [] };
   const hooks: ScriptHooks = {
     say: (pages, done) => { log.says.push(pages); done(); },
     battle: (_id, done) => done(null),
     warp: (_w, done) => done(),
     sfx: (n) => log.sfx.push(n),
-    fx: () => {},
+    fx: (id, at) => log.fx.push(id + (at ? '@' + at.join(',') : '')),
     music: () => {},
     setTile: (x, y, ch) => log.tiles.push([x, y, ch]),
     addWarp: () => {},
@@ -55,6 +56,8 @@ describe('moonDig fossil chest (at:8,4)', () => {
     runScript(moonDigScripts['at:8,4'], hooks);
     expect(quest.flags.fossilsTaken).toBe(true);
     expect(log.tiles).toContainEqual([8, 4, '%']);
+    expect(log.sfx).toContain('unlock'); // JCE.1: the crate clicks, no quest-grant fanfare
+    expect(log.fx).toContain('spark@8,4'); // JCE.4: the glint
     expect(log.says.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -77,6 +80,7 @@ describe('moonDig enter repair', () => {
     const { hooks, log } = makeHooks();
     runScript(moonDigScripts.enter, hooks);
     expect(log.tiles).toEqual([[8, 4, '%']]);
+    expect(log.fx).toEqual([]); // the repair is silent — nothing is opening
   });
 
   it('fossilsTaken false: no setTile', () => {

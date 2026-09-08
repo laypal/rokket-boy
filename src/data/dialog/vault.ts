@@ -4,11 +4,12 @@ import type { ScriptStep } from '../../types';
 export const vaultScripts: Record<string, ScriptStep[]> = {
   // the chest heist beat: loot, alarm, leg it
   'tile:$': [
+    { fx: { id: 'spark', at: [5, 3] } }, // JCE.4: the glint before the lid
     { setTile: [5, 3, '%'] },
     { setFlag: 'lootTaken' },
     { giveItem: 'CASE OF COINS' },
     { addCoins: 9999 },
-    { sfx: 'item' },
+    { sfx: 'unlock' }, // JCE.1: the lid click; the alarm is the fanfare here
     {
       say: [
         ['Got the CASE', 'OF COINS!'],

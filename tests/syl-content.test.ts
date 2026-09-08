@@ -25,7 +25,7 @@ function eventHooks(choiceYes = true) {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (w, done) => { events.push('warp:' + w.join(',')); done(); },
     sfx: (id) => events.push('sfx:' + id),
-    fx: () => {},
+    fx: (id, at) => events.push('fx:' + id + (at ? '@' + at.join(',') : '')),
     music: (n) => events.push('music:' + n),
     setTile: (x, y, ch) => events.push(`setTile:${x},${y},${ch}`),
     addWarp: () => {},
@@ -182,7 +182,7 @@ describe('the card-key doors (CH6.0 §2 / sylph.ts cardDoor)', () => {
     quest.items.push('CARD KEY');
     const { hooks, events } = eventHooks();
     runScript(syl1Scripts['at:10,7'], hooks);
-    expect(events).toEqual(['sfx:keycard', 'setTile:10,7,o', 'say']);
+    expect(events).toEqual(['sfx:keycard', 'fx:spark@10,7', 'setTile:10,7,o', 'say']); // JCE.4: the reader glints
   });
 });
 
@@ -223,6 +223,11 @@ describe('DJames, the inside man (CH6.0 §7)', () => {
     expect(says[0][0][0]).toBe('DJAMES: Psst.');
     expect(events).toContain('sysMsg:GOT SMOKE BALL!');
     expect(events).toContain('sysMsg:RULES LEARNED!');
+    // CH6-FB.1: he leaves in a puff over HIS pad (3,4), sound after picture,
+    // both queued before the flag that hides him lands
+    const puff = events.indexOf('fx:poof@3,4');
+    expect(puff).toBeGreaterThan(0);
+    expect(events[puff + 1]).toBe('sfx:poof');
   });
 
   it('second talk: no second SMOKE BALL, same opener, still RULES LEARNED', () => {
@@ -255,8 +260,8 @@ describe('the BOSS BALL chest (syl5 at:9,8)', () => {
     // giveItem is not a hook (script.ts pushes straight into quest.items), so
     // it has no event — checked above via quest.items instead. Each `say`
     // step is ONE event regardless of pages; the steal says 2 pages.
-    expect(events.slice(0, 4)).toEqual(['say', 'setTile:9,8,%', 'sfx:item', 'sysMsg:BOSS BALL!']);
-    expect(events[4]).toBe('choice');
+    expect(events.slice(0, 5)).toEqual(['say', 'fx:spark@9,8', 'setTile:9,8,%', 'sfx:unlock', 'sysMsg:BOSS BALL!']); // JCE.4 glint, JCE.1 click
+    expect(events[5]).toBe('choice');
 
     // "choice last" is structural (the mocked hook auto-answers YES and
     // recurses into RIDE_HOME's own warp) — read the steal's last step.
@@ -275,10 +280,10 @@ describe('the BOSS BALL chest (syl5 at:9,8)', () => {
 });
 
 describe('the heal pad (syl5 step:10,5, CH6.0 §4 — asks first)', () => {
-  it('answering yes: choice -> healParty -> sfx -> PARTY HEALED!', () => {
+  it('answering yes: choice -> healParty -> sfx heal -> PARTY HEALED!', () => {
     const { hooks, events } = eventHooks(true);
     runScript(syl5Scripts['step:10,5'], hooks);
-    expect(events).toEqual(['choice', 'healParty', 'sfx:item', 'sysMsg:PARTY HEALED!']);
+    expect(events).toEqual(['choice', 'fx:heal', 'healParty', 'sfx:heal', 'sysMsg:PARTY HEALED!']); // JCE.2
   });
 
   it('answering no: only the choice, no heal', () => {

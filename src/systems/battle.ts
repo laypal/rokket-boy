@@ -426,7 +426,7 @@ function doSwipe(b: BattleState): void {
     playFx(b, caught ? 'throwOk' : 'throwFail', 'me', 'NORMAL', () => {
       if (caught) {
         b.caught = true; // the throwOk fx has ended (hideDefender reset); this keeps the foe hidden
-        Audio2.sfx('item');
+        Audio2.sfx('catch'); // JCE.1
         say(b, ['Gotcha!', sp.name + ' was', 'caught!']);
         if (G.party.length < 4) G.party.push(b.foe);
         else {

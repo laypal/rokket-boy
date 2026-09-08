@@ -27,7 +27,7 @@ function eventHooks() {
     battle: (id, done) => { events.push('battle:' + id); done(null); },
     warp: (w, done) => { events.push('warp:' + w.join(',')); done(); },
     sfx: (id) => events.push('sfx:' + id),
-    fx: () => {},
+    fx: (id, at) => events.push('fx:' + id + (at ? '@' + at.join(',') : '')),
     music: (n) => events.push('music:' + n),
     setTile: (x, y, ch) => events.push(`setTile:${x},${y},${ch}`),
     addWarp: () => {},
@@ -189,7 +189,9 @@ describe('the altar (lav3 at:2,1)', () => {
     const sayCount = events.filter((e) => e === 'say').length;
     expect(sayCount).toBe(3);
     expect(events[0]).toBe('say');
-    expect(events[1]).toBe('setTile:2,1,%');
+    expect(events[1]).toBe('fx:spark@2,1'); // JCE.4: the glint
+    expect(events[2]).toBe('setTile:2,1,%');
+    expect(events).toContain('sfx:unlock'); // JCE.1: the chest click replaced `item`
     const npcRunAt = events.indexOf('npcRun:myowth');
     const giveMonAt = events.findIndex((e) => e.startsWith('giveMon:'));
     expect(npcRunAt).toBeGreaterThan(0);

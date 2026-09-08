@@ -37,6 +37,10 @@ export const syl1Scripts: Record<string, ScriptStep[]> = {
         ["I'll be in the", 'canteen. Not', 'here. Never here.'],
       ],
     },
+    // CH6-FB.1: the puff draws over HIS pad for 20 frames while goneIf hides
+    // him on the flag below — picture then sound, both before the flag
+    { fx: { id: 'poof', at: [3, 4] } },
+    { sfx: 'poof' },
     { setFlag: 'ch6Rules' },
     { sysMsg: ['RULES LEARNED!', 'THE PAD IS FREE.'] },
   ],

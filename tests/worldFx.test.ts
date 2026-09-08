@@ -12,7 +12,7 @@ vi.mock('../src/engine/renderer', () => ({
 }));
 
 import {
-  WORLD_FX, WORLD_FX_IDS, worldFxFrame, playWorldFx, clearWorldFx, activeWorldFx, drawWorldFx,
+  WORLD_FX, WORLD_FX_IDS, worldFxFrame, playWorldFx, clearWorldFx, activeWorldFx, drawWorldFx, alertPop, shakeOffset,
   type WorldFxId,
 } from '../src/systems/worldFx';
 import { FX_SPRITES } from '../src/data/sprites';
@@ -101,5 +101,23 @@ describe('queue: play / age / drop / clear', () => {
     playWorldFx('heal', 2, 2);
     clearWorldFx();
     expect(activeWorldFx()).toEqual([]);
+  });
+});
+
+// ── JCE.3: the guard beats that are NOT queued fx — pure schedules ────────
+describe('alertPop (JCE.3): the sighting `!` pops 4px and settles over 8 frames', () => {
+  it('is the dy to ADD to the glyph: -4 -4 -3 -3 -2 -2 -1 -1 then 0 forever', () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 47].map(alertPop)).toEqual([-4, -4, -3, -3, -2, -2, -1, -1, 0, 0, 0]);
+  });
+  it('never returns a positive offset (the pop only ever lifts)', () => {
+    for (let t = -5; t < 60; t++) expect(alertPop(t)).toBeLessThanOrEqual(0);
+  });
+});
+
+describe('shakeOffset (JCE.3): a screen-space ±1px jolt while frames remain', () => {
+  it('is 0 with nothing left, else alternates -1/+1 by parity so the camera never drifts', () => {
+    expect(shakeOffset(0)).toBe(0);
+    expect(shakeOffset(-3)).toBe(0);
+    expect([6, 5, 4, 3, 2, 1].map(shakeOffset)).toEqual([-1, 1, -1, 1, -1, 1]);
   });
 });

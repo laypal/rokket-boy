@@ -59,10 +59,11 @@ export const lav3Scripts: Record<string, ScriptStep[]> = {
             ["It has a child's", 'face carved into', 'it. You take it.'],
           ],
         },
+        { fx: { id: 'spark', at: [2, 1] } }, // JCE.4: the glint before the lid
         { setTile: [2, 1, '%'] },
         { giveItem: 'BONE MASK' },
         { setFlag: 'ch5Mask' },
-        { sfx: 'item' },
+        { sfx: 'unlock' }, // JCE.1: the chest click
         { sysMsg: ['BONE MASK!', 'GET OUT.'] },
         { npcRun: { id: 'myowth' } },
         {

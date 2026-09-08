@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   tileAt, isBlocked, warpAt, performWarp, worldUpdate, landAt,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
-  todoMarkersActive, TODO_BOB, npcTodo,
+  todoMarkersActive, TODO_BOB, npcTodo, shakeFramesLeft,
 } from '../src/systems/world';
 import { playWorldFx, activeWorldFx, clearWorldFx } from '../src/systems/worldFx';
 import { MAPS } from '../src/data/maps';
@@ -814,5 +814,65 @@ describe('world fx hook + map change (F38 JCE.0)', () => {
     playWorldFx('poof', 3, 4);
     landAt(['corner', 9, 2, 'down']);
     expect(activeWorldFx()).toEqual([]);
+  });
+});
+
+describe('JCE.3 guard alert animations: dust trail + screen shake', () => {
+  it('every chase STEP queues a `dust` fx on the tile the guard left', () => {
+    clearWorldFx();
+    const guard: NpcDef = { id: 'gJ', char: 'guard', x: 2, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } };
+    const map = makeHeatMap(['#########', '#       #', '#########'], [guard]);
+    G.map = map;
+    G.player.x = 5;
+    G.player.y = 1;
+    G.player.dir = DOWN;
+    G.player.moving = false;
+    G.player.prog = 0;
+    G.heatState.corner = setHeat(calmHeat(), 2, 0);
+    const rt = guardRuntime('corner', guard);
+    rt.mode = 'chase';
+    rt.tracking = true;
+    G.frame = 24;
+    expect(heatTick()).toBe(false);
+    expect(guard.x).toBe(3); // one greedy step toward the player
+    expect(activeWorldFx().map((f) => [f.id, f.x, f.y])).toEqual([['dust', 2, 1]]);
+    G.frame = 25; // off-beat: no step, no second puff
+    heatTick();
+    expect(activeWorldFx()).toHaveLength(1);
+  });
+
+  it('a stage RAISE arms a 6-frame shake; reaching stage 3 arms two (12); a drop arms none', () => {
+    G.map = MAPS.corner;
+    delete G.heatState.corner;
+    worldHooks.heat(1);
+    expect(shakeFramesLeft()).toBe(6);
+    worldHooks.heat(3);
+    expect(shakeFramesLeft()).toBe(12);
+    worldHooks.heat(2); // a drop: the counter is left to run down, never re-armed
+    expect(shakeFramesLeft()).toBe(12);
+    delete G.heatState.corner;
+  });
+});
+
+describe('JCE.4 lift pads: performWarp from a `W` tile queues a spark before the fade', () => {
+  it('the spark sits on the pad tile; a door warp queues nothing', () => {
+    clearWorldFx();
+    G.map = MAPS.syl1;
+    G.player.x = 3;
+    G.player.y = 4; // DJames's pad A — a `W` tile
+    expect(MAPS.syl1.grid[4][3]).toBe('W');
+    performWarp(warpAt(MAPS.syl1, 3, 4)!);
+    expect(activeWorldFx().map((f) => [f.id, f.x, f.y])).toEqual([['spark', 3, 4]]);
+    clearWorldFx();
+    G.fade = 0;
+    G.fadeDir = 0;
+    G.map = MAPS.hq;
+    G.player.x = 9;
+    G.player.y = 13; // an exit door
+    performWarp(warpAt(MAPS.hq, 9, 13)!);
+    expect(activeWorldFx()).toHaveLength(0);
+    G.fade = 0;
+    G.fadeDir = 0;
+    G.state = 'world';
   });
 });

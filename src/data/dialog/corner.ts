@@ -41,6 +41,7 @@ export const cornerScripts: Record<string, ScriptStep[]> = {
           then: [
             { setFlag: 'switchFound' },
             { sfx: 'switch' },
+            { fx: { id: 'spark', at: [2, 2] } }, // JCE.4: the switch glints as the stairs appear
             { setTile: [2, 2, '>'] },
             { addWarp: ['2,2', ['vault', 5, 5, 'up']] },
             {

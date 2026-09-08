@@ -13,8 +13,9 @@ export const moonDigScripts: Record<string, ScriptStep[]> = {
             ["Wrap 'em quick --", 'scientists could', 'be back any sec.'],
           ],
         },
-        { sfx: 'item' },
+        { sfx: 'unlock' }, // JCE.1: the crate lid
         { setFlag: 'fossilsTaken' },
+        { fx: { id: 'spark', at: [8, 4] } }, // JCE.4: the glint before the lid
         { setTile: [8, 4, '%'] },
         { say: [['Fossils secured!', 'Time to move.']] },
         // CH2.7 — the moment you hold them, BRAD notices and RUNS you down.

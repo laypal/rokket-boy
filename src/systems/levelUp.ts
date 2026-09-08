@@ -161,6 +161,7 @@ export function levelUpInput(h: LevelUpHost): boolean {
  *  move-replace prompts, then the evolution offer — and call `then` when the
  *  whole chain has played out. */
 export function announceLevelUps(h: LevelUpHost, mon: MonInstance, events: LevelUpEvent[], then: () => void): void {
+  if (events.length) Audio2.sfx('levelup'); // JCE.1: once per mon, under the first 'grew' line
   const offers: MoveId[] = [];
   let pendingEvo: string | undefined;
   for (const ev of events) {

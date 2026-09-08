@@ -128,3 +128,22 @@ export function drawWorldFx(camX: number, camY: number, mapPal: Palette): void {
   }
   queue = queue.filter((f) => f.t < WORLD_FX[f.id].len);
 }
+
+// ── JCE.3: the guard beats that are NOT queued fx ─────────────────────────
+// Both are pure schedules over counters world.ts already owns; the draw
+// applies them. No sprite, no queue entry, no new state.
+
+/** The sighting `!` pop-and-settle: `t` = frames since the acquisition
+ *  (`STARTLE_FRAMES - spotFlash`). Returns the dy to ADD to the glyph —
+ *  4px up on the first frame, settling in 2-frame steps, 0 from t=8 on. */
+export function alertPop(t: number): number {
+  if (t < 0 || t >= 8) return 0;
+  return -(4 - (t >> 1));
+}
+
+/** Screen shake: `t` = frames left on world.ts's shake counter. ±1px by
+ *  parity so consecutive frames cancel and the camera never drifts. */
+export function shakeOffset(t: number): number {
+  if (t <= 0) return 0;
+  return t & 1 ? 1 : -1;
+}

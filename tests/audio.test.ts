@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parse, freq } from '../src/engine/audio';
 import { TRACKS } from '../src/data/music';
+import { SFX } from '../src/data/sfx';
 
 describe('sequencer parse()', () => {
   it('splits tokens on any whitespace including newlines', () => {
@@ -37,5 +38,14 @@ describe('freq()', () => {
     expect(freq('-')).toBe(0);
     expect(freq('=')).toBe(0);
     expect(freq('H2')).toBe(0);
+  });
+});
+
+describe('the JCE.1 SFX library (F38)', () => {
+  it('registers every catalogued id — AUD.1 absorbed plus the world beats', () => {
+    for (const id of ['spotted', 'save', 'levelup', 'catch', 'keycard', 'disguise', 'poof', 'heal', 'pad', 'unlock', 'pickup']) {
+      expect(SFX[id], `missing sfx "${id}"`).toBeDefined();
+      expect(SFX[id].length, `"${id}" has no steps`).toBeGreaterThan(0);
+    }
   });
 });

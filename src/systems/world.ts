@@ -30,7 +30,7 @@ import { fogActive, fogVisible } from './fog';
 import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
-import { playWorldFx, clearWorldFx, drawWorldFx } from './worldFx';
+import { playWorldFx, clearWorldFx, drawWorldFx, alertPop, shakeOffset } from './worldFx';
 import { makeMon, maxHp } from './mon';
 import { SPECIES } from '../data/mons';
 
@@ -78,7 +78,10 @@ let pendingEnter: ScriptStep[] | null = null;
 export const worldHooks: ScriptHooks = {
   say: (pages, done) => openDialog(pages, done),
   choice: (pages, done) => openChoice(pages, done),
-  battle: (id, done) => startBattle(id, done),
+  battle: (id, done) => {
+    shakeT = 0; // JCE.3: a jolt armed on the tick that made contact must not replay after the fight
+    startBattle(id, done);
+  },
   warp: (w, done) => performWarp(w, done),
   sfx: (name) => Audio2.sfx(name),
   // F38 JCE.0: draw-only world fx; no `at` = over the player
@@ -112,8 +115,13 @@ export const worldHooks: ScriptHooks = {
     const prev = G.heatState[id]?.stage ?? 0;
     const ld = G.map.lockdown; // CH4.0 §2: the map's own clock, if it has one
     G.heatState[id] = setHeat(G.heatState[id] ?? calmHeat(), n, G.playSeconds, ld ? { lockdown: ld } : undefined);
-    // 1f.10 alert cue: a stage RAISE briefly boosts the vignette (draw-only)
-    if ((G.heatState[id]?.stage ?? 0) > prev) alertT = ALERT_FRAMES;
+    // 1f.10 alert cue: a stage RAISE briefly boosts the vignette (draw-only);
+    // JCE.3 adds a screen jolt — one shake, two when the map hits lockdown stage
+    const now = G.heatState[id]?.stage ?? 0;
+    if (now > prev) {
+      alertT = ALERT_FRAMES;
+      shakeT = now === 3 ? SHAKE_FRAMES * 2 : SHAKE_FRAMES;
+    }
   },
   // CH2.3 gift scenes: party if there's room (cap 4, §4.2), else the LOCKER
   // box — same overflow rule the SWIPE catch uses. Silent by design; the
@@ -224,6 +232,15 @@ function npcRunTick(): boolean {
 // 1f.10 vignette state — draw-only (juice rule: never gates logic)
 const ALERT_FRAMES = 30;
 let alertT = 0;
+// JCE.3 screen shake — screen-space (a camera offset), draw-only, aged in
+// the draw like every other juice counter here. Outside the worldFx queue by
+// design (PLAN D4): it has no tile.
+const SHAKE_FRAMES = 6;
+let shakeT = 0;
+/** Test surface only — the draw is the sole consumer. */
+export function shakeFramesLeft(): number {
+  return shakeT;
+}
 // CH2.9 grass rustle — draw-only: a `~` tile jitters briefly when the player
 // steps onto it or starts walking off it. Module-local, never saved, and it
 // never touches the encounter roll (which stays keyed to step completion).
@@ -270,7 +287,12 @@ export function performWarp(w: WarpDef, after?: () => void): void {
   // keeps the ship's clock running; only the gangway OFF it is the escape.
   if (heatKey(MAPS[mapId]) !== heatKey(G.map)) delete G.heatState[heatKey(G.map)];
   clearMapGuardRuntime(G.map.id);
-  Audio2.sfx(mapId === 'vault' || G.map.id === 'vault' ? 'stairs' : 'door');
+  // JCE.1: a lift pad (`W`) rides UP, the vault stairs sweep down, anything else is a door
+  // positional, not warp-typed: a scripted { warp } from a `W` tile would ride too (none does);
+  // CONTINUE is safe because applySave never restores map/position before this runs
+  const onPad = tileAt(G.map, G.player.x, G.player.y) === 'W';
+  Audio2.sfx(onPad ? 'pad' : mapId === 'vault' || G.map.id === 'vault' ? 'stairs' : 'door');
+  if (onPad) playWorldFx('spark', G.player.x, G.player.y); // JCE.4: 8 frames, inside the fade; landAt clears it
   G.state = 'worldwait';
   rustles = []; // CH2.9: tile coords are per-map — never carry across a warp
   startFade(() => {
@@ -452,6 +474,7 @@ export function heatTick(): boolean {
             // a re-acquisition re-arms the 20 s lockdown (frozen contract).
             rt.tracking = true;
             rt.spotFlash = STARTLE_FRAMES;
+            Audio2.sfx('spotted'); // JCE.1/3: the startle sting under the `!` pop
             worldHooks.heat(Math.min(3, stage + 1));
           }
           if ((G.heatState[hk]?.stage ?? 0) >= 2) rt.mode = 'chase';
@@ -486,6 +509,7 @@ export function heatTick(): boolean {
         if (rt.blockedT >= BLOCKED_GIVE_UP_FRAMES) giveUpChase(rt);
         continue;
       }
+      playWorldFx('dust', n.x, n.y); // JCE.3: a puff on the tile he leaves — the trail
       n.x = nx;
       n.y = ny;
       n.faceDir = stepFaceDir(step.dx, step.dy);
@@ -551,7 +575,7 @@ export function interact(): void {
     setTile(G.map, tx, ty, ' ');
     quest.pickups.add(it.id);
     quest.items.push(it.item);
-    Audio2.sfx('item');
+    Audio2.sfx('pickup'); // JCE.1: a floor find, not the quest-grant fanfare
     openDialog([['Found a', it.item + '!']]);
     return;
   }
@@ -684,7 +708,10 @@ export function worldDraw(): void {
   const ppx = p.x * TILE + dx * p.prog;
   const ppy = p.y * TILE + dy * p.prog;
   const cut = G.cutscene;
-  const [camX, camY] = cameraFor(map, cut ? cut.camX : ppx, cut ? cut.camY : ppy);
+  const [camX0, camY] = cameraFor(map, cut ? cut.camX : ppx, cut ? cut.camY : ppy);
+  // JCE.3 shake: a ±1px camera jolt for a few frames after a stage raise
+  const camX = camX0 + shakeOffset(shakeT);
+  if (shakeT > 0) shakeT--;
   // tiles
   const x0 = Math.max(0, Math.floor(camX / TILE));
   const y0 = Math.max(0, Math.floor(camY / TILE));
@@ -780,8 +807,12 @@ export function worldDraw(): void {
     const rt = guardRt.get(map.id + ':' + n.id);
     if (!rt) continue;
     const flagged = rt.spotFlash > 0 || (rt.mode === 'chase' && rt.cooldown === 0);
-    if (flagged && ((G.frame >> 3) & 1) === 1) {
-      text('!', n.x * TILE - camX + 5, n.y * TILE - camY - 14, pal[3]);
+    // JCE.3: the first 8 frames of a startle POP the glyph 4px and settle it,
+    // drawn solid so the pop always lands; the blink takes over after
+    const pop = rt.spotFlash > 0 ? alertPop(STARTLE_FRAMES - rt.spotFlash) : 0;
+    const popping = rt.spotFlash > STARTLE_FRAMES - 8;
+    if (flagged && (popping || ((G.frame >> 3) & 1) === 1)) {
+      text('!', n.x * TILE - camX + 5, n.y * TILE - camY - 14 + pop, pal[3]);
     }
   }
   // F38 JCE.0 world fx — world-space (scrolls with the map), over the

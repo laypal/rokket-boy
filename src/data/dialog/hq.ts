@@ -297,10 +297,12 @@ export const hqScripts: Record<string, ScriptStep[]> = {
       choice: {
         say: [['GRUNT: Bunks', 'are free. Only', 'perk of the job.'], ['Crash a while?', 'Full heal, free.']],
         yes: [
-          // 'heal' was never a registered sfx id (silent no-op since QOL.9);
-          // 'item' is the existing rising jingle — closest fit for the rest chime
-          { sfx: 'item' },
+          // JCE.2: sparkles over the player (no `at` = the player's tile), the
+          // heal itself, then the JCE.1 `heal` chime — picture and sound are
+          // two steps by design (JCE.0 D2); the toast follows the chatter.
+          { fx: { id: 'heal' } },
           { healParty: true },
+          { sfx: 'heal' },
           { say: [['...zzz...'], ['Party rested up!', 'Back to work,', 'grunt.']] },
           // CH2.10: game-voice receipt AFTER the dialogue closes — the say above
           // is chatter, this is the system confirming the heal actually happened.

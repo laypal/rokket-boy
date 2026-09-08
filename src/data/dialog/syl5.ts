@@ -40,7 +40,7 @@ export const syl5Scripts: Record<string, ScriptStep[]> = {
     },
   ],
   'step:10,5': [
-    { choice: { say: [['A HEAL PAD hums.', 'Rest here?']], yes: [{ healParty: true }, { sfx: 'item' }, { sysMsg: ['PARTY HEALED!'] }] } },
+    { choice: { say: [['A HEAL PAD hums.', 'Rest here?']], yes: [{ fx: { id: 'heal' } }, { healParty: true }, { sfx: 'heal' }, { sysMsg: ['PARTY HEALED!'] }] } }, // JCE.2
   ],
   'at:7,7': cardDoor(7, 7),
   'at:9,8': [
@@ -53,10 +53,11 @@ export const syl5Scripts: Record<string, ScriptStep[]> = {
           then: [{ say: [['Two BODYGUARDS', 'stand between you', 'and the case.']] }],
           else: [
             { say: [['The BOSS BALL.', 'One prototype.', 'Catches anything.'], ['SYLPHCO spent a', 'fortune on it.', 'You spend a step.']] },
+            { fx: { id: 'spark', at: [9, 8] } }, // JCE.4: the glint before the lid
             { setTile: [9, 8, '%'] },
             { giveItem: 'BOSS BALL' },
             { setFlag: 'ch6Ball' },
-            { sfx: 'item' },
+            { sfx: 'unlock' }, // JCE.1: the case click
             { sysMsg: ['BOSS BALL!', 'GET OUT.'] },
             RIDE_HOME,
           ],

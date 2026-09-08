@@ -195,9 +195,7 @@ describe('script reference lints', () => {
   });
 
   it('every {fx} id is a WorldFxId and its `at` (if any) is in bounds of its map', () => {
-    // No `> 0` sanity gate yet: JCE.0 ships the primitive with no content
-    // user — JCE.2 (heal) and CH6-FB.1 (DJames's poof) add the first steps
-    // and should flip this to `toBeGreaterThan(0)` when they do.
+    expect(REG.fx.length).toBeGreaterThan(0); // sanity: JCE.2's heal steps are the first content users
     for (const f of REG.fx) {
       expect(FX_NAMES.has(f.id), `${f.where}: unknown fx id "${f.id}"`).toBe(true);
       if (f.at && f.dims) {

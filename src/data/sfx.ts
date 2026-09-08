@@ -52,4 +52,23 @@ export const SFX: Record<string, readonly SfxStep[]> = {
   // CH6-FB.2: the card reader — two rising notes then a soft click, a
   // different shape from `switch` (one pitch twice) and `door` (low, slow).
   keycard: [[0, 659, 0.04, 0.2, 0.5], [0.05, 988, 0.05, 0.2, 0.5], [0.14, 'h']],
+  // F38 JCE.1 — overworld juice, nine new moments.
+  // A posted guard's `!` — sharp startle, not `alarm`'s repeating two-tone.
+  spotted: [[0, 'h'], [0, 1568, 0.04, 0.28, 0.5], [0.04, 220, 0.1, 0.22, 0.5]],
+  // SAVE menu confirm — settled triangle rise, calmer/lower than `item`.
+  save: [[0, 392, 0.07, 0.2, 0], [0.07, 494, 0.07, 0.2, 0], [0.14, 587, 0.12, 0.22, 0]],
+  // Level-up flourish — thin-pulse arpeggio with a skip, shorter than `evolve`.
+  levelup: [[0, 349, 0.06, 0.2, 0.25], [0.06, 523, 0.06, 0.22, 0.25], [0.12, 698, 0.06, 0.22, 0.25], [0.18, 932, 0.12, 0.26, 0.25]],
+  // "Gotcha!" — descending clinch landing on a kick.
+  catch: [[0, 880, 0.05, 0.22, 0.5], [0.05, 659, 0.06, 0.22, 0.5], [0.11, 440, 0.09, 0.24, 0.5], [0.11, 'k']],
+  // NPC vanish — hat/snare puff over a quick low triangle drop, airy.
+  poof: [[0, 'h'], [0.02, 's'], [0.03, 220, 0.05, 0.16, 0], [0.08, 110, 0.07, 0.14, 0]],
+  // HQ/CH6 heal pad — soft ascending triangle chime, gentle not fanfare.
+  heal: [[0, 392, 0.08, 0.14, 0], [0.08, 494, 0.08, 0.16, 0], [0.16, 587, 0.08, 0.18, 0], [0.24, 784, 0.16, 0.2, 0]],
+  // Lift pad warp — mirrors `stairs` but rising.
+  pad: seq(5, (i) => [[i * 0.04, 220 + i * 90, 0.05, 0.16, 0.25]]),
+  // Chest lid click — hat plus two short low-mid pulses.
+  unlock: [[0, 'h'], [0.01, 330, 0.04, 0.2, 0.5], [0.05, 262, 0.06, 0.18, 0.5]],
+  // Floor item pickup — two thin plinks, lighter than `coin`.
+  pickup: [[0, 988, 0.04, 0.16, 0.25], [0.04, 1319, 0.05, 0.16, 0.25]],
 };

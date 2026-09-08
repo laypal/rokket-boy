@@ -8,7 +8,6 @@ import { G } from '../state';
 import type { MonInstance } from '../types';
 import { BG_PAL } from '../data/palettes';
 import { drawWindow, W } from '../engine/renderer';
-import { Audio2 } from '../engine/audio';
 import { drawEvolveScene, drawMessage, drawLevelUpPrompt } from './battleDraw';
 import { pumpMessages, levelUpInput, announceLevelUps, afterQueue, type LevelUpHost } from './levelUp';
 import { gainXp, xpForLevel, LEVEL_CAP, type LevelUpEvent } from './mon';
@@ -25,7 +24,7 @@ export function levelUpState(): LevelUpHost | null {
 export function startLevelUp(mon: MonInstance, events: LevelUpEvent[], done: () => void): void {
   H = { phase: 'anim', t: 0, sel: 0, msg: null, msgChars: 0, queue: [], done };
   G.state = 'levelup';
-  Audio2.sfx('item');
+  // JCE.1: no `item` here — announceLevelUps plays `levelup`; two stings in one frame clashed (Opus review 2026-09-08)
   // leave AFTER the last queued message, not when the chain resolves (with no
   // offers it resolves synchronously, before the first "grew" line shows)
   const h = H;
