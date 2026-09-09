@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   // .opencode/ holds OpenCode harness plugins (own SDK types, not app code)
   // .sprite-studio/ is Sprite Studio's gitignored local scaffold (its own .cjs helpers); scratch/ holds gitignored preview/A-B helpers
-  { ignores: ['dist/', 'node_modules/', 'team-rokket.html', 'playwright-report/', 'test-results/', '.opencode/', '.sprite-studio/', 'scratch/'] },
+  { ignores: ['dist/', 'node_modules/', 'team-rokket.html', 'playwright-report/', 'test-results/', '.opencode/', '.sprite-studio/', 'scratch/', '.cache/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

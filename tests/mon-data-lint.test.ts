@@ -75,15 +75,15 @@ describe('species registry', () => {
   });
 
   it('every battle sprite is rectangular and battle-sized', () => {
-    // Legal shapes: 28×28 (front) or 24×20 (back). Either slot may hold
-    // either shape while the 1a placeholder cross-reuse lasts; what this
-    // lint hard-fails is ragged rows or off-grammar dimensions.
-    const legal = (rows: string[]) =>
-      (rows.length === 28 && rows.every((r) => r.length === 28)) ||
-      (rows.length === 20 && rows.every((r) => r.length === 24));
+    // Legal shapes: 28×28 (front) or 24×20 (back). A front is ALWAYS 28×28
+    // (SPR.R2 pin — KOFFINK shipped with its back as a front placeholder
+    // until 2026-09-09; never again). A back may still be a 28×28 front
+    // while the VOLTORBB/MAROWL placeholder reuse lasts.
+    const front = (rows: string[]) => rows.length === 28 && rows.every((r) => r.length === 28);
+    const back = (rows: string[]) => rows.length === 20 && rows.every((r) => r.length === 24);
     for (const [key, sp] of Object.entries(SPECIES)) {
-      expect(legal(sp.front), `${key} front is 28×28 or 24×20 with uniform rows`).toBe(true);
-      expect(legal(sp.back), `${key} back is 28×28 or 24×20 with uniform rows`).toBe(true);
+      expect(front(sp.front), `${key} front is 28×28 with uniform rows (never a back)`).toBe(true);
+      expect(front(sp.back) || back(sp.back), `${key} back is 24×20 or a 28×28 placeholder with uniform rows`).toBe(true);
     }
   });
 

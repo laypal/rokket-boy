@@ -1,11 +1,11 @@
 // Species registry (plan §4.1/§4.2). Seeded with the Ch.1 duo so the model is
 // exercised end-to-end; the roster cards add the other lines in batches of 4.
-// KOFFINK's front and VOLTORBB's back reuse the existing battle sprites as
-// placeholders until their sprite card lands. Evolution links (WHEEZINK,
+// VOLTORBB's back reuses its front sprite as a placeholder until its
+// sprite card lands. Evolution links (WHEEZINK,
 // ELECTRÖD) arrive with those species' cards.
 import type { MonSpecies } from '../types';
 import {
-  KOFFINK_BACK, VOLTORBB,
+  KOFFINK_FRONT, KOFFINK_BACK, VOLTORBB,
   RATIKATT_FRONT, RATIKATT_BACK, RATIKATE_FRONT, RATIKATE_BACK,
   ZUBATT_FRONT, ZUBATT_BACK, GOLBATT_FRONT, GOLBATT_BACK,
   GEODOOD_FRONT, GEODOOD_BACK, GRAVLR_FRONT, GRAVLR_BACK,
@@ -33,7 +33,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 14, move: 'sludge' },
     ],
     evolvesTo: { id: 'wheezink', lv: 28 }, // SPR.C — completes the starter line
-    front: KOFFINK_BACK, // placeholder until the KOFFINK front sprite card
+    front: KOFFINK_FRONT,
     back: KOFFINK_BACK,
     pal: OBJ_PAL.koffink,
     catchRate: 0.45,
