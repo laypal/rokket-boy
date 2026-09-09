@@ -326,6 +326,114 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
   // chains guard1 → guard2 with NO heal in between (CH6.0 §5), and only
   // guard2's onWin sets ch6Duo — a wipe or flee between the two records
   // nothing and leaves the office chest sealed.
+  // CH7.0 §6: the plant's posted TECHNICIANs — a delay, not a payday (the
+  // ship_watch shape). Foe becomes magnemyt lv 27 once SPR.E lands (worker
+  // A/B); voltorbb holds the slot so the heatGuard lint stays green.
+  plant_watch: {
+    trainer: 'TECHNICIAN',
+    foe: { species: 'magnemyt', lv: 27 },
+    winText: ['TECH: Not my', 'department.', 'Go on.'],
+    onWin: [],
+    onLose: [],
+    onFlee: [],
+  },
+  // CH7.0 §6: the three posted TECHNICIANs, one payday each behind their own
+  // flag — the syl_exec shape (setFlag + addCoins + sfx + sysMsg + one say).
+  plantTech1: {
+    trainer: 'TECHNICIAN',
+    foe: { species: 'magnemyt', lv: 27 },
+    winText: ['TECH: Fine! FINE!', "I'm off rota."],
+    onWin: [
+      { setFlag: 'plantTech1' },
+      { addCoins: 250 },
+      { sfx: 'coin' },
+      { sysMsg: ['GOT 250 COINS!'] },
+      { say: [['He slinks off,', 'muttering about', 'the rota sheet.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  plantTech2: {
+    trainer: 'TECHNICIAN',
+    foe: { species: 'voltorbb', lv: 28 },
+    winText: ['TECH: Ugh! Take', 'the cells then!'],
+    onWin: [
+      { setFlag: 'plantTech2' },
+      { addCoins: 250 },
+      { sfx: 'coin' },
+      { sysMsg: ['GOT 250 COINS!'] },
+      { say: [['He backs off the', 'cell rack, hands', 'up.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  plantTech3: {
+    trainer: 'TECHNICIAN',
+    foe: { species: 'magnetun', lv: 30 },
+    winText: ['TECH: The floor', 'is yours. Happy?'],
+    onWin: [
+      { setFlag: 'plantTech3' },
+      { addCoins: 250 },
+      { sfx: 'coin' },
+      { sysMsg: ['GOT 250 COINS!'] },
+      { say: [['He waves you', 'past, still', 'grumbling.']] },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  // CH7.0 §3: the four frozen mines (2F, dialog/plant.ts mine(n)) — a
+  // catchable wild VOLTORBB whose onWin spends var mineN (a catch runs
+  // onWin too, so `onCatch` stays undefined by design). Flee/whiteout leave
+  // the var untouched, so the cell re-arms.
+  plant_mine1: {
+    foe: { species: 'voltorbb', lv: 26 },
+    winText: [],
+    onWin: [{ incVar: 'mine1' }],
+    onLose: [],
+    onFlee: [],
+  },
+  plant_mine2: {
+    foe: { species: 'voltorbb', lv: 26 },
+    winText: [],
+    onWin: [{ incVar: 'mine2' }],
+    onLose: [],
+    onFlee: [],
+  },
+  plant_mine3: {
+    foe: { species: 'voltorbb', lv: 26 },
+    winText: [],
+    onWin: [{ incVar: 'mine3' }],
+    onLose: [],
+    onFlee: [],
+  },
+  plant_mine4: {
+    foe: { species: 'voltorbb', lv: 26 },
+    winText: [],
+    onWin: [{ incVar: 'mine4' }],
+    onLose: [],
+    onFlee: [],
+  },
+  // CH7.0 §5: the VOLTRAWK set piece (3F dive, step:7,8) — a catchable wild
+  // legend whose three callbacks each set exactly one of the chapter's three
+  // outcome flags (ch7Caught/ch7Beaten/ch7Fled). Nothing else in the game
+  // sets those flags (pinned by ch7-contracts.test.ts's everySetter).
+  plant_voltrawk: {
+    foe: { species: 'voltrawk', lv: 34 },
+    winText: [],
+    onCatch: [
+      { setFlag: 'ch7Caught' },
+      { say: [['It is in the', 'ball. The plant', 'goes quiet.']] },
+    ],
+    onWin: [
+      { setFlag: 'ch7Beaten' },
+      { say: [['It crashes into', 'the rafters and', 'does not move.']] },
+    ],
+    onFlee: [
+      { setFlag: 'ch7Fled' },
+      { say: [['You run. It', 'shrieks once and', 'lets you.']] },
+    ],
+    onLose: [],
+  },
   syl_watch: {
     trainer: 'SYLPH GUARD',
     foe: { species: 'drowzey', lv: 21 },

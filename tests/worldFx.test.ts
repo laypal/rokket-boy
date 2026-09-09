@@ -5,14 +5,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const drawn: { x: number; y: number }[] = [];
+const filled: { w: number; h: number; style: string }[] = [];
 vi.mock('../src/engine/renderer', () => ({
-  ctx: { drawImage: (_img: unknown, x: number, y: number) => drawn.push({ x, y }) },
+  ctx: {
+    drawImage: (_img: unknown, x: number, y: number) => drawn.push({ x, y }),
+    fillStyle: '',
+    fillRect: function (this: { fillStyle: string }, _x: number, _y: number, w: number, h: number) { filled.push({ w, h, style: this.fillStyle }); },
+  },
   decode: vi.fn(() => ({})),
   TILE: 16,
+  W: 160,
+  H: 144,
 }));
 
 import {
-  WORLD_FX, WORLD_FX_IDS, worldFxFrame, playWorldFx, clearWorldFx, activeWorldFx, drawWorldFx, alertPop, shakeOffset,
+  WORLD_FX, WORLD_FX_IDS, worldFxFrame, playWorldFx, clearWorldFx, activeWorldFx, drawWorldFx, alertPop, shakeOffset, screenAlpha,
   type WorldFxId,
 } from '../src/systems/worldFx';
 import { FX_SPRITES } from '../src/data/sprites';
@@ -24,8 +31,8 @@ beforeEach(() => {
 });
 
 describe('WORLD_FX table', () => {
-  it('ids are exactly the four JCE.0 froze (alert is a glyph schedule, not a queued fx)', () => {
-    expect([...WORLD_FX_IDS]).toEqual(['poof', 'heal', 'spark', 'dust']);
+  it('ids are the four JCE.0 froze plus CH7\'s screen flash (alert is a glyph schedule, not a queued fx)', () => {
+    expect([...WORLD_FX_IDS]).toEqual(['poof', 'heal', 'spark', 'dust', 'flash']);
     expect(Object.keys(WORLD_FX).sort()).toEqual([...WORLD_FX_IDS].sort());
   });
 
@@ -33,6 +40,10 @@ describe('WORLD_FX table', () => {
     for (const id of WORLD_FX_IDS) {
       const fx = WORLD_FX[id];
       expect(fx.len, `${id}.len`).toBeGreaterThan(0);
+      if (fx.screen) {
+        expect(fx.parts, `${id} is a screen fx — no particles`).toEqual([]);
+        continue;
+      }
       expect(fx.parts.length, `${id} has parts`).toBeGreaterThan(0);
       if (fx.pal) expect(OBJ_PAL[fx.pal], `${id}.pal "${fx.pal}"`).toBeDefined();
       for (const p of fx.parts) {
@@ -46,8 +57,9 @@ describe('WORLD_FX table', () => {
 });
 
 describe('worldFxFrame (pure)', () => {
-  it('draws something on frame 0 and nothing at len, for every id', () => {
+  it('draws something on frame 0 and nothing at len, for every particle id', () => {
     for (const id of WORLD_FX_IDS) {
+      if (WORLD_FX[id].screen) continue;
       expect(worldFxFrame(id, 0).length, `${id} @0`).toBeGreaterThan(0);
       expect(worldFxFrame(id, WORLD_FX[id].len), `${id} @len`).toEqual([]);
     }
@@ -69,6 +81,28 @@ describe('worldFxFrame (pure)', () => {
       const mid = Math.floor(WORLD_FX[id].len / 2);
       expect(worldFxFrame(id, mid)).toEqual(worldFxFrame(id, mid));
     }
+  });
+});
+
+describe('CH7 screen flash', () => {
+  it('screenAlpha: solid for the first half, a straight fade to 0 at len', () => {
+    expect(screenAlpha(0, 60)).toBe(1);
+    expect(screenAlpha(29, 60)).toBe(1);
+    expect(screenAlpha(30, 60)).toBe(1);
+    expect(screenAlpha(45, 60)).toBeCloseTo(0.5);
+    expect(screenAlpha(60, 60)).toBe(0);
+  });
+  it('drawWorldFx fills the WHOLE screen white for a flash, ignores its tile, ages and drops it at len', () => {
+    filled.length = 0;
+    drawn.length = 0;
+    playWorldFx('flash', 7, 3);
+    for (let i = 0; i < WORLD_FX.flash.len; i++) drawWorldFx(999, 999, BG_PAL.hq);
+    expect(filled).toHaveLength(WORLD_FX.flash.len);
+    expect(filled.every((f) => f.w === 160 && f.h === 144)).toBe(true);
+    expect(filled[0].style).toBe('rgba(255,255,255,1.000)');
+    expect(filled[WORLD_FX.flash.len - 1].style).not.toBe('rgba(255,255,255,1.000)');
+    expect(drawn).toHaveLength(0); // no particles
+    expect(activeWorldFx()).toEqual([]);
   });
 });
 

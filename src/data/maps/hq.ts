@@ -40,6 +40,8 @@ export const hqMap: MapDef = makeMap({
         { all: [{ flag: 'ch5Mask' }, { notFlag: 'ch5Done' }] },                              // CH5 hand-in
         { all: [{ flag: 'ch5Done' }, { notFlag: 'ch6Briefed' }, { notFlag: 'ch6Done' }] },   // CH6 briefing
         { all: [{ flag: 'ch6Ball' }, { notFlag: 'ch6Done' }] },                              // CH6 hand-in
+        { all: [{ flag: 'ch6Done' }, { notFlag: 'ch7Briefed' }, { notFlag: 'ch7Done' }] },   // CH7 briefing
+        { all: [{ hasItem: 'ENERGY CELL' }, { any: [{ flag: 'ch7Caught' }, { flag: 'ch7Beaten' }, { flag: 'ch7Fled' }] }, { notFlag: 'ch7Done' }] }, // CH7 hand-in (an outcome, not just the CELL)
       ] } },
     { id: 'jessika', char: 'jessika', x: 13, y: 7, dir: 'down', todoIf: { notFlag: 'drillBattleDone' } }, // ONB.3: until her spar is won once
     { id: 'djames', char: 'djames', x: 15, y: 7, dir: 'down' },

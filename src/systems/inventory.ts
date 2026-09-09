@@ -34,10 +34,15 @@ export function packCounts(items: string[]): { id: string; count: number }[] {
 /** Usable from the in-battle PACK menu: heals, plus whichever key items
  *  THIS fight answers to — SMOKE BALL by default; an unwinnable fight swaps
  *  in its charm instead (CH5.0 §2), so no other key item (the SILF SCOPE)
- *  ever clutters the list. Balls are thrown via SWIPE, not the pack; quest
- *  items never apply. */
+ *  ever clutters the list. The ROKKET BALL is thrown via SWIPE, not the pack;
+ *  a better ball (F43) is thrown from here; quest items never apply. */
 export function usableInBattle(id: string, keys: readonly string[] = ['SMOKE BALL']): boolean {
-  return itemDef(id).kind === 'heal' || keys.includes(id);
+  const def = itemDef(id);
+  // F43 BALL.1: a better-than-ROKKET ball is thrown from here (SWIPE keeps
+  // the ROKKET BALL — no picker, BALL.0's don't). The ROKKET BALL itself
+  // (ballMod absent) stays off the list.
+  if (def.kind === 'ball' && (def.ballMod ?? 1) > 1) return true;
+  return def.kind === 'heal' || keys.includes(id);
 }
 
 /** Usable from the overworld PACK menu. Heals always; the key-item SMOKE

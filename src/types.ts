@@ -4,9 +4,10 @@
 import type { SpriteRows } from './data/sprites';
 import type { WorldFxId } from './systems/worldFx';
 import type { TypeId } from './data/typeChart';
+import type { HeatStage } from './systems/heat';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3' | 'syl1' | 'syl2' | 'syl3' | 'syl4' | 'syl5';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3' | 'syl1' | 'syl2' | 'syl3' | 'syl4' | 'syl5' | 'plant1' | 'plant2' | 'plant3';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -81,6 +82,17 @@ export interface Flags {
   sylClerkA: boolean;
   sylClerkB: boolean;  // also the RECORDS alcove gate (goneIf) — the CARD KEY is behind him
   sylExec: boolean;
+  // CH7 (KANTOO POWER PLANT) — contract in .paul/plan/ch7-power-plant-design-2026-09-09.md §5/§8. No save bump.
+  ch7Briefed: boolean; // Giovanni's CH7 briefing heard (ONB.3 marker pattern)
+  ch7Rules: boolean;   // Myowth taught the plant rules at the door — he pops back into the party
+  ch7Cell: boolean;    // the ENERGY CELL is out of the generator hall — the lights are dead, VOLTRAWK is awake
+  ch7Caught: boolean;  // the set piece ended in a catch (onCatch)
+  ch7Beaten: boolean;  // ...in a knockout (onWin)
+  ch7Fled: boolean;    // ...in a getaway (onFlee) — any one of the three ends the chapter
+  ch7Done: boolean;    // the CELL handed in at HQ — 1200c, no rank (assumption 1)
+  plantTech1: boolean; // once-only TECHNICIAN paydays, one per floor
+  plantTech2: boolean;
+  plantTech3: boolean;
 }
 export type FlagName = keyof Flags;
 
@@ -222,6 +234,14 @@ export interface MapDef {
   /** CH5.0 §1: fog of war — worldDraw masks every tile outside the lantern
    *  ring (systems/fog.ts) until the SILF SCOPE is in the PACK. */
   fog?: true;
+  /** CH7.0 §1: the ALARM never sleeps here — heatTick raises an absent or
+   *  decayed record back to this stage every tick, so the red border and the
+   *  guards' scans are permanent. Leaving the map still clears the record;
+   *  re-entering re-floors it. heat.ts is untouched: the guard lives in
+   *  world.ts, one place, and catches decay, SMOKE BALL and `{ heat: 0 }`.
+   *  Side effect: ONB.3 `!` markers only draw at stage 0, so no NPC on a
+   *  floored map can wear one. */
+  minStage?: HeatStage;
 }
 
 // ── Phase 1 mon/move data model (plan §4.1) ────────────────────────────────
@@ -351,4 +371,9 @@ export interface EncounterDef {
   onWin: ScriptStep[];
   onLose: ScriptStep[];
   onFlee: ScriptStep[];
+  /** CH7.0 §5: runs INSTEAD of onWin when the fight ended in a catch. A
+   *  catch has always run onWin (a caught foe is a beaten foe); the VOLTRAWK
+   *  set piece is the first content that needs to tell the two apart.
+   *  Absent = onWin, as before. */
+  onCatch?: ScriptStep[];
 }

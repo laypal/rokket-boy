@@ -11,14 +11,14 @@
 // draw (and `activeWorldFx()` for tests).
 import { FX_SPRITES, type FxSpriteId } from '../data/sprites';
 import { OBJ_PAL, type Palette } from '../data/palettes';
-import { ctx, decode, TILE } from '../engine/renderer';
+import { ctx, decode, TILE, W, H } from '../engine/renderer';
 
-export type WorldFxId = 'poof' | 'heal' | 'spark' | 'dust';
+export type WorldFxId = 'poof' | 'heal' | 'spark' | 'dust' | 'flash';
 
 /** All ids, in card order — drives the script-ref lint and the tests.
  *  `alert` (the guard `!` pop) is NOT here: it is a dy schedule over the
  *  glyph worldDraw already draws off `spotFlash` (JCE.3), not a queued fx. */
-export const WORLD_FX_IDS: readonly WorldFxId[] = ['poof', 'heal', 'spark', 'dust'];
+export const WORLD_FX_IDS: readonly WorldFxId[] = ['poof', 'heal', 'spark', 'dust', 'flash'];
 
 /** One 8×8 particle from the battle pool, drawn at tile-origin + (dx, dy)
  *  on frames `from ≤ t < to`, rising `rise` px linearly over that window. */
@@ -37,6 +37,10 @@ export interface WorldFxDef {
   /** OBJ_PAL key; absent = the map's own BG palette (smoke in the room's greys). */
   pal?: string;
   parts: FxPart[];
+  /** CH7 (Lyall, 2026-09-09): a SCREEN-space white-out instead of tile
+   *  particles — solid white for the first half of `len`, fading over the
+   *  second. The (x, y) it is queued at is ignored; `parts` is empty. */
+  screen?: true;
 }
 
 // x offsets for the six heal sparks — the BFX.3 heal-item timeline scaled to
@@ -77,7 +81,22 @@ export const WORLD_FX: Record<WorldFxId, WorldFxDef> = {
     len: 8,
     parts: [{ sprite: 'puff', dx: 4, dy: 10, from: 0, to: 8, rise: 2 }],
   },
+  // the ENERGY CELL coming out — every light in the plant at once, then dark
+  // (Lyall: "longer and full screen"). ~1 s: 30 frames solid, 30 fading.
+  flash: {
+    len: 60,
+    screen: true,
+    parts: [],
+  },
 };
+
+/** Pure: a screen fx's white-out alpha on frame `t` — 1 for the first half
+ *  of `len`, then a straight fade to 0 at `len`. */
+export function screenAlpha(t: number, len: number): number {
+  const half = len / 2;
+  if (t < half) return 1;
+  return Math.max(0, 1 - (t - half) / half);
+}
 
 /** Pure: the particles visible on frame `t` of `id`, as (sprite, dx, dy). */
 export function worldFxFrame(id: WorldFxId, t: number): { sprite: FxSpriteId; dx: number; dy: number }[] {
@@ -120,7 +139,14 @@ export function activeWorldFx(): readonly Readonly<Active>[] {
 export function drawWorldFx(camX: number, camY: number, mapPal: Palette): void {
   if (!queue.length) return;
   for (const f of queue) {
-    const pal = WORLD_FX[f.id].pal ? OBJ_PAL[WORLD_FX[f.id].pal!] : mapPal;
+    const def = WORLD_FX[f.id];
+    if (def.screen) {
+      ctx.fillStyle = 'rgba(255,255,255,' + screenAlpha(f.t, def.len).toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+      f.t++;
+      continue;
+    }
+    const pal = def.pal ? OBJ_PAL[def.pal!] : mapPal;
     for (const p of worldFxFrame(f.id, f.t)) {
       ctx.drawImage(decode(FX_SPRITES[p.sprite], pal), f.x * TILE - camX + p.dx, f.y * TILE - camY + p.dy);
     }

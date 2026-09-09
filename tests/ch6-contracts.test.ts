@@ -98,7 +98,7 @@ describe('CH6.0 §10 objectives', () => {
     quest.flags.ch6Ball = true;
     expect(currentObjective()).toBe('REPORT TO BOSS');
     quest.flags.ch6Done = true;
-    expect(currentObjective()).toBe('AWAIT ORDERS.');
+    expect(currentObjective()).toBe('GO TO ANN DOCK'); // CH7's first objective takes over (was AWAIT ORDERS.)
   });
 });
 

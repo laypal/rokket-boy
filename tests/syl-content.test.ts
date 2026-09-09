@@ -338,14 +338,16 @@ describe('the Giovanni CH6 chain (hq.ts, CH6.0 §10)', () => {
     expect(events.some((e) => e.startsWith('rankUp:'))).toBe(false);
   });
 
-  it('ch6Done already: the afterglow line only, no re-payout', () => {
+  it('ch6Done already: no re-payout — the slot now holds the CH7 briefing (CH7.3 replaced the afterglow, the CH5→CH6 pattern)', () => {
     quest.flags.ch6Ball = true;
     quest.flags.ch6Done = true;
     quest.rank = 'EXECUTIVE';
     const { hooks, events } = eventHooks();
     runScript(hqScripts['npc:giovanni'], hooks);
 
-    expect(events).toEqual(['say']);
+    expect(events[0]).toBe('say');
     expect(events.some((e) => e === 'endScreen')).toBe(false);
+    expect(events.some((e) => e.startsWith('rankUp'))).toBe(false);
+    expect(quest.flags.ch7Briefed).toBe(true);
   });
 });

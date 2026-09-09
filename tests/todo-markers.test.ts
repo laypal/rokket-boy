@@ -218,9 +218,14 @@ describe('briefing text untouched (D4 ordering)', () => {
   it('pins setFlag-before-say ordering in the CH2/CH3/CH4 briefing branches, reading the data directly', () => {
     // CH5.3 wrapped the old chain in three outer branches (ch5Done afterglow,
     // ch5Mask hand-in, ch4Done -> CH5 briefing); CH6.3 wrapped that in three
-    // more (ch6Done afterglow, ch6Ball hand-in, ch5Done -> CH6 briefing). Walk
-    // past all six to reach the same `if ch4Done` node this pin started from.
-    const outerCh6Done = hqScripts['npc:giovanni'][0];
+    // more (ch6Done afterglow, ch6Ball hand-in, ch5Done -> CH6 briefing); CH7.3
+    // in three more (ch7Done afterglow, ENERGY CELL hand-in, ch6Done -> CH7
+    // briefing). Walk past all nine to reach the same `if ch4Done` node.
+    const outerCh7Done = hqScripts['npc:giovanni'][0];
+    if (!('if' in outerCh7Done) || !outerCh7Done.else) throw new Error('unexpected giovanni script shape (ch7Done)');
+    const outerCh7Cell = outerCh7Done.else[0];
+    if (!('if' in outerCh7Cell) || !outerCh7Cell.else) throw new Error('unexpected giovanni script shape (ENERGY CELL)');
+    const outerCh6Done = outerCh7Cell.else[0]; // ch6Done is now the CH7 briefing node
     if (!('if' in outerCh6Done) || !outerCh6Done.else) throw new Error('unexpected giovanni script shape (ch6Done)');
     const outerCh6Ball = outerCh6Done.else[0];
     if (!('if' in outerCh6Ball) || !outerCh6Ball.else) throw new Error('unexpected giovanni script shape (ch6Ball)');

@@ -22,8 +22,8 @@ export const dockMap: MapDef = makeMap({
     '#   X    s         #',
     'o                  o',
     '#   X       X      #',
-    '#  P             P #',
-    '####################',
+    '#  P    s        P #',
+    '#########o##########',
   ],
   npcs: [
     // Jessika hands over the SAILOR SUIT — the hint NPC for the whole ship
@@ -37,10 +37,12 @@ export const dockMap: MapDef = makeMap({
   ],
   signs: {
     '9,5': [['S.S. ANN GALA', 'TONIGHT!', 'CREW ONLY ABOARD']],
+    '8,8': [['POWER PLANT:', 'SOUTH DOOR.', 'STAFF ONLY.']], // CH7.0 §9: the quay road south — signposted (Lyall)
   },
   items: {},
   warps: {
     '19,6': ['syl1', 9, 10, 'up'], // CH6.2: SYLPHCO TOWER, across the quay
+    '9,9': ['plant1', 9, 10, 'up'], // CH7.0 §9: the quay road south to the POWER PLANT
     '0,6': ['outskirts', 19, 6, 'left'],
     '17,2': ['deck1', 2, 9, 'up'],
   },

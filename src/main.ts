@@ -315,6 +315,25 @@ if (import.meta.env.DEV) {
       runScript([{ warp: ['syl1', 9, 10, 'up'] }], worldHooks);
       console.error('[__debug.ch6] CH1–5 done, LIEUTENANT, inside SYLPHCO 1F — DJames on the lift pad at (3,4)');
     },
+    // CH7: CH1–6 done, EXECUTIVE, the CH7 briefing heard with its three PRO
+    // BALLs, and a fade-warp to the plant's 1F door. Myowth waits beside it
+    // at (8,10); pair with party(4, 28).
+    ch7: () => {
+      for (const f of [
+        'briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone',
+        'fossilsTaken', 'bradBeaten', 'ch2Done',
+        'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done',
+        'introSeen', 'introToured', 'ch2Briefed', 'ch3Briefed', 'ch4Briefed',
+        'ch4Suit', 'ch4Safe', 'ch4Done', 'ch5Briefed',
+        'ch5Spirit', 'ch5Mask', 'ch5Myowth', 'ch5Done', 'ch6Briefed',
+        'ch6Rules', 'ch6Smoke', 'ch6Duo', 'ch6Ball', 'ch6Done', 'ch7Briefed',
+      ] as const) quest.flags[f] = true;
+      quest.rank = 'EXECUTIVE';
+      if (quest.coins < 300) quest.coins = 300;
+      if (!quest.items.includes('PRO BALL')) quest.items.push('PRO BALL', 'PRO BALL', 'PRO BALL');
+      runScript([{ warp: ['plant1', 9, 10, 'up'] }], worldHooks);
+      console.error('[__debug.ch7] CH1–6 done, EXECUTIVE, 3 PRO BALLs, inside POWER PLANT 1F — Myowth beside the door at (8,10)');
+    },
   };
 }
 

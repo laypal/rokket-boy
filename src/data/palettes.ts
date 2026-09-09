@@ -32,6 +32,7 @@ export const BG_PAL: Record<string, Palette> = {
   ship:   ['#06101c', '#1c3a5c', '#4a86b0', '#d8ecf8', ALERT],   // CH4.2 — S.S. ANN, night sea
   lavendar: ['#0c0814', '#3a2458', '#7a58a8', '#e0d0f0', ALERT], // CH5.0 §11 — LAVENDAR TOWER, purple; shade 0 is the fog
   sylph: ['#0a1418', '#1e4a58', '#4a9aa8', '#d8f0f0', ALERT],    // CH6.0 §12 — SYLPHCO TOWER, a cold corporate teal
+  plant: ['#0c0a04', '#5a4c10', '#c8b020', '#f8f0c0', ALERT],    // CH7.0 §2/§9 — KANTOO POWER PLANT, electric yellow; `~` vents and `spark` recolour through it
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -77,6 +78,19 @@ export const OBJ_PAL: Record<string, Palette> = {
   // line, blue-grey.
   drowzey: ['#1c1408', '#a07828', '#e0c060', '#f8f0d0'],
   machopp: ['#0c1018', '#3858a0', '#8098c8', '#e0e8f8'],
+  // CH7.0 §2 — the LIVE FLOOR hit flash: the player's own frames decoded
+  // red/white for `hurtT` frames (world.ts). Five shades because the player
+  // charset carries the gold gear slot at index 4 — a four-shade palette
+  // would drop the worn gear mid-flash.
+  // Playtester (2026-09-09): a red-shifted uniform read as "slightly pinker"
+  // at 160×144 — so the flash is an INVERSION: uniform white, skin red.
+  hurt:    ['#0c0c14', '#ffffff', '#ff3050', '#ffffff', '#e0b840'],
+  // CH7.0 §6 — plant TECHNICIANs: the guard charset in hi-vis yellow.
+  plant:   ['#0c0c14', '#c8a020', '#e8b088', '#e8e8f0'],
+  // CH7.0 §10 (SPR.E) — MAGNEMYT/MAGNETUN line, steel grey-blue; VOLTRAWK,
+  // electric gold. ELECTRÖD reuses OBJ_PAL.voltorbb (same line).
+  magnemyt: ['#101418', '#4a5a78', '#9aa8c0', '#e8f0f8'],
+  voltrawk: ['#141008', '#c89818', '#f0d040', '#fffbe0'],
 };
 
 // ── Battle-FX type tints (13-battle-fx.md) ───────────────────────────────

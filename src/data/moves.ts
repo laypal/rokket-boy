@@ -34,4 +34,7 @@ export const MOVES: Record<MoveId, MoveDef> = {
   lowkick:   { id: 'lowkick',   name: 'LOW KICK',  type: 'FIGHTING', power: 45, acc: 0.95, anim: 'lunge', desc: 'SWEEPS THE LEGS.' },
   karate:    { id: 'karate',    name: 'KARATE',    type: 'FIGHTING', power: 50, acc: 1,    anim: 'lunge', desc: 'A FLAT-HAND CHOP.' },
   submit:    { id: 'submit',    name: 'VICE GRIP', type: 'FIGHTING', power: 80, acc: 0.8,  anim: 'blast', desc: 'A CRUSHING HOLD.' },
+  // CH7.0 §10 (SPR.E) — MAGNEMYT/MAGNETUN/ELECTRÖD/VOLTRAWK line.
+  magnet:  { id: 'magnet',  name: 'MAGNET',  type: 'ELECTRIC', power: 55,  acc: 0.95, anim: 'rings', desc: 'PULLS WITH FORCE.' },
+  thunder: { id: 'thunder', name: 'THUNDER', type: 'ELECTRIC', power: 110, acc: 0.7,  anim: 'blast', desc: 'THE SKY FALLS.' },
 };

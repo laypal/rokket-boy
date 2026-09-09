@@ -606,7 +606,7 @@ export const TILES: Record<string, SpriteRows[]> = {
   '.': [T.VOID],
 };
 // tiles you can walk on
-export const WALKABLE: Set<string> = new Set([' ', '_', ',', '1', '2', '3', '4', 'o', '>', 'W', '~', 'h']);
+export const WALKABLE: Set<string> = new Set([' ', '_', ',', '1', '2', '3', '4', 'o', '>', 'W', '~', 'h', 'z', 'e']);
 
 // item ball on floor
 T.BALL = S(
@@ -955,3 +955,68 @@ T.HEALPAD_B = S(
 '1222222222222222',
 '1222222222222222');
 TILES['h'] = [T.HEALPAD_A, T.HEALPAD_B];
+
+// CH7.0 §2 — LIVE FLOOR, walkable. A floor grate (the `_` seam idiom) with
+// a shade-3 arc jumping across it; frame B moves the arc so it crackles on
+// the shared (G.frame>>5)&1 tile cycle (the h/Q idiom). world.ts bites the
+// lead mon 1 hp on ARRIVAL (hazard.ts shockLead) unless RUBBER BOOTS are in
+// the PACK. Reads dangerous at 160×144 by silhouette: the arc is the only
+// shade-3 on the tile.
+T.LIVE_A = S(
+'1111111111111111',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222',
+'1212121212121212',
+'1222223332222222',
+'1212133121312212',
+'1222322222332222',
+'1212122222123212',
+'1222222222222332',
+'1212121212121212',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222');
+T.LIVE_B = S(
+'1111111111111111',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222',
+'1212121212121212',
+'1233222222222222',
+'1212332212121212',
+'1222223332222222',
+'1212121233121212',
+'1222222222332222',
+'1212121212123312',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222',
+'1212121212121212',
+'1222222222222222');
+TILES['z'] = [T.LIVE_A, T.LIVE_B];
+
+// CH7.0 §3 — CELL, walkable prop. A round battery cell on the plain floor
+// field: a VOLTORBB-shaped silhouette (dark upper half, light lower half,
+// one shade-3 glint) so the minefield gag lands — every cell looks the
+// same; four of them on plant2 are `step:` mines (dialog/plant.ts).
+T.CELL = S(
+'1111111111111111',
+'1222222222222222',
+'1222222222222222',
+'1222222000022222',
+'1222220111102222',
+'1222201131110222',
+'1222201111110222',
+'1222201111110222',
+'1222200000000222',
+'1222203333330222',
+'1222203333330222',
+'1222220333302222',
+'1222222000022222',
+'1222222222222222',
+'1222222222222222',
+'1222222222222222');
+TILES['e'] = [T.CELL];

@@ -21,6 +21,9 @@ import { syl2Map } from './syl2';
 import { syl3Map } from './syl3';
 import { syl4Map } from './syl4';
 import { syl5Map } from './syl5';
+import { plant1Map } from './plant1';
+import { plant2Map } from './plant2';
+import { plant3Map } from './plant3';
 
 export const MAPS: Record<MapId, MapDef> = {
   hq: hqMap,
@@ -45,4 +48,7 @@ export const MAPS: Record<MapId, MapDef> = {
   syl3: syl3Map,
   syl4: syl4Map,
   syl5: syl5Map,
+  plant1: plant1Map,
+  plant2: plant2Map,
+  plant3: plant3Map,
 };

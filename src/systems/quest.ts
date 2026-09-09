@@ -68,6 +68,16 @@ function freshFlags(): Flags {
     sylClerkA: false,
     sylClerkB: false,
     sylExec: false,
+    ch7Briefed: false,
+    ch7Rules: false,
+    ch7Cell: false,
+    ch7Caught: false,
+    ch7Beaten: false,
+    ch7Fled: false,
+    ch7Done: false,
+    plantTech1: false,
+    plantTech2: false,
+    plantTech3: false,
   };
 }
 
@@ -252,6 +262,21 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'BEAT THE GUARDS', done: { flag: 'ch6Duo' } },
       { objective: 'STEAL BOSS BALL', done: { flag: 'ch6Ball' } },
       { objective: 'REPORT TO BOSS', done: { flag: 'ch6Done' } },
+    ],
+  },
+  // CH7 (POWER PLANT): Myowth at the plant door is the rules gate, the BOOTS
+  // are a 1F pickup behind the live strip, the CELL wakes VOLTRAWK, and any
+  // of the three set-piece outcomes ends the chapter (CH7.0 §5). The hand-in
+  // pays 1200c and does NOT promote (assumption 1). Objective 1 names the
+  // place — Lyall, 2026-09-09: the player must KNOW where to go.
+  {
+    id: 'ch7',
+    steps: [
+      { objective: 'GO TO ANN DOCK', done: { flag: 'ch7Rules' } },
+      { objective: 'FIND THE BOOTS', done: { hasItem: 'RUBBER BOOTS' } },
+      { objective: 'TAKE THE CELL', done: { flag: 'ch7Cell' } },
+      { objective: 'ESCAPE THE PLANT', done: { any: [{ flag: 'ch7Caught' }, { flag: 'ch7Beaten' }, { flag: 'ch7Fled' }] } },
+      { objective: 'REPORT TO BOSS', done: { flag: 'ch7Done' } },
     ],
   },
 ];

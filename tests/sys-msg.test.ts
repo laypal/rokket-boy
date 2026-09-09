@@ -116,9 +116,9 @@ describe('every NEW JOB toast in hq.ts is announced by the job chime', () => {
       }
     });
   }
-  it('six briefings, six chimes', () => {
+  it('seven briefings, seven chimes', () => {
     const seen = { n: 0 };
     for (const [key, steps] of Object.entries(hqScripts)) check(steps, key, seen);
-    expect(seen.n).toBe(6);
+    expect(seen.n).toBe(7); // CH7's briefing joined the chain (2026-09-09)
   });
 });

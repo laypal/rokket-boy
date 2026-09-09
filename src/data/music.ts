@@ -221,4 +221,21 @@ export const TRACKS: Record<string, Track> = {
           E2 =  =  =  B1 =  =  =  E2 =  =  =  E2 =  =  =`,
     dr: `k...h...k...h... ....h.......h... k...h...k...h... ....k...h...h...`,
   },
+  // CH7 — KANTOO POWER PLANT, industrial hum (area loop, plan §10)
+  plant: {
+    bpm: 128,
+    p1: `-  -  -  -  F4 -  -  -  -  -  A#4 -  -  -  -  -
+         -  -  -  -  E4 -  -  -  -  -  -  -  A4 -  -  -
+         -  -  -  -  F4 -  -  -  -  -  A#4 -  C5 -  -  -
+         -  -  -  -  E4 -  -  -  -  -  -  -  -  -  -  -`,
+    p2: `D3 -  D3 -  D3 -  D3 -  D3 -  D3 -  D3 -  D3 -
+         D3 -  D3 -  D3 -  D3 -  D3 -  D3 -  D3 -  D3 -
+         G3 -  G3 -  G3 -  G3 -  D3 -  D3 -  D3 -  D3 -
+         G3 -  G3 -  G3 -  G3 -  D3 -  D3 -  D3 -  D3 -`,
+    tri: `D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2
+          D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2 D2
+          G2 G2 G2 G2 G2 G2 G2 G2 D2 D2 D2 D2 D2 D2 D2 D2
+          G2 G2 G2 G2 G2 G2 G2 G2 D2 D2 D2 D2 D2 D2 D2 D2`,
+    dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h.`,
+  },
 };

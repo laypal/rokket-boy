@@ -17,7 +17,10 @@ const m = (species: string) => ({ species });
  *  evolved form walks back to its base, koffink/voltorbb are standalone. */
 // CH5 (SPR.C): wheezink credits the KOFFINK line, hauntor the GASTLEE line; MAROWL is
 // bossOnly and outside the denominator (dexTotal), so no fixture ever holds it.
-const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke'].map(m); // SPR.D: +2 lines
+// SPR.E: +3 lines. dexCount walks evolved -> pre-evolution only, so holding
+// VOLTORBB does NOT credit ELECTRÖD (it's the other direction, same as the
+// "base form alone" case below) — the fixture needs the evolved mon itself.
+const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke', 'magnetun', 'electrod', 'voltrawk'].map(m);
 
 describe('dexComplete (SIDE.4)', () => {
   it('is false for an empty collection', () => {
@@ -25,7 +28,10 @@ describe('dexComplete (SIDE.4)', () => {
   });
 
   it('is false one line short, true when every species id is credited', () => {
-    const short = COMPLETE.filter((x) => x.species !== 'voltorbb');
+    // electrod, not voltorbb: dexCount walks evolved -> pre-evolution, so
+    // holding electrod (in COMPLETE) already auto-credits voltorbb — the
+    // one species nothing else in the fixture credits back is electrod.
+    const short = COMPLETE.filter((x) => x.species !== 'electrod');
     expect(dexCount(short, SPECIES)).toBe(dexTotal(SPECIES) - 1);
     expect(dexComplete(short, SPECIES)).toBe(false);
     expect(dexComplete(COMPLETE, SPECIES)).toBe(true);
@@ -61,7 +67,7 @@ describe('{ dexComplete: true } Cond reads the registered mons provider', () => 
 // SIDE.4: the HQ desk clerk — pure data behind the { dexComplete: true }
 // Cond, so this is content coverage (real script, fake hooks), the same
 // idiom as training-content.test.ts.
-const PARTIAL = COMPLETE.filter((x) => x.species !== 'voltorbb');
+const PARTIAL = COMPLETE.filter((x) => x.species !== 'electrod');
 
 function dexclerkHooks() {
   const said: string[][] = [];
@@ -123,7 +129,7 @@ describe('npc:dexclerk (SIDE.4)', () => {
     expect(said).toEqual([['CLERK: Paid you', 'already. Go steal', 'something.']]);
   });
 
-  it('a partial dex (voltorbb missing): no egg, no sysMsg, the desk pitch said', () => {
+  it('a partial dex (electrod missing): no egg, no sysMsg, the desk pitch said', () => {
     setDexMons(() => PARTIAL);
     const { hooks, said, sfx, sysMsg } = dexclerkHooks();
     runScript(hqScripts['npc:dexclerk'], hooks);

@@ -1,8 +1,8 @@
 // Species registry (plan §4.1/§4.2). Seeded with the Ch.1 duo so the model is
 // exercised end-to-end; the roster cards add the other lines in batches of 4.
 // VOLTORBB's back reuses its front sprite as a placeholder until its
-// sprite card lands. Evolution links (WHEEZINK,
-// ELECTRÖD) arrive with those species' cards.
+// sprite card lands. Evolution links arrive with each species' card
+// (WHEEZINK with SPR.C, ELECTRÖD with SPR.E / CH7).
 import type { MonSpecies } from '../types';
 import {
   KOFFINK_FRONT, KOFFINK_BACK, VOLTORBB,
@@ -14,6 +14,8 @@ import {
   HAUNTOR_FRONT, HAUNTOR_BACK, MYOWTH_FRONT, MYOWTH_BACK, MAROWL_FRONT,
   DROWZEY_FRONT, DROWZEY_BACK, HYPNOZ_FRONT, HYPNOZ_BACK,
   MACHOPP_FRONT, MACHOPP_BACK, MACHOKE_FRONT, MACHOKE_BACK,
+  MAGNEMYT_FRONT, MAGNEMYT_BACK, MAGNETUN_FRONT, MAGNETUN_BACK,
+  ELECTROD_FRONT, ELECTROD_BACK, VOLTRAWK_FRONT, VOLTRAWK_BACK,
 } from './chars';
 import { OBJ_PAL } from './palettes';
 
@@ -54,7 +56,9 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 1, move: 'screech' },
       { lv: 12, move: 'zap' },
       { lv: 22, move: 'boom' },
+      { lv: 31, move: 'magnet' }, // CH7.0 §10 — catchable this chapter
     ],
+    evolvesTo: { id: 'electrod', lv: 30 }, // CH7.0 §10 (SPR.E)
     front: VOLTORBB,
     back: VOLTORBB, // placeholder until the VOLTORBB back sprite card
     pal: OBJ_PAL.voltorbb,
@@ -452,5 +456,98 @@ export const SPECIES: Record<string, MonSpecies> = {
     heightM: 1.5,
     weightKg: 70.5,
     dex: ['WEARS A BELT TO', 'HOLD ITSELF IN.'],
+  },
+  // ── SPR.E (CH7 SYLPHCO POWER PLANT): the ELECTRIC magnet/orb line ──────
+  // Stats and learnsets per .paul/plan/ch7-power-plant/species-audio.md §10.
+  magnemyt: {
+    id: 'magnemyt',
+    name: 'MAGNEMYT',
+    type: ['ELECTRIC'],
+    baseHp: 25,
+    atk: 35,
+    def: 70,
+    spd: 45,
+    moves: [
+      { lv: 1, move: 'tackle' },
+      { lv: 6, move: 'zap' },
+      { lv: 11, move: 'screech' },
+      { lv: 21, move: 'magnet' },
+    ],
+    evolvesTo: { id: 'magnetun', lv: 30 },
+    front: MAGNEMYT_FRONT,
+    back: MAGNEMYT_BACK,
+    pal: OBJ_PAL.magnemyt,
+    catchRate: 0.35,
+    heightM: 0.3,
+    weightKg: 6.0,
+    dex: ['A FLOATING MAGNET.', 'HUMS AT 50 HZ.'],
+  },
+  magnetun: {
+    id: 'magnetun',
+    name: 'MAGNETUN',
+    type: ['ELECTRIC'],
+    baseHp: 50,
+    atk: 60,
+    def: 95,
+    spd: 70,
+    moves: [
+      { lv: 1, move: 'tackle' },
+      { lv: 1, move: 'zap' },
+      { lv: 11, move: 'screech' },
+      { lv: 21, move: 'magnet' },
+      { lv: 33, move: 'boom' },
+    ],
+    front: MAGNETUN_FRONT,
+    back: MAGNETUN_BACK,
+    pal: OBJ_PAL.magnemyt,
+    catchRate: 0.15,
+    heightM: 1.0,
+    weightKg: 60.0,
+    dex: ['THREE OF THEM.', 'ONE OPINION.'],
+  },
+  electrod: {
+    id: 'electrod',
+    name: 'ELECTRÖD',
+    type: ['ELECTRIC'],
+    baseHp: 60,
+    atk: 50,
+    def: 70,
+    spd: 140,
+    moves: [
+      { lv: 1, move: 'tackle' },
+      { lv: 1, move: 'screech' },
+      { lv: 12, move: 'zap' },
+      { lv: 22, move: 'boom' },
+      { lv: 31, move: 'magnet' },
+    ],
+    front: ELECTROD_FRONT,
+    back: ELECTROD_BACK,
+    pal: OBJ_PAL.voltorbb, // same line as VOLTORBB
+    catchRate: 0.15,
+    heightM: 1.2,
+    weightKg: 66.6,
+    dex: ['A BIGGER BALL.', 'A BIGGER BOOM.'],
+  },
+  voltrawk: {
+    id: 'voltrawk',
+    name: 'VOLTRAWK',
+    type: ['ELECTRIC'],
+    baseHp: 90,
+    atk: 90,
+    def: 85,
+    spd: 100,
+    moves: [
+      { lv: 1, move: 'zap' },
+      { lv: 1, move: 'gust' },
+      { lv: 20, move: 'magnet' },
+      { lv: 30, move: 'thunder' },
+    ],
+    front: VOLTRAWK_FRONT,
+    back: VOLTRAWK_BACK,
+    pal: OBJ_PAL.voltrawk,
+    catchRate: 0.05, // a 5% legend — CH7.0 §5 set piece, not bossOnly
+    heightM: 1.6,
+    weightKg: 52.6,
+    dex: ['A LEGEND OF THE', 'PLANT. IT DIVES.'],
   },
 };

@@ -8,7 +8,6 @@ import type { CoachBeat, EncounterDef, MonInstance, MonSpecies, MoveDef, MoveId,
 import { ENCOUNTERS } from '../data/encounters';
 import { SPECIES } from '../data/mons';
 import { MOVES } from '../data/moves';
-import { BALL_ITEM } from '../data/items';
 import { effectiveness } from '../data/typeChart';
 import { Audio2 } from '../engine/audio';
 import { rollInt, type Rng } from '../engine/rng';
@@ -70,6 +69,10 @@ export interface BattleState {
   xpAnim?: { segs: XpFillSeg[]; start: number }; // UX2.1 — draw-only post-win xp fill; active mon only, benched shares apply silently
   float?: { side: 'me' | 'foe'; amt: number; mult: number; start: number }; // QOL.11 — draw-only floating damage number; side is whoever TOOK the hit
   caught?: boolean; // BFX.3 — a wild catch landed; keeps the foe hidden after the throwOk fx ends
+  /** F43 BALL.1-FB (Lyall, 2026-09-09): the ITEM list is showing BALLS ONLY —
+   *  SWIPE opened it because more than one kind of ball is held. B returns
+   *  the cursor to SWIPE, not ITEM. */
+  ballPick?: boolean;
   stole?: boolean; // trainer-battle SWIPE gag already fired — ONB.5 reads it as "the player has swiped"
   /** ONB.5 — is this battle a coaching one at all? Resolved ONCE in
    *  startBattle, because `coachIf` reads world flags that the encounter's
@@ -296,7 +299,8 @@ export function battleUpdate(): void {
         () => useItem(b, items[b.sel].id),
         () => {
           b.phase = 'menu';
-          b.sel = 3;
+          b.sel = b.ballPick ? 1 : 3; // back to SWIPE when SWIPE opened the list
+          b.ballPick = false;
         },
       );
       break;
@@ -410,19 +414,36 @@ function doSwipe(b: BattleState): void {
     say(b, ["It can't be", 'caught!'], () => (b.phase = 'menu'));
     return;
   }
-  const ball = quest.items.indexOf(BALL_ITEM);
-  if (ball < 0) {
-    say(b, ['No ROKKET', 'BALLS left!'], () => (b.phase = 'menu'));
+  // F43 BALL.1-FB (Lyall, 2026-09-09): SWIPE throws whatever ball is held —
+  // one kind throws it straight away; more than one opens a balls-only pick
+  // (the ITEM list filtered), so a PRO BALL never needs the ITEM menu.
+  const kinds = packCounts(quest.items).filter((e) => itemDef(e.id).kind === 'ball');
+  if (kinds.length === 0) {
+    say(b, ['No balls', 'left!'], () => (b.phase = 'menu'));
     return;
   }
-  quest.items.splice(ball, 1);
+  if (kinds.length === 1) {
+    throwBall(b, kinds[0].id);
+    return;
+  }
+  b.phase = 'item';
+  b.ballPick = true;
+  b.sel = 0;
+}
+
+/** Throw one `item` (already known to be held) at a wild foe. SWIPE throws
+ *  the ROKKET BALL (mod 1); the ITEM menu throws any ball with a ballMod
+ *  above 1 — F43 BALL.1, the PRO BALL. One path, one rng call, the wobble
+ *  fx untouched; the mod is the only difference. */
+function throwBall(b: BattleState, item: string): void {
+  consume(item);
   const sp = spec(b.foe);
-  const p = catchChance(sp.catchRate, b.foe.hp, maxHp(sp, b.foe.lv));
+  const p = catchChance(sp.catchRate, b.foe.hp, maxHp(sp, b.foe.lv), itemDef(item).ballMod ?? 1);
   // Roll BEFORE the animation — the wobble count reads the outcome, it never
   // decides it (13-battle-fx.md hard rule; same rng-order guarantee as the
   // move rolls above).
   const caught = rollCatch(p, battleRng);
-  say(b, ['You hurled a', 'ROKKET BALL!'], () => {
+  say(b, ['You hurled a', item + '!'], () => {
     playFx(b, caught ? 'throwOk' : 'throwFail', 'me', 'NORMAL', () => {
       if (caught) {
         b.caught = true; // the throwOk fx has ended (hideDefender reset); this keeps the foe hidden
@@ -447,6 +468,7 @@ function doSwipe(b: BattleState): void {
  *  — or, in an unwinnable fight, heals plus the one item it answers to
  *  (CH5.0 §2; SMOKE BALL is simply not on the list there). */
 export function battleItems(enc: Pick<EncounterDef, 'unwinnable'> | null = G.battle?.enc ?? null): { id: string; count: number }[] {
+  if (G.battle?.ballPick) return packCounts(quest.items).filter((e) => itemDef(e.id).kind === 'ball');
   const keys = enc?.unwinnable ? [enc.unwinnable.item] : ['SMOKE BALL'];
   return packCounts(quest.items).filter((e) => usableInBattle(e.id, keys));
 }
@@ -472,6 +494,19 @@ function useItem(b: BattleState, id: string): void {
     b.phase = 'target';
     b.pendingItem = id;
     b.sel = b.meIdx;
+    return;
+  }
+  if (def.kind === 'ball') {
+    // F43 BALL.1: a ball from the pack (or SWIPE's pick) — the SWIPE
+    // refusals apply (a trainer's mon, an uncatchable), then the shared throw
+    b.ballPick = false;
+    if (b.enc.trainer || b.enc.uncatchable) {
+      b.phase = 'anim';
+      say(b, b.enc.trainer ? ["Can't catch a", "trainer's mon!"] : ["It can't be", 'caught!'], () => (b.phase = 'menu'));
+      return;
+    }
+    b.phase = 'anim';
+    throwBall(b, id);
     return;
   }
   if (b.enc.unwinnable && id === b.enc.unwinnable.item) {
@@ -716,6 +751,9 @@ function winBattle(b: BattleState): void {
   G.battle = null;
   G.state = 'world';
   Audio2.play(G.map.music);
-  b.done(b.enc.onWin.length ? b.enc.onWin : null);
+  // CH7.0 §5: a catch prefers onCatch when the encounter has one — the
+  // VOLTRAWK set piece is the first fight whose ending depends on HOW
+  const steps = b.caught && b.enc.onCatch ? b.enc.onCatch : b.enc.onWin;
+  b.done(steps.length ? steps : null);
 }
 

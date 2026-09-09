@@ -2,16 +2,24 @@ import { describe, it, expect } from 'vitest';
 import { catchChance, rollCatch } from '../src/systems/catch';
 import { mulberry32 } from '../src/engine/rng';
 
-// p = catchRate * (1 - (hp/max)*0.7) * ballMod (plan §4.4), clamped to [0, 1].
+// p = catchRate * (1 - (hp/max)*0.7) * ballMod (plan §4.4), ×2 under a third
+// of max hp (the red bar, 2026-09-09), clamped to [0, 1].
 describe('catchChance', () => {
+  it('the red bar (hp ≤ a third of max) doubles the odds; a hair above it does not', () => {
+    expect(catchChance(0.1, 20, 60)).toBeCloseTo(0.1 * (1 - (20 / 60) * 0.7) * 2, 12);
+    expect(catchChance(0.1, 21, 60)).toBeCloseTo(0.1 * (1 - (21 / 60) * 0.7), 12);
+    // VOLTRAWK at 14/60 with a PRO BALL: ≈ 21% a throw, three balls ≈ 51%
+    expect(catchChance(0.05, 14, 60, 2.5)).toBeCloseTo(0.05 * (1 - (14 / 60) * 0.7) * 2.5 * 2, 12);
+  });
+
   it('at full HP, the (1 - hp/max*0.7) term is exactly 0.3', () => {
     expect(catchChance(0.5, 100, 100)).toBeCloseTo(0.5 * 0.3, 12);
     expect(catchChance(0.2, 50, 50)).toBeCloseTo(0.2 * 0.3, 12);
   });
 
-  it('at zero HP, the term collapses to 1 so p equals catchRate', () => {
-    expect(catchChance(0.3, 0, 100)).toBeCloseTo(0.3, 12);
-    expect(catchChance(0.75, 0, 40)).toBeCloseTo(0.75, 12);
+  it('at zero HP, the hp term collapses to 1 and the red bar doubles it: p = 2·catchRate', () => {
+    expect(catchChance(0.3, 0, 100)).toBeCloseTo(0.6, 12);
+    expect(catchChance(0.75, 0, 40)).toBeCloseTo(1, 12); // clamped
   });
 
   it('is strictly monotonic: lower hp yields strictly higher p', () => {

@@ -16,11 +16,70 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   // the 1e rule; no addCoins — the rank's pay is the reward, CH6.0 §10).
   'npc:giovanni': [
     {
-      if: { flag: 'ch6Done' },
+      // CH7.0 §8/§11: outermost-first — the CH7 afterglow, then its hand-in,
+      // then its briefing (replacing the CH6 afterglow line in that slot),
+      // then the untouched CH6 chain below.
+      if: { flag: 'ch7Done' },
       then: [
-        { say: [['GIOVANNI: The', 'BOSS BALL. Ours.', 'EXECUTIVE.'], ['The POWER PLANT', 'is next. Rest', 'while you can.']] },
+        { say: [['GIOVANNI: The', 'CELL runs the', 'whole base now.'], ['Rest. The next', 'one is bigger.']] },
       ],
       else: [
+        {
+          // The CELL alone is not enough — a whiteout with the CELL in the
+          // PACK lands here too, and that player never faced the dive (code
+          // review, 2026-09-09). One of the three outcomes is the ticket.
+          if: { all: [{ hasItem: 'ENERGY CELL' }, { any: [{ flag: 'ch7Caught' }, { flag: 'ch7Beaten' }, { flag: 'ch7Fled' }] }] },
+          then: [
+            { say: [['GIOVANNI: The', 'CELL. You made', 'it out. Talk.']] },
+            {
+              if: { flag: 'ch7Caught' },
+              then: [{ say: [['You brought it', 'HOME? The BIRD?', '...Good.']] }],
+              else: [
+                {
+                  if: { flag: 'ch7Beaten' },
+                  then: [{ say: [['You put it DOWN?', 'A legend? Heh.']] }],
+                  else: [{ say: [['You ran. From', 'that? Wise.']] }],
+                },
+              ],
+            },
+            { setFlag: 'ch7Done' },
+            { addCoins: 1200 },
+            { sfx: 'coin' },
+            { music: 'victory' },
+            { endScreen: true },
+          ],
+          else: [
+            {
+              if: { flag: 'ch6Done' },
+              then: [
+                {
+                  say: [
+                    ['GIOVANNI:', 'EXECUTIVE. The', 'KANTOO PLANT.'],
+                    ['An ENERGY CELL.', 'Siphon it. The', 'base runs on it.'],
+                    ['The alarm never', 'sleeps in there.', 'Hide, not fight.'],
+                    ['A legend lives', 'in the rafters.', 'Wings. Careful.'],
+                  ],
+                },
+                // The three PRO BALLs are handed over ONCE (the DJames SMOKE
+                // BALL idiom) — a second talk with ch6Done still true used to
+                // be a ball faucet (code review, 2026-09-09). The speech repeats.
+                {
+                  if: { notFlag: 'ch7Briefed' },
+                  then: [
+                    { setFlag: 'ch7Briefed' },
+                    { say: [['R&D copied the', 'BOSS BALL you', 'stole. Three.'], ["Don't waste", 'them.']] },
+                    { giveItem: 'PRO BALL' },
+                    { giveItem: 'PRO BALL' },
+                    { giveItem: 'PRO BALL' },
+                    { sfx: 'item' },
+                    { sysMsg: ['GOT 3 PRO BALLS!'] },
+                  ],
+                },
+                { say: [['South door off', 'the ANN DOCK.', 'Past the crates.']] },
+                { sfx: 'job' },
+                { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
+              ],
+              else: [
         {
           if: { flag: 'ch6Ball' },
           then: [
@@ -189,8 +248,12 @@ export const hqScripts: Record<string, ScriptStep[]> = {
         },
           ],   // close ch6Ball else
         },     // close ch6Ball if object
-      ],       // close ch6Done else
-    },         // close ch6Done if object
+      ],       // close ch6Done(briefing) else
+    },         // close ch6Done(briefing) if object
+        ],     // close hasItem(CELL) else
+      },       // close hasItem(CELL) if object
+    ],         // close ch7Done else
+  },           // close ch7Done if object
   ],
   // SIDE.5 (re-cut 2026-08-15 after Lyall's playtest): the sparring drill is
   // available from the FIRST talk — training must land BEFORE the guard
@@ -281,7 +344,8 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   ],
   'npc:vendor': [
     { say: [['Psst... need', 'gear for the', 'job? I gotcha.']] },
-    { shop: 'hqStall' },
+    // F43 BALL.0: PRO BALLs join the stock once the plant job is done
+    { if: { flag: 'ch7Done' }, then: [{ shop: 'hqStallPro' }], else: [{ shop: 'hqStall' }] },
   ],
   // RNK.3: the BACK ROOM gear vendor. Stock is rank-gated in shops.ts —
   // this dialogue names no rank or condition, only the sales pitch (the

@@ -23,6 +23,10 @@ export interface ItemDef {
   desc: string;    // one-line flavour, ≤ 17 chars (box width)
   perk?: { kind: PerkKind; pct: number }; // gear only — additive fraction (0.5 = +50%), summed in perks.ts
   wear?: { slot: 'head' | 'hands' | 'body'; tier: number }; // gear only — worn overlay slot; highest tier draws (rows live in chars.ts)
+  /** F43 BALL.0: catch multiplier a ball item feeds into catchChance. The
+   *  ROKKET BALL is 1 (SWIPE's ball, unchanged); anything above 1 is thrown
+   *  from the battle ITEM menu instead (inventory.ts usableInBattle). */
+  ballMod?: number;
 }
 
 export const ITEMS: Record<string, ItemDef> = {
@@ -40,6 +44,17 @@ export const ITEMS: Record<string, ItemDef> = {
   // CH6.0 §2/§8), the BOSS BALL is the prize. Neither buyable nor sellable.
   'CARD KEY': { id: 'CARD KEY', kind: 'key', price: 0, desc: 'OPENS THE DOORS.' },
   'BOSS BALL': { id: 'BOSS BALL', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // CH7 KANTOO POWER PLANT — the BOOTS silence the live floor (a 1F pickup
+  // behind the forced strip, CH7.0 §2), the CELL is the prize.
+  'RUBBER BOOTS': { id: 'RUBBER BOOTS', kind: 'key', price: 0, desc: 'WALK LIVE FLOOR.' },
+  'ENERGY CELL': { id: 'ENERGY CELL', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // F43 BALL.0/1 — 2.5× the ROKKET BALL, thrown from the battle ITEM menu.
+  // Three come with the CH7 briefing; the HQ vendor sells them at 2000c
+  // only once ch7Done (shops.ts hqStallPro — Lyall, 2026-09-09).
+  // Price: Lyall said 2000c, but a stackable shop row reserves '$' + 3
+  // digits (shop.ts SHOP_STACK_ROW_CAP, the FLW.3 lint) — 999 is the ceiling
+  // that column can show. Flagged in the CH7 build assumptions.
+  'PRO BALL': { id: 'PRO BALL', kind: 'ball', price: 999, desc: 'A 2.5X BALL.', ballMod: 2.5 },
   // SIDE.7: the Gamez Corner jackpot prize — never stocked, never bought;
   // only the special machine's tile script grants it (dialog/corner.ts).
   'LEVEL CANDY': { id: 'LEVEL CANDY', kind: 'candy', price: 0, desc: 'UP ONE LEVEL.' },

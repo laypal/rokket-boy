@@ -76,6 +76,7 @@ describe('content lints', () => {
       collectSays(enc.onWin, says, 'enc onWin', where);
       collectSays(enc.onLose, says, 'enc onLose', where);
       collectSays(enc.onFlee, says, 'enc onFlee', where);
+      collectSays(enc.onCatch ?? [], says, 'enc onCatch', where); // CH7.0 §5
     }
     says.forEach((pages, i) => {
       for (const page of pages) {

@@ -30,6 +30,7 @@ import { fogActive, fogVisible } from './fog';
 import { startTour, tourTick, tourDraw } from './tour';
 import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
+import { shockLead, BOOTS_ITEM } from './hazard';
 import { playWorldFx, clearWorldFx, drawWorldFx, alertPop, shakeOffset } from './worldFx';
 import { makeMon, maxHp } from './mon';
 import { SPECIES } from '../data/mons';
@@ -250,6 +251,16 @@ let shakeT = 0;
 export function shakeFramesLeft(): number {
   return shakeT;
 }
+// CH7.0 §2 LIVE FLOOR hit flash — the player is drawn in OBJ_PAL.hurt for
+// HURT_FRAMES after a shock (Lyall: every lost hp must be SEEN on the
+// character). Draw-only like shakeT, aged in the draw.
+export const HURT_FRAMES = 8;
+export const LIVE_TILE = 'z';
+let hurtT = 0;
+/** Test surface only. */
+export function hurtFramesLeft(): number {
+  return hurtT;
+}
 // CH2.9 grass rustle — draw-only: a `~` tile jitters briefly when the player
 // steps onto it or starts walking off it. Module-local, never saved, and it
 // never touches the encounter roll (which stays keyed to step completion).
@@ -449,6 +460,13 @@ export function heatTick(): boolean {
     if (ticked.state.stage === 0) delete G.heatState[hk]; // absent = calm
     else G.heatState[hk] = ticked.state;
   }
+  // CH7.0 §1: the ALARM floor — ONE guard, every path (arrival, decay,
+  // SMOKE BALL, a script `{ heat: 0 }`): a record below the map's minStage
+  // is raised to it right after the tick, so the guards below scan at the
+  // floored stage this same frame. heat.ts keeps its contracts untouched.
+  if (G.map.minStage && (G.heatState[hk]?.stage ?? 0) < G.map.minStage) {
+    G.heatState[hk] = setHeat(G.heatState[hk] ?? calmHeat(), G.map.minStage, G.playSeconds);
+  }
   const p = G.player;
   for (const n of G.map.npcs) {
     if (!n.heatGuard || npcGone(n)) continue;
@@ -635,6 +653,18 @@ export function worldUpdate(): void {
       p.x += dx;
       p.y += dy;
       if (tryWarp()) return;
+      // CH7.0 §2: a LIVE FLOOR tile bites the lead mon on arrival — before
+      // the step: lookup so a mine on a live tile still shocks first. Boots
+      // on = nothing at all: silence is the reward.
+      if (tileAt(G.map, p.x, p.y) === LIVE_TILE) {
+        const lost = shockLead(G.party, quest.items.includes(BOOTS_ITEM));
+        if (lost > 0) {
+          Audio2.sfx('hurt');
+          playWorldFx('spark', p.x, p.y);
+          hurtT = HURT_FRAMES;
+          shakeT = Math.max(shakeT, 4);
+        }
+      }
       // SIDE.5 (2026-08-15): step-on scripts — `step:x,y` fires on ARRIVAL,
       // no A press, same slot as a warp. Born from the stealth drill's goal
       // pad: interact() only ever checks the tile IN FRONT, so a walkable
@@ -783,7 +813,10 @@ export function worldDraw(): void {
         if (p.moving) f = p.prog < 8 ? (p.step ? 1 : 2) : 0;
         // RNK.5a: the player wears owned gear — no-op rebuild guard inside
         // CH4.1: the map's disguise palette while the suit is on
-        ensurePlayerFrames(quest.items, quest.flags.disguised && G.map.disguise ? G.map.disguise : 'player');
+        // CH7.0 §2: the shock flash wins over the disguise for HURT_FRAMES
+        const hurt = hurtT > 0;
+        if (hurt) hurtT--;
+        ensurePlayerFrames(quest.items, hurt ? 'hurt' : quest.flags.disguised && G.map.disguise ? G.map.disguise : 'player');
         ctx.drawImage(CHAR_FRAMES.player[p.dir][f], Math.round(ppx) - camX, Math.round(ppy) - camY - 4);
       },
     });
