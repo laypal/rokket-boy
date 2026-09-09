@@ -71,4 +71,6 @@ export const SFX: Record<string, readonly SfxStep[]> = {
   unlock: [[0, 'h'], [0.01, 330, 0.04, 0.2, 0.5], [0.05, 262, 0.06, 0.18, 0.5]],
   // Floor item pickup — two thin plinks, lighter than `coin`.
   pickup: [[0, 988, 0.04, 0.16, 0.25], [0.04, 1319, 0.05, 0.16, 0.25]],
+  // NEW JOB (2026-09-08): a three-note rising chime under the briefing toast — the mission is yours
+  job: [[0, 659, 0.06, 0.22, 0.25], [0.07, 880, 0.06, 0.22, 0.25], [0.14, 1319, 0.16, 0.26, 0.25]],
 };

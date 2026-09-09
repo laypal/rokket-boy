@@ -44,6 +44,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                     ['Lift pads. Card', 'key doors. Guards', 'who watch. Go.'],
                   ],
                 },
+                { sfx: 'job' },
                 { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
               ],
               else: [
@@ -71,6 +72,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                     ['Mourners. Fog.', 'Ghosts, they say.', 'Bring a light.'],
                   ],
                 },
+                { sfx: 'job' },
                 { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
               ],
               else: [
@@ -88,6 +90,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
               ],
             },
             // QA.5: last step — surfaces once the dialog closes.
+            { sfx: 'job' },
             { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
           ],
           else: [
@@ -100,6 +103,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                 // QA.5: last step in the branch — surfaces once the dialog
                 // closes (sysMsg only ticks in worldDraw), telling the player
                 // STATUS just moved on.
+                { sfx: 'job' },
                 { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
               ],
               else: [
@@ -135,6 +139,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                       ],
                     },
                     // QA.5: last step — surfaces once the dialog closes.
+                    { sfx: 'job' },
                     { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
                   ],
                   else: [
@@ -162,6 +167,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                               ],
                             },
                             // QA.5: last step — surfaces once the dialog closes.
+                            { sfx: 'job' },
                             { sysMsg: ['NEW JOB!', 'CHECK STATUS.'] },
                           ],
                         },

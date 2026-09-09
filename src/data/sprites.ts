@@ -93,3 +93,19 @@ export const FX_SPRITES: Record<FxSpriteId, SpriteRows> = {
     '........',
   ),
 };
+
+// UI (2026-09-09, Lyall): the "press A" button — a 10×10 round key with
+// an A on it, drawn in the window's own palette (0 ink on 3 paper) where
+// the dialog box and the system toast used to blink a bare `v`.
+export const BTN_A = S(
+  '..000000..',
+  '.03333330.',
+  '0330003330',
+  '0303330330',
+  '0303330330',
+  '0300000030',
+  '0303330330',
+  '0303330330',
+  '.03333330.',
+  '..000000..',
+);

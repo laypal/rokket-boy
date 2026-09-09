@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { decodePixels, glyphRows } from '../src/engine/renderer';
 import { T } from '../src/data/tiles';
+import { BTN_A } from '../src/data/sprites';
 
 describe('decodePixels', () => {
   it('maps shade chars to pixels and skips transparency', () => {
@@ -36,6 +37,18 @@ describe('decodePixels', () => {
     expect(px).toHaveLength(expected);
     expect(px.length).toBeLessThan(256);
     expect(px.some((p) => p.x === 0 && p.y === 0)).toBe(false); // corner transparent
+  });
+});
+
+describe('BTN_A — the press-A key (2026-09-09)', () => {
+  it('is 10×10, ink on paper only, with an A that reads (crossbar row is solid ink)', () => {
+    expect(BTN_A).toHaveLength(10);
+    for (const row of BTN_A) {
+      expect(row).toHaveLength(10);
+      expect(row).toMatch(/^[03.]+$/);
+    }
+    expect(BTN_A[5]).toBe('0300000030');
+    expect(BTN_A[0]).toBe('..000000..');
   });
 });
 

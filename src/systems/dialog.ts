@@ -3,7 +3,8 @@
 // row instead of the continue arrow, so a repeat visit to a service NPC is
 // a decision rather than an A-mash accident.
 import { G } from '../state';
-import { clamp, drawWindow, text, W } from '../engine/renderer';
+import { clamp, ctx, decode, drawWindow, text, W } from '../engine/renderer';
+import { BTN_A } from '../data/sprites';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
 import { DUR, EASE, lerp, msToFrames, tween } from '../engine/easing';
@@ -106,5 +107,5 @@ export function drawDialogBox(pal: Palette): void {
     text((sel === 1 ? '>' : ' ') + 'NO', CHOICE_X.no, CHOICE_Y + dy, pal[0]);
     return;
   }
-  if ((G.frame >> 4) & 1) text('v', 148, 133 + dy, pal[0]);
+  if ((G.frame >> 4) & 1) ctx.drawImage(decode(BTN_A, pal), 146, 131 + dy); // the A key, blinking
 }

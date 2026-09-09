@@ -7,7 +7,7 @@ import { MAPS } from '../data/maps';
 import { TILES, WALKABLE } from '../data/tiles';
 import { BG_PAL, OBJ_PAL } from '../data/palettes';
 import { CHARSETS } from '../data/chars';
-import { mirrorRows, stack, type SpriteRows } from '../data/sprites';
+import { mirrorRows, stack, BTN_A, type SpriteRows } from '../data/sprites';
 import { ctx, decode, fill, drawWindow, text, W, H, TILE } from '../engine/renderer';
 import { startFade } from '../engine/renderer';
 import { cameraFor } from './camera';
@@ -162,17 +162,22 @@ export const worldHooks: ScriptHooks = {
   // mapNameT idiom: draw-only, never saved, never gates logic.
   sysMsg: (lines) => {
     sysMsgLines = lines;
-    sysMsgT = SYS_MSG_FRAMES;
   },
   // ONB.2/FLW.5 guided camera tour — hand the pan to the worldUpdate tick
   // below, the npcRun pattern. tour.ts owns the machine; world only routes.
   tour: (stops, done) => startTour(stops, done),
 };
 
-// CH2.10 toast state — draw-only (juice rule: never gates logic)
-const SYS_MSG_FRAMES = 150;
+// CH2.10 toast state. Since 2026-09-08 (Lyall's playthrough) a toast has no
+// timer: it holds until A — which it CONSUMES, so the press that dismisses
+// "NEW JOB!" can't re-open Giovanni — or until the player starts a step.
+// Movement is never blocked (the juice rule); only that one A is.
 let sysMsgLines: string[] = [];
-let sysMsgT = 0;
+
+/** Is a system toast on screen? (tests; the draw reads the lines directly) */
+export function sysMsgUp(): boolean {
+  return sysMsgLines.length > 0;
+}
 
 // ONB.3 todo-marker bob — 32-frame cycle, 2px amplitude. Module constant,
 // never allocated per frame (QA.4).
@@ -614,6 +619,10 @@ export function worldUpdate(): void {
   if (npcRunTick()) return; // CH2.7 cutscene owns the frame — input + guards wait
   if (tourTick()) return; // ONB.2/FLW.5 tour owns the frame — same contract
   if (heatTick()) return; // §4.8 — may fire the lockdown whiteout or a contact battle
+  if (sysMsgLines.length && Input.hit('a')) {
+    sysMsgLines = []; // the toast's own A — never reaches interact()
+    return;
+  }
   const p = G.player;
   if (p.turnLock > 0) p.turnLock--;
   if (p.moving) {
@@ -685,6 +694,7 @@ function tryMove(d: Dir): void {
   }
   p.moving = true;
   p.prog = 0;
+  sysMsgLines = []; // walking away is an answer too — the toast never eats a later A
   addRustle(p.x, p.y); // CH2.9: the tile being walked OFF stirs as you leave
 }
 
@@ -863,14 +873,14 @@ export function worldDraw(): void {
     drawWindow(0, 0, map.name.length * 8 + 16, 20, pal);
     text(map.name, 8, 6, pal[0]);
   }
-  // CH2.10 system toast — bottom-anchored, timed like the name plate. 10px
+  // CH2.10 system toast — bottom-anchored, up until the player acts. 10px
   // row pitch + drawWindow's 6px chrome (the F14 playtest formula: interior
-  // = h-8 for an 8px glyph line).
-  if (sysMsgT > 0) {
-    sysMsgT--;
+  // = h-8 for an 8px glyph line). The dialog box's blinking A key says "A".
+  if (sysMsgLines.length) {
     const th = sysMsgLines.length * 10 + 12;
     drawWindow(0, H - th, W, th, pal);
     sysMsgLines.forEach((l, i) => text(l, 6, H - th + 5 + i * 10, pal[0]));
+    if ((G.frame >> 4) & 1) ctx.drawImage(decode(BTN_A, pal), 146, H - 13); // the A key, blinking
   }
   // ONB.2/FLW.5 tour band — last, over everything: the held stop is the
   // one thing on screen the player is being asked to look at
