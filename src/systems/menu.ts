@@ -206,8 +206,8 @@ function packUpdate(): void {
 
 function usePackItem(p: PackNav, id: string): void {
   const kind = itemDef(id).kind;
-  if (kind === 'heal' || kind === 'candy') {
-    flash(p, 'USE IN PARTY.'); // heals and candy need a mon target — PARTY owns that
+  if (kind === 'heal' || kind === 'candy' || kind === 'cure') {
+    flash(p, 'USE IN PARTY.'); // heals, candy and the TONIC need a mon target — PARTY owns that
     return;
   }
   const stage = G.heatState[heatKey(G.map)]?.stage ?? 0;
@@ -254,13 +254,19 @@ export function menuDraw(pal: Palette): void {
     drawWindow(PACK_WIN.x, PACK_WIN.y, PACK_WIN.w, PACK_WIN.h, pal);
     text('PACK', 12, 14, pal[0]);
     if (entries.length === 0) text('EMPTY...', 16, 34, pal[0]);
-    // first 5 distinct items; Ch.1 never carries more — scroll comes with
-    // a later content phase if an inventory ever outgrows the window
-    entries.slice(0, 5).forEach((e, i) => {
+    // FB review: CH7+ carries can exceed 5 distinct items (TONIC was
+    // rendering off-window) — a 5-row scrolling window instead of a hard
+    // slice(0,5). off keeps the cursor's row inside [0,4]: it trails p.sel
+    // once the cursor passes row 4, clamped so the last page still fills 5
+    // rows (or fewer, at ≤5 entries where off is always 0).
+    const off = Math.max(0, Math.min(p.sel - 4, entries.length - 5));
+    entries.slice(off, off + 5).forEach((e, i) => {
       const y = 32 + i * 12;
-      if (i === p.sel) text('>', 8, y, pal[0]);
+      if (i === p.sel - off) text('>', 8, y, pal[0]);
       text(e.id + ' x' + e.count, 16, y, pal[0]);
     });
+    if (off > 0) text('^', PACK_WIN.x + PACK_WIN.w - 12, PACK_WIN.y + 16, pal[0]);
+    if (off + 5 < entries.length) text('v', PACK_WIN.x + PACK_WIN.w - 12, PACK_WIN.y + PACK_WIN.h - 12, pal[0]);
     // QOL.1: with no flash message active, the footer shows the SELECTED
     // item's desc instead of the static prompt (row labels already show
     // counts via the x-count pattern above — leave those). MNU.2: drawn in
@@ -471,6 +477,19 @@ function partyUpdate(): void {
 function useHealOnMon(p: PartyNav, id: string): void {
   const mon = G.party[p.monSel];
   const sp = SPECIES[mon.species];
+  if (itemDef(id).kind === 'cure') {
+    // FB review: a fainted mon refuses TONIC the same as SODA — it doesn't
+    // revive either (QOL.6 rule) — checked before the status branch below.
+    if (mon.hp <= 0) { flash(p, 'OUT COLD.'); return; }
+    // F43-FB A4: TONIC — clears status; a healthy mon refuses without consuming.
+    if (!mon.status) { flash(p, 'NOT SICK.'); return; }
+    consumeItem(id);
+    mon.status = undefined;
+    mon.sleepT = undefined;
+    flash(p, monLabel(mon) + ' CURED', true);
+    p.mode = 'list';
+    return;
+  }
   if (itemDef(id).kind === 'candy') {
     // SIDE.7: LEVEL CANDY — the menu closes and the levelup scene plays the
     // level (moves / evolution offer) out over the world, battle-style.

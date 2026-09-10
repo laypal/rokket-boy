@@ -58,7 +58,10 @@ export const hqMap: MapDef = makeMap({
     { id: 'blackmarket', char: 'grunt', x: 10, y: 2, dir: 'down', pal: 'ghost' },
     // SIDE.4: the GRUNTDEX completion clerk — free floor on the room's
     // right-hand side, clear of the console cluster and every e2e walk path.
-    { id: 'dexclerk', char: 'grunt', x: 16, y: 5, dir: 'down' },
+    // F43-FB A1: the `!` once the MAZTER BALL is owed — 15 lines, CH7 reported, not yet paid.
+    // x 15, not 16: at 16 the marker lands on the prop tile at (16,4) and reads as
+    // its shading (playtester pixel-diff, 2026-09-10) — over floor it reads as a `!`.
+    { id: 'dexclerk', char: 'grunt', x: 15, y: 5, dir: 'down', todoIf: { all: [{ flag: 'ch7Done' }, { notFlag: 'sureBall' }, { dexAtLeast: 15 }] } },
   ],
   // Two pages each: the old 4-line versions lost their last line at draw
   // time (3-line box), which is why the motto read as a half-sentence.

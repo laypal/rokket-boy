@@ -14,14 +14,14 @@ export interface ShopDef {
 export const SHOPS: Record<string, ShopDef> = {
   // HQ black-market grunt — gives coins a sink and makes SWIPE's ball economy
   // real before Ch.2's proper vendor cart lands.
-  hqStall: { name: 'ROKKET STASH', stock: ['ROKKET BALL', 'SODA'] },
+  hqStall: { name: 'ROKKET STASH', stock: ['ROKKET BALL', 'SODA', 'TONIC'] },
   // F43 BALL.0 (Lyall, 2026-09-09): the same stall once CH7 is done — PRO
   // BALLs at 2000c. Gated by WHICH shop the vendor script opens (hq.ts,
   // `if ch7Done`), not by rank: no new gate machinery for one flag.
-  hqStallPro: { name: 'ROKKET STASH', stock: ['ROKKET BALL', 'SODA', 'PRO BALL'] },
+  hqStallPro: { name: 'ROKKET STASH', stock: ['ROKKET BALL', 'SODA', 'TONIC', 'PRO BALL'] },
   // CH2.4: the canonical first shop — a grunt's cart wheeled into MT. MOON.
   // Same stock as the stall; the cart supersedes it narratively, not in code.
-  moonCart: { name: 'MOON CART', stock: ['ROKKET BALL', 'SODA'] },
+  moonCart: { name: 'MOON CART', stock: ['ROKKET BALL', 'SODA', 'TONIC'] },
   // RNK.3: the back-room vendor at HQ — this IS F32's FLD.1 vendor, opened
   // early (FLD.1 adds moves to it later). Gated one rung below the
   // promotion that grants the matching perk (PLAN "Frozen contracts —

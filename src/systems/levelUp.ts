@@ -18,6 +18,10 @@ export interface BattleMsg {
   lines: string[];
   after?: (() => void) | null;
   auto?: boolean;
+  /** F43 STA.1: runs the frame this message is pulled from the queue — for
+   *  draw state that must land WITH its line (the poison tick's hp drop,
+   *  float and sfx), not while an earlier message is still on screen. */
+  show?: () => void;
 }
 
 export type LevelUpPhase = 'replace' | 'evolve' | 'evolveScene' | 'evoConfirm' | 'anim';
@@ -45,8 +49,8 @@ export function monName(mon: MonInstance): string {
   return mon.nick ?? spec(mon).name;
 }
 
-export function say(h: LevelUpHost, lines: string[], after?: () => void): void {
-  h.queue.push({ lines, after });
+export function say(h: LevelUpHost, lines: string[], after?: () => void, show?: () => void): void {
+  h.queue.push({ lines, after, show });
 }
 
 /** Chain fn onto whatever message is last in flight (or run now if none). */
@@ -83,6 +87,7 @@ export function pumpMessages(h: LevelUpHost, frame: number): boolean {
   if (h.queue.length) {
     h.msg = h.queue.shift()!;
     h.msgChars = 0;
+    h.msg.show?.();
     return true;
   }
   return false;

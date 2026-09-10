@@ -30,6 +30,8 @@ import { TRACKS } from './data/music';
 import { SPECIES } from './data/mons';
 import { maxHp, makeMon } from './systems/mon';
 import { findPartyMon, xpToReach, hpFromArg } from './systems/debugResolve';
+import { tryInflict } from './systems/status';
+import type { StatusId } from './types';
 import { requestPersist } from './engine/storage';
 import type { WarpDef } from './types';
 
@@ -266,6 +268,27 @@ if (import.meta.env.DEV) {
       const pool = ['koffink', 'ekanzz', 'zubatt', 'geodood', 'ratikatt', 'voltorbb'];
       G.party = pool.slice(0, Math.max(1, Math.min(4, n))).map((s) => makeMon(SPECIES[s], lv));
       console.error(`[__debug.party] ${G.party.map((m) => `${m.species} lv${m.lv}`).join(', ')}`);
+    },
+    // F43 STA.1: rig a real status through the real tryInflict (a synthetic
+    // chance-1 move, not a state poke) — pair with startBattle to watch the
+    // tick/skip/catch-mod land.
+    inflict: (key: string | number, id: StatusId) => {
+      const mon = findPartyMon(G.party, key);
+      if (!mon) {
+        console.error(`[__debug.inflict] no party mon matches ${key}`);
+        return;
+      }
+      const ok = tryInflict(mon, { id: 'dbg', name: 'DBG', type: 'NORMAL', power: 0, acc: 1, anim: 'rings', desc: '', status: { id, chance: 1 } }, mulberry32(1));
+      if (ok) console.error(`[__debug.inflict] ${mon.species} -> ${mon.status}${mon.sleepT ? ' x' + mon.sleepT : ''}`);
+      else console.error(`[__debug.inflict] ${mon.species} already ${mon.status} — refused`);
+    },
+    // F43 BALL.2: fills the MON LOCKER with n distinct catchable species at
+    // lv 5 through the real makeMon constructor — the GRUNTDEX line count
+    // the MAZTER BALL milestone reads. bossOnly mons never count toward a
+    // player's dex in play, so they're excluded here too.
+    dex: (n = 15) => {
+      G.box = Object.values(SPECIES).filter((s) => !s.bossOnly).slice(0, n).map((s) => makeMon(s, 5));
+      console.error(`[__debug.dex] locker filled with ${G.box.length} species`);
     },
     // CH4: seed a finished CH1–3 (the same flags chapter4.spec.ts sets), rank
     // OPERATIVE, the briefing heard, and fade-warp to the dock beside Jessika

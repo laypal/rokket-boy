@@ -7,6 +7,7 @@ import type { JobContract } from './jobs';
 import { RANK_REWARDS } from '../data/rankRewards';
 import { SPECIES } from '../data/mons';
 import { dexComplete } from './dex';
+import { dexCount } from './mon';
 import { mulberry32 } from '../engine/rng';
 
 export interface QuestState {
@@ -78,6 +79,7 @@ function freshFlags(): Flags {
     plantTech1: false,
     plantTech2: false,
     plantTech3: false,
+    sureBall: false,
   };
 }
 
@@ -137,6 +139,7 @@ export function checkCond(c: Cond): boolean {
   if ('egg' in c) return quest.eggs.has(c.egg);
   if ('notEgg' in c) return !quest.eggs.has(c.notEgg);
   if ('dexComplete' in c) return dexComplete(dexMons(), SPECIES);
+  if ('dexAtLeast' in c) return dexCount(dexMons(), SPECIES) >= c.dexAtLeast; // F43 BALL.2
   // ONB.3 compound forms — recursive, so any-of-alls (a "hand-in OR briefing
   // waiting" marker) is one Cond in map data, no per-NPC evaluator
   if ('all' in c) return c.all.every(checkCond);
@@ -187,7 +190,8 @@ export function rankUp(): string {
 
 export type ChapterId =
   | 'ch1' | 'ch2' | 'ch3' | 'ch4' | 'ch5'
-  | 'ch6' | 'ch7' | 'ch8' | 'ch9' | 'ch10';
+  | 'ch6' | 'ch7' | 'ch8' | 'ch9' | 'ch10'
+  | 'dex15'; // F43-FB A1: the GRUNTDEX side quest, shown between CH7 and CH8
 
 export interface ChapterStep {
   objective: string; // STATUS line, ≤17 chars (content lint)
@@ -277,6 +281,17 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'TAKE THE CELL', done: { flag: 'ch7Cell' } },
       { objective: 'ESCAPE THE PLANT', done: { any: [{ flag: 'ch7Caught' }, { flag: 'ch7Beaten' }, { flag: 'ch7Fled' }] } },
       { objective: 'REPORT TO BOSS', done: { flag: 'ch7Done' } },
+    ],
+  },
+  // F43-FB A1 (Lyall, 2026-09-10): the MAZTER BALL side quest. Announced in
+  // the CH7 briefing and by the clerk, it takes the STATUS line once CH7 is
+  // reported and holds it until the clerk pays — CH8's card decides whether
+  // it stays ahead of CH8 or drops behind it in this array.
+  {
+    id: 'dex15',
+    steps: [
+      { objective: 'CATCH 15 LINES', done: { any: [{ dexAtLeast: 15 }, { flag: 'sureBall' }] } },
+      { objective: 'SEE THE DEX CLERK', done: { flag: 'sureBall' } },
     ],
   },
 ];

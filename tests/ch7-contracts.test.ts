@@ -201,6 +201,8 @@ describe('CH7.0 §8 objectives', () => {
       quest.flags[f] = true;
       expect(currentObjective(), f).toBe('REPORT TO BOSS');
       quest.flags.ch7Done = true;
+      expect(currentObjective()).toBe('CATCH 15 LINES'); // F43-FB A1: the MAZTER BALL side quest takes the line after CH7
+      quest.flags.sureBall = true;
       expect(currentObjective()).toBe('AWAIT ORDERS.');
     }
   });

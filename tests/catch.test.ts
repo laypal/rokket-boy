@@ -46,6 +46,11 @@ describe('catchChance', () => {
     // hp > max*(1/0.7) makes (1 - hp/max*0.7) negative
     expect(catchChance(1, 100, 50)).toBe(0);
   });
+
+  it('F43 BALL.2: an Infinity ballMod (the MAZTER BALL) clamps to certain capture at any hp', () => {
+    expect(catchChance(0.05, 60, 60, Infinity)).toBe(1);
+    expect(catchChance(0.05, 1, 60, Infinity)).toBe(1);
+  });
 });
 
 describe('rollCatch', () => {

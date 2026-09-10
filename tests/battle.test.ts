@@ -747,11 +747,11 @@ describe('partyRow', () => {
     );
   });
 
-  it('appends the status tag when one is set', () => {
+  it('FB review: a status REPLACES hp/maxHp in the row (overflowed a long name otherwise appended)', () => {
     const mon = makeMon(SPECIES.koffink, 5);
     mon.hp = 12;
     mon.status = 'PSN';
-    expect(partyRow(mon, SPECIES.koffink, false)).toBe('KOFFINK 12/19 PSN');
+    expect(partyRow(mon, SPECIES.koffink, false)).toBe('KOFFINK PSN');
   });
 
   it('prefers the nickname over the species name', () => {
@@ -765,6 +765,15 @@ describe('partyRow', () => {
     for (const sp of Object.values(SPECIES)) {
       const mon = makeMon(sp, 5);
       const row = partyRow(mon, sp, false);
+      expect(row.length).toBeLessThanOrEqual(15);
+    }
+  });
+
+  it('FB review: every real species also fits WITH a status tag — the status replaces hp/maxHp, it never appends to it', () => {
+    for (const sp of Object.values(SPECIES)) {
+      const mon = makeMon(sp, 5);
+      mon.status = 'PAR'; // the longest of PSN/PAR/SLP
+      const row = partyRow(mon, sp, true); // the active marker's '*' is the worst case too
       expect(row.length).toBeLessThanOrEqual(15);
     }
   });
@@ -1784,11 +1793,15 @@ describe('spar battles (SIDE.5 training exemption)', () => {
     quest.coins = 100;
     G.party = [makeMon(SPECIES.koffink, 5)];
     G.party[0].hp = 1;
+    G.party[0].status = 'SLP'; // F43-FB A6 review: the whiteout is the bunk's heal — status goes too
+    G.party[0].sleepT = 2;
     begin('guard_voltorbb');
     fightItOut();
     expect(quest.coins).toBe(90);
     expect(G.map.id).toBe('hq');
     expect(G.state).toBe('worldwait');
+    expect(G.party[0].status).toBeUndefined();
+    expect(G.party[0].sleepT).toBeUndefined();
   });
 
   it('winning a spar exits normally with onWin (spar only changes the loss path)', () => {

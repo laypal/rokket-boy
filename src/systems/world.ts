@@ -155,6 +155,7 @@ export const worldHooks: ScriptHooks = {
     for (const m of G.party) {
       m.hp = maxHp(SPECIES[m.species], m.lv);
       m.status = undefined;
+      m.sleepT = undefined; // F43 STA.1: the sleep counter goes with the status
     }
     G.playSeconds += 480;
   },

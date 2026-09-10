@@ -73,6 +73,7 @@ export const hqScripts: Record<string, ScriptStep[]> = {
                     { giveItem: 'PRO BALL' },
                     { sfx: 'item' },
                     { sysMsg: ['GOT 3 PRO BALLS!'] },
+                    { say: [['R&D wants 15', 'GRUNTDEX lines.', 'The clerk pays.']] },
                   ],
                 },
                 { say: [['South door off', 'the ANN DOCK.', 'Past the crates.']] },
@@ -437,7 +438,23 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   // derived from what the player holds — quest.setDexMons), so the clerk is
   // pure data: paid once, then a brush-off forever.
   'npc:dexclerk': [
+    // F43 BALL.2: the one MAZTER BALL, 15/22 after CH7 (PLAN.md A1). Checked
+    // BEFORE the egg brush-off — a player who took the dexmaster egg before
+    // finishing CH7 must still get the ball on their next talk, not be
+    // brushed off forever (Lyall, review fix). `notFlag sureBall`
+    // self-terminates: once granted, the else — the unchanged egg/
+    // dexComplete/pitch chain — runs on every later talk. One reward per
+    // talk: a 22/22 player gets the ball, then the egg next time.
     {
+      if: { all: [{ flag: 'ch7Done' }, { notFlag: 'sureBall' }, { dexAtLeast: 15 }] },
+      then: [
+        { setFlag: 'sureBall' },
+        { giveItem: 'MAZTER BALL' },
+        { sfx: 'item' },
+        { say: [['CLERK: Fifteen', 'lines. R&D said', 'give you this.'], ['One MAZTER BALL.', 'Never misses.', 'No second one.']] },
+        { sysMsg: ['MAZTER BALL', 'RECEIVED!'] },
+      ],
+      else: [{
       if: { egg: 'dexmaster' },
       then: [{ say: [['CLERK: Paid you', 'already. Go steal', 'something.']] }],
       else: [
@@ -449,9 +466,14 @@ export const hqScripts: Record<string, ScriptStep[]> = {
             { say: [['CLERK: Every line', 'in the GRUNTDEX.', "Didn't think so."], ['Take the egg.', "Don't ask what's", 'in it.']] },
             { sysMsg: ['EGG FOUND!'] },
           ],
-          else: [{ say: [['CLERK: GRUNTDEX', 'desk. Fill it', 'and I pay out.'], ['Every line. Not', 'just the cute', 'ones.']] }],
+          else: [
+            { say: [['CLERK: GRUNTDEX', 'desk. Fill it', 'and I pay out.'], ['Every line. Not', 'just the cute', 'ones.']] },
+            // The MAZTER BALL hint only while it's still there to earn.
+            { if: { notFlag: 'sureBall' }, then: [{ say: [['Fifteen lines and', 'R&D owes you a', 'ball. Go on.']] }] },
+          ],
         },
       ],
+    }],
     },
   ],
   // The lone terminal at (3,11) is the MON LOCKER; the other C consoles stay

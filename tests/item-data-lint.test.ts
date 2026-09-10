@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { ITEMS, type ItemKind, BALL_ITEM } from '../src/data/items';
 import { PACK_DESC_CAP, PACK_ROW_CAP } from '../src/systems/menu';
 
-const KINDS: ItemKind[] = ['heal', 'ball', 'key', 'quest', 'gear', 'candy'];
+const KINDS: ItemKind[] = ['heal', 'ball', 'key', 'quest', 'gear', 'candy', 'cure'];
 
 describe('item registry', () => {
   it('every item is well-formed', () => {
@@ -42,10 +42,11 @@ describe('item registry', () => {
     }
   });
 
-  it('ball items are buyable', () => {
+  it('ball items are buyable, except the F43 BALL.2 MAZTER BALL (never bought, never sold)', () => {
     for (const [key, item] of Object.entries(ITEMS)) {
-      if (item.kind === 'ball') expect(item.price, `${key} price`).toBeGreaterThan(0);
+      if (item.kind === 'ball' && key !== 'MAZTER BALL') expect(item.price, `${key} price`).toBeGreaterThan(0);
     }
+    expect(ITEMS['MAZTER BALL'].price).toBe(0);
   });
 
   it('key/quest items are never buyable', () => {
@@ -67,6 +68,16 @@ describe('item registry', () => {
     expect(ITEMS['CASE OF COINS'].kind).toBe('quest');
     expect(ITEMS.SODA.kind).toBe('heal');
     expect(ITEMS.SODA.heal).toBe(20);
+  });
+
+  it('F43-FB A4: cure items (TONIC) are priced and carry no heal field', () => {
+    for (const [key, item] of Object.entries(ITEMS)) {
+      if (item.kind === 'cure') {
+        expect(item.price, `${key} price`).toBeGreaterThan(0);
+        expect(item.heal, `${key} is kind 'cure' but carries a heal amount`).toBeUndefined();
+      }
+    }
+    expect(ITEMS.TONIC.price).toBe(100);
   });
 
   it('gear kind and the wear def always agree (FLW.3: shop.ts gates the owned-count column on wear, not kind)', () => {

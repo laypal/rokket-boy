@@ -4,9 +4,12 @@
 // bad {sfx}/{music} is a no-op, a bad {giveItem} hands over a useless item,
 // a bad {battle}/{shop} throws mid-cutscene) — this walker reuses the
 // collectSays recursion shape (content-lint.test.ts:13-33) to visit every
-// ScriptStep in shipped content and assert each reference resolves.
+// ScriptStep in shipped content and assert each reference resolves. The
+// walker itself lives in helpers/script-registry.ts (a plain .ts, never
+// collected by vitest) so sure-ball.test.ts (F43 BALL.2) can reuse it
+// without importing this *.test.ts file directly.
 import { describe, it, expect } from 'vitest';
-import type { ScriptStep, MapDef, MapId } from '../src/types';
+import type { MapDef, MapId } from '../src/types';
 import { MAPS } from '../src/data/maps';
 import { ENCOUNTERS } from '../src/data/encounters';
 import { SHOPS } from '../src/data/shops';
@@ -16,122 +19,12 @@ import { TRACKS } from '../src/data/music';
 import { TILES } from '../src/data/tiles';
 import { SFX } from '../src/data/sfx';
 import { WORLD_FX_IDS } from '../src/systems/worldFx';
+import { buildRegistry, collectItemPickups } from './helpers/script-registry';
 
 // TOOL.2: the SFX registry is data now — its keys ARE the lint set.
 const SFX_NAMES = new Set(Object.keys(SFX));
 // F38 JCE.0: the world-fx table's id list is the lint set for {fx}.
 const FX_NAMES = new Set<string>(WORLD_FX_IDS);
-
-// The full ScriptStep discriminant set (src/types.ts:43-67), same order as
-// the interpreter's if-chain (src/systems/script.ts:77-128). `then`/`else`
-// are payload fields on the `if` step, not discriminants of their own.
-const DISCRIMINANT_KEYS = new Set([
-  'say', 'setFlag', 'if', 'giveItem', 'setTile', 'addWarp', 'battle', 'warp',
-  'sfx', 'music', 'addCoins', 'addEgg', 'incVar', 'sayCycle', 'locker',
-  'shop', 'endScreen', 'rankUp', 'heat', 'giveMon', 'npcRun', 'healParty',
-  'sysMsg', 'jobs', 'choice', 'cardFlip', 'tour', 'fx',
-]);
-
-interface Ref { where: string }
-interface IdRef extends Ref { id: string }
-interface TileRef extends Ref { x: number; y: number; ch: string; dims?: { w: number; h: number } }
-interface WarpRef extends Ref { target: string; x: number; y: number }
-interface FxRef extends Ref { id: string; at?: [number, number]; dims?: { w: number; h: number } }
-interface KeyViolation extends Ref { keys: string[] }
-interface CounterRef extends Ref { counter: string }
-
-interface Registry {
-  battles: IdRef[];
-  shops: IdRef[];
-  giveItems: IdRef[];
-  giveMons: IdRef[];
-  music: IdRef[];
-  sfx: IdRef[];
-  fx: FxRef[];
-  setTiles: TileRef[];
-  warps: WarpRef[];
-  keyViolations: KeyViolation[];
-  sayCycles: CounterRef[];
-  incVars: Set<string>;
-  stepCount: number;
-}
-
-function newRegistry(): Registry {
-  return {
-    battles: [], shops: [], giveItems: [], giveMons: [], music: [], sfx: [], fx: [],
-    setTiles: [], warps: [], keyViolations: [], sayCycles: [],
-    incVars: new Set(), stepCount: 0,
-  };
-}
-
-/** Walk a ScriptStep tree, collecting every cross-reference into `r`.
- *  `dims` is the current map's (w, h), used to bounds-check {setTile}; it's
- *  undefined when walking ENCOUNTERS onWin/onLose/onFlee, which run on
- *  whatever map the fight happened on, so there's no fixed grid to check
- *  against (no shipped encounter follow-up uses setTile today). */
-function walk(steps: ScriptStep[], dims: { w: number; h: number } | undefined, where: string, r: Registry): void {
-  for (const step of steps) {
-    r.stepCount++;
-    const ownKeys = Object.keys(step).filter((k) => k !== 'then' && k !== 'else');
-    const matched = ownKeys.filter((k) => DISCRIMINANT_KEYS.has(k));
-    if (matched.length !== 1) r.keyViolations.push({ where, keys: ownKeys });
-
-    if ('battle' in step) r.battles.push({ id: step.battle, where });
-    if ('shop' in step) r.shops.push({ id: step.shop, where });
-    if ('giveItem' in step) r.giveItems.push({ id: step.giveItem, where });
-    if ('giveMon' in step) r.giveMons.push({ id: step.giveMon.species, where });
-    if ('music' in step) r.music.push({ id: step.music, where });
-    if ('sfx' in step) r.sfx.push({ id: step.sfx, where });
-    if ('fx' in step) r.fx.push({ id: step.fx.id, at: step.fx.at, where, dims });
-    if ('setTile' in step) {
-      const [x, y, ch] = step.setTile;
-      r.setTiles.push({ x, y, ch, where, dims });
-    }
-    if ('addWarp' in step) {
-      const [, wd] = step.addWarp;
-      r.warps.push({ target: wd[0], x: wd[1], y: wd[2], where: `${where} (addWarp)` });
-    }
-    if ('warp' in step) {
-      const wd = step.warp;
-      r.warps.push({ target: wd[0], x: wd[1], y: wd[2], where: `${where} (warp)` });
-    }
-    if ('sayCycle' in step) r.sayCycles.push({ counter: step.sayCycle.counter, where });
-    if ('incVar' in step) r.incVars.add(step.incVar);
-    if ('if' in step) {
-      walk(step.then, dims, `${where} > then`, r);
-      if (step.else) walk(step.else, dims, `${where} > else`, r);
-    }
-    if ('choice' in step) {
-      walk(step.choice.yes, dims, `${where} > yes`, r);
-      if (step.choice.no) walk(step.choice.no, dims, `${where} > no`, r);
-    }
-  }
-}
-
-function buildRegistry(): Registry {
-  const r = newRegistry();
-  for (const map of Object.values(MAPS)) {
-    for (const [key, steps] of Object.entries(map.scripts)) {
-      walk(steps, { w: map.w, h: map.h }, `${map.id}:${key}`, r);
-    }
-  }
-  for (const [encId, enc] of Object.entries(ENCOUNTERS)) {
-    walk(enc.onWin, undefined, `enc ${encId} onWin`, r);
-    walk(enc.onLose, undefined, `enc ${encId} onLose`, r);
-    walk(enc.onFlee, undefined, `enc ${encId} onFlee`, r);
-  }
-  return r;
-}
-
-function collectItemPickups(): IdRef[] {
-  const out: IdRef[] = [];
-  for (const map of Object.values(MAPS)) {
-    for (const [pos, item] of Object.entries(map.items)) {
-      out.push({ id: item.item, where: `${map.id} item@${pos}` });
-    }
-  }
-  return out;
-}
 
 const REG = buildRegistry();
 const ITEM_PICKUPS = collectItemPickups();

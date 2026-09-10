@@ -26,6 +26,7 @@ import { jobBattleWon } from './jobs';
 import { sharedWhiteout } from './recovery';
 import { reduceHeat, heatKey } from './heat';
 import { perkPct } from './perks';
+import { tryInflict, poisonDamage, beforeAction, statusCatchMod, STATUS_LINES } from './status';
 
 // Injectable RNG (plan §4.9): seeded-snapshot battle tests swap this out;
 // the game keeps Math.random.
@@ -136,14 +137,17 @@ export function encounterFlash(t: number, wild: boolean): number | null {
   return Math.floor(t / 3) & 1 ? 0 : 3;
 }
 
-/** QOL.12: SWITCH/target-list row — name, hp/maxHp, active marker, status
- *  tag. Pure formatter so the 15-char wide-list column width is lint-tested
- *  against every real species (mon-data-lint precedent). */
+/** QOL.12: SWITCH/target-list row — name, active marker, and either hp/maxHp
+ *  or (FB review) the status tag REPLACING it — the same HUD stand-in
+ *  pattern as battleDraw's level/status swap (13-battle-fx.md): a status
+ *  tag appended after hp/maxHp overflowed the 15-char wide-list column on a
+ *  long name. hp is still one tap away on the detail screen. Pure formatter
+ *  so the column width is lint-tested against every real species
+ *  (mon-data-lint precedent). */
 export function partyRow(mon: MonInstance, sp: MonSpecies, active: boolean): string {
   const name = mon.nick ?? sp.name;
-  let row = (active ? '*' : '') + name + ' ' + mon.hp + '/' + maxHp(sp, mon.lv);
-  if (mon.status) row += ' ' + mon.status;
-  return row;
+  const stat = mon.status ?? mon.hp + '/' + maxHp(sp, mon.lv);
+  return (active ? '*' : '') + name + ' ' + stat;
 }
 export function active(b: BattleState): MonInstance {
   return G.party[b.meIdx];
@@ -344,11 +348,22 @@ function useMove(b: BattleState, id: MoveId): void {
   const foeSp = spec(b.foe);
   const mv = MOVES[id];
   b.phase = 'anim';
+  // F43 STA.1: the status gate runs BEFORE the "used" line — a healthy mon
+  // never touches battleRng here (beforeAction only rolls for PAR), so a
+  // status-free fight's rng order is untouched. Read the status before the
+  // gate call: 'wake' clears it, so the skip/wake line still needs to know
+  // what it was.
+  const priorStatus = mon.status;
+  const gate = beforeAction(mon, battleRng);
+  if (gate !== 'act') {
+    say(b, gate === 'wake' ? STATUS_LINES.wake(monName(mon)) : STATUS_LINES.skip[priorStatus as 'PAR' | 'SLP'](monName(mon)), () => endPlayerAction(b));
+    return;
+  }
   say(b, [monName(mon) + ' used', mv.name + '!'], () => {
     // Accuracy AND damage rolls stay in their pre-FX order; the effect plays
     // between them without touching battleRng (13-battle-fx.md hard rule).
     if (battleRng() > mv.acc) {
-      say(b, ['But it missed!'], () => enemyTurn(b));
+      say(b, ['But it missed!'], () => endPlayerAction(b));
       return;
     }
     const dmg = damage({ lv: mon.lv, move: mv, atk: spec(mon).atk, def: foeSp.def, defTypes: foeSp.type }, battleRng);
@@ -357,10 +372,17 @@ function useMove(b: BattleState, id: MoveId): void {
     const mult = effectiveness(mv.type, foeSp.type);
     playFx(b, mv.anim, 'me', mv.type, () => {
       if (b.enc.unwinnable) {
-        // CH5.0 §2: nothing lands on a spirit — no hp, no float, no drain.
-        // The rolls above already happened, so rng order is untouched.
+        // CH5.0 §2: nothing lands on a spirit — no hp, no float, no drain,
+        // no status (the rolls above already happened; rng order untouched).
         say(b, ['But it passed', 'right through!']);
-        say(b, b.enc.unwinnable.hint, () => enemyTurn(b)); // CH5-FB — and again every time a hit fails
+        say(b, b.enc.unwinnable.hint, () => endPlayerAction(b)); // CH5-FB — and again every time a hit fails
+        return;
+      }
+      if (mv.power === 0) {
+        // F43 STA.1: a status-only move (hypno) — no damage, shake, float,
+        // effectiveness or drain, just the inflict roll.
+        inflictLine(b, b.foe, mv, foeLabel(b));
+        endPlayerAction(b);
         return;
       }
       Audio2.sfx('hit');
@@ -369,10 +391,25 @@ function useMove(b: BattleState, id: MoveId): void {
       b.float = { side: 'foe', amt: dmg, mult, start: b.t };
       sayEffectiveness(b, mult);
       applyDrain(b, mv, mon, spec(mon), monName(mon), dmg);
+      inflictLine(b, b.foe, mv, foeLabel(b));
+      // A KO ends the turn without the attacker's own poison tick — the tick
+      // is the tail of an action, and a faint (either side) is the exit (GB).
       if (b.foe.hp <= 0) foeDefeated(b);
-      else enemyTurn(b);
+      else endPlayerAction(b);
     });
   });
+}
+
+/** F43 STA.1: roll `mv.status` on a target that just took a landed hit (or,
+ *  for a power-0 move, the move's only effect). No-op on a fainted target
+ *  or a move with no status — tryInflict's own guards handle "already
+ *  statused" and the chance roll.
+ *  F43-FB A6: a target immune to the move's TYPE (effectiveness 0, e.g.
+ *  GROUND vs ELECTRIC) can never be inflicted by it either — skipped before
+ *  the roll so no extra rng is consumed on an immune hit. */
+function inflictLine(b: BattleState, target: MonInstance, mv: MoveDef, label: string): void {
+  if (target.hp <= 0 || effectiveness(mv.type, spec(target).type) === 0) return;
+  if (tryInflict(target, mv, battleRng)) say(b, STATUS_LINES.inflict[target.status!](label));
 }
 
 function sayEffectiveness(b: BattleState, mult: number): void {
@@ -403,7 +440,7 @@ function doSwipe(b: BattleState): void {
       const got = Math.floor(15 * (1 + perkPct('steal')));
       quest.coins += got;
       trace(`swipe: OK (+${got} coins)`);
-      say(b, ['Swiped ' + got + ' coins', 'mid-battle!'], () => enemyTurn(b));
+      say(b, ['Swiped ' + got + ' coins', 'mid-battle!'], () => endPlayerAction(b));
     } else {
       trace('swipe: REFUSED (stole already true)');
       say(b, ['Nothing left', 'to swipe!'], () => (b.phase = 'menu'));
@@ -438,7 +475,7 @@ function doSwipe(b: BattleState): void {
 function throwBall(b: BattleState, item: string): void {
   consume(item);
   const sp = spec(b.foe);
-  const p = catchChance(sp.catchRate, b.foe.hp, maxHp(sp, b.foe.lv), itemDef(item).ballMod ?? 1);
+  const p = catchChance(sp.catchRate, b.foe.hp, maxHp(sp, b.foe.lv), itemDef(item).ballMod ?? 1, statusCatchMod(b.foe.status));
   // Roll BEFORE the animation — the wobble count reads the outcome, it never
   // decides it (13-battle-fx.md hard rule; same rng-order guarantee as the
   // move rolls above).
@@ -448,6 +485,7 @@ function throwBall(b: BattleState, item: string): void {
       if (caught) {
         b.caught = true; // the throwOk fx has ended (hideDefender reset); this keeps the foe hidden
         Audio2.sfx('catch'); // JCE.1
+        if (b.foe.status === 'PAR') b.foe.status = undefined; // F43-FB A6 — foe joins outside G.party, clear it here
         say(b, ['Gotcha!', sp.name + ' was', 'caught!']);
         if (G.party.length < 4) G.party.push(b.foe);
         else {
@@ -457,16 +495,17 @@ function throwBall(b: BattleState, item: string): void {
         afterQueue(b, () => winBattle(b));
       } else {
         Audio2.sfx('hurt');
-        say(b, ['Darn! It', 'broke free!'], () => enemyTurn(b));
+        say(b, ['Darn! It', 'broke free!'], () => endPlayerAction(b));
       }
     });
   });
 }
 
 // ── ITEM: use a heal or the SMOKE BALL mid-battle (plan §4.5) ─────────────
-/** Distinct pack items usable in battle, with counts: heals plus SMOKE BALL
- *  — or, in an unwinnable fight, heals plus the one item it answers to
- *  (CH5.0 §2; SMOKE BALL is simply not on the list there). */
+/** Distinct pack items usable in battle, with counts: heals and cure items
+ *  (TONIC) plus SMOKE BALL — or, in an unwinnable fight, heals/cures plus
+ *  the one item it answers to (CH5.0 §2; SMOKE BALL is simply not on the
+ *  list there). */
 export function battleItems(enc: Pick<EncounterDef, 'unwinnable'> | null = G.battle?.enc ?? null): { id: string; count: number }[] {
   if (G.battle?.ballPick) return packCounts(quest.items).filter((e) => itemDef(e.id).kind === 'ball');
   const keys = enc?.unwinnable ? [enc.unwinnable.item] : ['SMOKE BALL'];
@@ -487,9 +526,10 @@ function openItemMenu(b: BattleState): void {
 }
 function useItem(b: BattleState, id: string): void {
   const def = itemDef(id);
-  if (def.kind === 'heal') {
+  if (def.kind === 'heal' || def.kind === 'cure') {
     // QOL.6: heal items pick a target from the party first (SWITCH-style
     // list). SMOKE BALL below stays targetless — instant by design.
+    // F43-FB A4: TONIC ('cure') shares the same target pick as a heal.
     Audio2.sfx('confirm');
     b.phase = 'target';
     b.pendingItem = id;
@@ -541,9 +581,32 @@ function applyItemTarget(b: BattleState): void {
   const t = G.party[b.sel];
   const sp = SPECIES[t.species];
   if (t.hp <= 0) {
+    // FB review: a fainted mon refuses EVERY pack item the same way — a
+    // status cure included. TONIC doesn't revive; that's still only the
+    // bunk/whiteout path (QOL.6 rule), so this check runs before the cure
+    // branch, not after it.
     Audio2.sfx('cancel');
     b.phase = 'anim';
     say(b, ["It's out cold!", "A SODA won't", 'wake it.'], () => (b.phase = 'target'));
+    return;
+  }
+  if (def.kind === 'cure') {
+    // F43-FB A4: TONIC — clears status on any living target, benched
+    // included; a healthy target refuses without consuming, like the heal
+    // misses below.
+    if (!t.status) {
+      Audio2.sfx('cancel');
+      b.phase = 'anim';
+      say(b, [monName(t) + ' is', 'not sick!'], () => (b.phase = 'target'));
+      return;
+    }
+    b.pendingItem = undefined;
+    consume(id);
+    t.status = undefined;
+    t.sleepT = undefined;
+    Audio2.sfx('item');
+    b.phase = 'anim';
+    say(b, [monName(t), 'shook it off!'], () => afterQueue(b, () => endPlayerAction(b)));
     return;
   }
   if (t.hp >= maxHp(sp, t.lv)) {
@@ -567,12 +630,12 @@ function applyItemTarget(b: BattleState): void {
       playFx(b, 'heal', 'me', 'NORMAL', () => {
         say(b, [monName(t) + ' got', 'back ' + healed + ' HP!']);
         coach(b, 'itemUsed'); // ONB.5 — praise the lesson, point at the next one
-        afterQueue(b, () => enemyTurn(b));
+        afterQueue(b, () => endPlayerAction(b));
       });
     } else {
       say(b, [monName(t) + ' got', 'back ' + healed + ' HP!']);
       coach(b, 'itemUsed');
-      afterQueue(b, () => enemyTurn(b));
+      afterQueue(b, () => endPlayerAction(b));
     }
   });
 }
@@ -592,6 +655,9 @@ function pickSwitch(b: BattleState): void {
   b.phase = 'anim';
   say(b, ['Go! ' + monName(active(b)) + '!']);
   monTalk(b); // CH5.0 §4 — switch-ins talk too
+  // F43 STA.1: stays on enemyTurn, not endPlayerAction — a voluntary switch
+  // is not the switched-in mon's action, so no poison tick fires on it here
+  // (GB parity: a poisoned mon you bench doesn't tick until it next acts).
   afterQueue(b, () => (wasForced ? toMenu(b) : enemyTurn(b)));
 }
 
@@ -637,32 +703,91 @@ function toMenu(b: BattleState): void {
   b.sel = b.rootSel;
 }
 
+/** F43 STA.1: poison ticks at the end of whichever side just acted, before
+ *  the turn hands over — `side` is who just acted, which is also who just
+ *  took the hit in poisonTick's callers (the attacker never poisons
+ *  itself). poisonDamage doesn't roll, so a fight with nobody poisoned
+ *  never touches battleRng here — the hand-over is byte-identical to the
+ *  pre-status code. A faint from the tick exits exactly like a faint from
+ *  a hit would. */
+function poisonTick(b: BattleState, side: 'me' | 'foe', then: () => void): void {
+  const mon = side === 'me' ? active(b) : b.foe;
+  const label = side === 'me' ? monName(mon) : foeLabel(b);
+  const dmg = poisonDamage(mon, maxHp(spec(mon), mon.lv));
+  if (dmg === 0) {
+    then();
+    return;
+  }
+  // The hp drop, float and sfx land the frame the poison line SHOWS (the
+  // say `show` hook) — never while the hit's own float is still on screen,
+  // and never in the same frame as the hit on a neutral tackle that queued
+  // nothing (afterQueue would have run it immediately there).
+  say(
+    b,
+    STATUS_LINES.poison(label),
+    () => {
+      if (mon.hp > 0) then();
+      else if (side === 'me') myMonFainted(b);
+      else foeDefeated(b);
+    },
+    () => {
+      const from = mon.hp; // QOL.4: pre-tick hp for the draw-side tween
+      mon.hp = Math.max(0, mon.hp - dmg);
+      b.hpAnim = { side, from, start: b.t };
+      b.float = { side, amt: dmg, mult: 1, start: b.t };
+      Audio2.sfx('hurt');
+    },
+  );
+}
+function endPlayerAction(b: BattleState): void {
+  poisonTick(b, 'me', () => enemyTurn(b));
+}
+function endFoeAction(b: BattleState): void {
+  poisonTick(b, 'foe', () => afterQueue(b, () => toMenu(b)));
+}
+
 function enemyTurn(b: BattleState): void {
-  const foeSp = spec(b.foe);
   const mon = active(b);
+  // F43 STA.1: same gate as useMove, on the foe. A healthy foe never touches
+  // battleRng here, so a status-free fight rolls exactly as before.
+  const priorStatus = b.foe.status;
+  const gate = beforeAction(b.foe, battleRng);
+  if (gate !== 'act') {
+    say(b, gate === 'wake' ? STATUS_LINES.wake(foeLabel(b)) : STATUS_LINES.skip[priorStatus as 'PAR' | 'SLP'](foeLabel(b)), () => endFoeAction(b));
+    return;
+  }
+  const foeSp = spec(b.foe);
   const mv = MOVES[b.foe.moves[rollInt(0, b.foe.moves.length - 1, battleRng)]];
   say(b, [foeLabel(b), 'used ' + mv.name + '!'], () => {
     // Same rng-order guarantee as useMove: rolls first, effect after.
     if (battleRng() > mv.acc) {
-      say(b, ['But it missed!'], () => toMenu(b));
+      say(b, ['But it missed!'], () => endFoeAction(b));
       return;
     }
     const dmg = damage({ lv: b.foe.lv, move: mv, atk: foeSp.atk, def: spec(mon).def, defTypes: spec(mon).type }, battleRng);
     const mult = effectiveness(mv.type, spec(mon).type); // QOL.11: shared by the message and the float
     playFx(b, mv.anim, 'foe', mv.type, () => {
+      if (mv.power === 0) {
+        // F43 STA.1: a status-only foe move — no damage, shake, float,
+        // effectiveness or drain, just the inflict roll.
+        inflictLine(b, mon, mv, monName(mon));
+        endFoeAction(b);
+        return;
+      }
       Audio2.sfx('hurt');
       b.shakeMe = 14;
       mon.hp = Math.max(0, mon.hp - dmg);
       b.float = { side: 'me', amt: dmg, mult, start: b.t };
       sayEffectiveness(b, mult);
       applyDrain(b, mv, b.foe, foeSp, foeLabel(b), dmg);
+      inflictLine(b, mon, mv, monName(mon));
       if (mon.hp <= 0) myMonFainted(b);
       else {
         // ONB.5: the hit the player just took is the teachable moment. The
         // first-blood nudge pre-empts the low-hp one — two lessons on a
         // single hit is nagging, not coaching.
         if (!coach(b, 'playerHurt') && mon.hp * 3 < maxHp(spec(mon), mon.lv)) coach(b, 'lowHp');
-        afterQueue(b, () => toMenu(b));
+        endFoeAction(b);
       }
     });
   });
@@ -726,6 +851,7 @@ function myMonFainted(b: BattleState): void {
       say(b, b.enc.unwinnable ? ['Overwhelmed...', 'You stumble', 'back.'] : ['No shame in a', 'practice loss!']);
       afterQueue(b, () => {
         for (const m of G.party) m.hp = maxHp(SPECIES[m.species], m.lv);
+        shakeOffParalysis(); // F43-FB A6 — the full-heal above only clears hp; this clears PAR too
         G.battle = null;
         G.state = 'world';
         Audio2.play(G.map.music);
@@ -742,12 +868,14 @@ function myMonFainted(b: BattleState): void {
 
 // ── battle exits (ScriptHooks contract: done(followUp | null)) ───────────
 function endBattleFlee(b: BattleState): void {
+  shakeOffParalysis(); // F43-FB A6
   G.battle = null;
   G.state = 'world';
   Audio2.play(G.map.music);
   b.done(b.enc.onFlee.length ? b.enc.onFlee : null);
 }
 function winBattle(b: BattleState): void {
+  shakeOffParalysis(); // F43-FB A6
   G.battle = null;
   G.state = 'world';
   Audio2.play(G.map.music);
@@ -755,5 +883,13 @@ function winBattle(b: BattleState): void {
   // VOLTRAWK set piece is the first fight whose ending depends on HOW
   const steps = b.caught && b.enc.onCatch ? b.enc.onCatch : b.enc.onWin;
   b.done(steps.length ? steps : null);
+}
+
+/** F43-FB A6: PAR wears off the moment a battle ends (won, fled, or a
+ *  spar/unwinnable loss) — PSN and SLP persist. The whiteout path
+ *  (recovery.ts's sharedWhiteout) now clears status too, so it needs no
+ *  separate call here. */
+function shakeOffParalysis(): void {
+  for (const m of G.party) if (m.status === 'PAR') m.status = undefined;
 }
 

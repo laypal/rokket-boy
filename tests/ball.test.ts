@@ -219,6 +219,23 @@ describe('BALL.1 the ITEM-menu throw', () => {
     expect(G.party).toHaveLength(2);
   });
 
+  it('F43 BALL.2: SWIPE with two ball kinds opens the pick; the MAZTER BALL catches regardless of the seed', () => {
+    quest.items.push(BALL_ITEM, 'MAZTER BALL');
+    wildAt(10); // above the red bar — an ordinary ball would be a coin flip; the MAZTER BALL is certain
+    tap('down'); // sel 1 = SWIPE
+    tap('a');
+    expect(b().phase).toBe('item');
+    expect(battleItems().map((e) => e.id)).toEqual([BALL_ITEM, 'MAZTER BALL']);
+    setBattleRng(() => 0.999999); // pinned: no ordinary ball could win this roll — only Infinity clamps to 1
+    tap('down'); // row 1 = MAZTER BALL
+    tap('a');
+    settle();
+    expect(G.battle).toBeNull();
+    expect(quest.items).toEqual([BALL_ITEM]); // the MAZTER BALL went, the ROKKET BALL stayed
+    expect(G.party).toHaveLength(2);
+    expect(G.party[1].species).toBe('voltorbb');
+  });
+
   it("a trainer's mon refuses the PRO BALL without consuming it", () => {
     quest.items.push(PRO);
     begin('guard_voltorbb');
@@ -239,6 +256,18 @@ describe('BALL.1 the ITEM-menu throw', () => {
     settle();
     expect(G.battle).not.toBeNull();
     expect(quest.items).toEqual([PRO]);
+    delete ENCOUNTERS.test_boss;
+  });
+
+  it('F43 BALL.2: an uncatchable refuses the MAZTER BALL too, without consuming it', () => {
+    quest.items.push('MAZTER BALL');
+    ENCOUNTERS.test_boss = { foe: { species: 'voltorbb', lv: 3 }, uncatchable: true, winText: [], onWin: [], onLose: [], onFlee: [] };
+    begin('test_boss');
+    settle();
+    throwFromPack();
+    settle();
+    expect(G.battle).not.toBeNull();
+    expect(quest.items).toEqual(['MAZTER BALL']);
     delete ENCOUNTERS.test_boss;
   });
 });

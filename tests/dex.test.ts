@@ -139,6 +139,7 @@ describe('npc:dexclerk (SIDE.4)', () => {
     expect(said).toEqual([
       ['CLERK: GRUNTDEX', 'desk. Fill it', 'and I pay out.'],
       ['Every line. Not', 'just the cute', 'ones.'],
+      ['Fifteen lines and', 'R&D owes you a', 'ball. Go on.'], // F43 BALL.2 pitch page
     ]);
   });
 

@@ -17,7 +17,14 @@ import { Audio2 } from '../engine/audio';
  *  world caller passes a no-op). */
 export function sharedWhiteout(lostCoins: number, onDone: () => void): void {
   quest.coins -= lostCoins;
-  for (const m of G.party) m.hp = maxHp(SPECIES[m.species], m.lv);
+  // F43-FB A6 review: the whiteout is the bunk's heal — hp AND status (a
+  // party carried home still paralysed contradicted "PAR wears off"); this
+  // one line also covers the heat lockdown whiteout (world.ts).
+  for (const m of G.party) {
+    m.hp = maxHp(SPECIES[m.species], m.lv);
+    m.status = undefined;
+    m.sleepT = undefined;
+  }
   G.battle = null;
   startFade(() => {
     G.map = MAPS[G.lastHq.map];

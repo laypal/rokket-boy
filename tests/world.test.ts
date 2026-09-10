@@ -471,12 +471,14 @@ describe('worldHooks.healParty (QOL.9): the HQ bunk rest', () => {
       G.party = [makeMon(SPECIES.koffink, 5), makeMon(SPECIES.voltorbb, 5)];
       G.party[0].hp = 3; // battered
       G.party[1].hp = 0; // fainted — the bunk DOES revive (unlike SODA)
-      G.party[1].status = 'PSN';
+      G.party[1].status = 'SLP';
+      G.party[1].sleepT = 3; // F43: the sleep counter goes with the status
       G.playSeconds = 100;
       worldHooks.healParty();
       expect(G.party[0].hp).toBe(maxHp(SPECIES.koffink, 5));
       expect(G.party[1].hp).toBe(maxHp(SPECIES.voltorbb, 5));
       expect(G.party[1].status).toBeUndefined();
+      expect(G.party[1].sleepT).toBeUndefined();
       expect(G.playSeconds).toBe(580); // +480s — lets map HEAT decay (§4.8 synergy)
     } finally {
       G.party = savedParty;

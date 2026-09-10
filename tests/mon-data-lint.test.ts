@@ -28,6 +28,14 @@ describe('move registry', () => {
       expect(mv.desc.length, `${key} desc fits the help bar`).toBeLessThanOrEqual(18);
       expect(mv.desc, `${key} desc is uppercase`).toBe(mv.desc.toUpperCase());
       expect(mv.desc.endsWith('.'), `${key} desc ends with '.'`).toBe(true);
+      // F43 STA.0: a status-carrying move rolls a real chance, and a
+      // power-0 move (status-only, e.g. hypno) must carry one.
+      if (mv.status) {
+        expect(mv.status.chance, `${key} status.chance`).toBeGreaterThan(0);
+        expect(mv.status.chance, `${key} status.chance`).toBeLessThanOrEqual(1);
+        expect(['PSN', 'PAR', 'SLP'], `${key} status.id`).toContain(mv.status.id);
+      }
+      if (mv.power === 0) expect(mv.status, `${key} power-0 move needs a status`).toBeTruthy();
     }
   });
 });

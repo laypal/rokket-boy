@@ -54,12 +54,12 @@ beforeEach(() => resetQuest());
 describe('placement (D5 — nothing else wears a marker)', () => {
   // CH4.2 adds one more: the dock's jessika wears the SAILOR SUIT hint
   // (todoIf: notFlag ch4Suit) — the no-softlock hint NPC for the whole ship.
-  it('todoIf is set on exactly giovanni/jessika/myowth on hq, plus jessika on the CH4 dock', () => {
+  it('todoIf is set on exactly giovanni/jessika/myowth/dexclerk on hq, plus jessika on the CH4 dock', () => {
     const withTodo: { mapId: string; id: string }[] = [];
     for (const [mapId, map] of Object.entries(MAPS)) {
       for (const npc of map.npcs) if (npc.todoIf) withTodo.push({ mapId, id: npc.id });
     }
-    expect(withTodo.map((n) => n.id).sort()).toEqual(['giovanni', 'jessika', 'jessika', 'myowth']);
+    expect(withTodo.map((n) => n.id).sort()).toEqual(['dexclerk', 'giovanni', 'jessika', 'jessika', 'myowth']); // F43-FB A1: the clerk wears one once the MAZTER BALL is owed
     expect(withTodo.filter((n) => n.mapId !== 'hq')).toEqual([{ mapId: 'dock', id: 'jessika' }]);
   });
 });

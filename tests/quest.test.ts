@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   quest,
   resetQuest,
@@ -8,6 +8,7 @@ import {
   currentObjective,
   formatPlayTime,
   checkCond,
+  setDexMons,
 } from '../src/systems/quest';
 
 beforeEach(() => resetQuest());
@@ -224,5 +225,17 @@ describe('formatPlayTime (§4.7 STATUS)', () => {
 
   it('never goes negative', () => {
     expect(formatPlayTime(-5)).toBe('0:00');
+  });
+});
+
+describe('dexAtLeast (F43 BALL.2)', () => {
+  afterEach(() => setDexMons(() => []));
+
+  it('is the >= boundary against dexCount, not dexComplete', () => {
+    // koffink/voltorbb/ratikatt: three unrelated base species (mon.ts
+    // dexCount credits pre-evolutions too), so three mons is exactly 3.
+    setDexMons(() => [{ species: 'koffink' }, { species: 'voltorbb' }, { species: 'ratikatt' }]);
+    expect(checkCond({ dexAtLeast: 3 })).toBe(true);
+    expect(checkCond({ dexAtLeast: 4 })).toBe(false);
   });
 });

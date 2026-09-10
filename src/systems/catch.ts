@@ -16,9 +16,11 @@ export const RED_BAR_MOD = 2;
  * with a plain ball. Extreme inputs/ballMod are clamped rather than allowed
  * to go negative or above certain capture.
  */
-export function catchChance(catchRate: number, hp: number, max: number, ballMod = 1): number {
+export function catchChance(catchRate: number, hp: number, max: number, ballMod = 1, statusMod = 1): number {
   const red = hp / max <= RED_BAR ? RED_BAR_MOD : 1;
-  const p = catchRate * (1 - (hp / max) * 0.7) * ballMod * red;
+  // F43 STA.0: statusMod is systems/status.ts statusCatchMod(foe.status) —
+  // SLP ×2, PAR/PSN ×1.5, 1 when healthy. Same clamp, one more factor.
+  const p = catchRate * (1 - (hp / max) * 0.7) * ballMod * red * statusMod;
   return Math.min(1, Math.max(0, p));
 }
 

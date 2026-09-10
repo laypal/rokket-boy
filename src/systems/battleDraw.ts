@@ -247,13 +247,21 @@ export function battleDraw(): void {
     // foe box (top-left)
     rect(2, 6, 92, 26, pal[3]);
     text(foeSp.name, 4, 8, pal[0]);
-    text('L' + b.foe.lv, 72, 8, pal[0]);
+    // F43 STA.1, GB parity: status REPLACES the level text while the mon
+    // carries one (glyphs advance 8px, not 4 — a status glyph beside the
+    // level overdraws any 6+-glyph name). The level is still on every list
+    // screen (partyRow etc.), just not here.
+    text(b.foe.status ?? 'L' + b.foe.lv, 72, 8, pal[0]);
     hpBar(4, 20, 62, foeHpShown, foeMax, pal);
     rect(2, 32, 92, 2, pal[0]);
     // my box (bottom-right)
     rect(74, 62, 84, 32, pal[3]);
     text(monName(me), 78, 64, pal[0]);
-    text('L' + me.lv, 138, 64, pal[0]);
+    // The status sits at 136, not 138: the third glyph's right leg (P·S·N,
+    // P·A·R ink column 6) would land on x 160, off the canvas — digits never
+    // reach that column, so the level keeps its spot (playtester, 2026-09-10).
+    if (me.status) text(me.status, 136, 64, pal[0]);
+    else text('L' + me.lv, 138, 64, pal[0]);
     hpBar(78, 76, 58, meHpShown, meMax, pal);
     text(meHpShown + '/' + meMax, 104, 84, pal[0]);
     // UX2.1: 2px xp strip under the hp number. The post-win fill (b.xpAnim)

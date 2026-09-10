@@ -93,6 +93,7 @@ export interface Flags {
   plantTech1: boolean; // once-only TECHNICIAN paydays, one per floor
   plantTech2: boolean;
   plantTech3: boolean;
+  sureBall: boolean;   // F43 BALL.2: the GRUNTDEX clerk paid the one MAZTER BALL (15 lines + ch7Done)
 }
 export type FlagName = keyof Flags;
 
@@ -105,6 +106,7 @@ export type Cond =
   | { varEq: [string, number] }
   | { varRoll: [string, number] } // SIDE.7: quest.varRoll(vars[name] ?? 0, p) — seeded per-spin jackpot odds
   | { coinsAtLeast: number }      // SIDE.7-FB: quest.coins >= n — the Q machine's stake gate
+  | { dexAtLeast: number } // F43 BALL.2: dexCount >= n under the same line-credit rule — the clerk's MAZTER BALL milestone
   | { dexComplete: true } // SIDE.4: GRUNTDEX n/n under SPR.0's line-credit rule (derived — quest.setDexMons)
   | { hasItem: string }   // CH5.0 §6: the PACK holds this item id — the SILF SCOPE gate
   | { partyFull: true }   // CH5.3 playtest: the party is at its cap (quest.setPartySize provider) — branch BEFORE a giveMon
@@ -265,6 +267,10 @@ export interface MoveDef {
    *  (QOL.5). One literal on purpose — no effect framework until a second
    *  kind exists. */
   effect?: 'drain';
+  /** F43 STA.0: a landed hit rolls `chance` (0..1) to inflict `id` on a
+   *  target that has no status yet (systems/status.ts tryInflict). A
+   *  power-0 move is status-only — no damage, the fx still plays. */
+  status?: { id: StatusId; chance: number };
 }
 
 export interface MonSpecies {
@@ -304,6 +310,9 @@ export interface MonInstance {
   xp: number;
   moves: MoveId[];   // up to 4
   status?: StatusId;
+  /** F43 STA.0: SLP turns left (1..3 at infliction). Optional — save.ts
+   *  spreads the mon, so no version bump; absent = not asleep. */
+  sleepT?: number;
   nick?: string;
   /** UX2.4: the player confirmed a refusal to evolve this mon. Permanent —
    *  gainXp never offers again, at any level. Optional so old saves read it

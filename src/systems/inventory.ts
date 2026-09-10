@@ -42,7 +42,7 @@ export function usableInBattle(id: string, keys: readonly string[] = ['SMOKE BAL
   // the ROKKET BALL — no picker, BALL.0's don't). The ROKKET BALL itself
   // (ballMod absent) stays off the list.
   if (def.kind === 'ball' && (def.ballMod ?? 1) > 1) return true;
-  return def.kind === 'heal' || keys.includes(id);
+  return def.kind === 'heal' || def.kind === 'cure' || keys.includes(id); // F43-FB A4: TONIC picks a target like a heal
 }
 
 /** Usable from the overworld PACK menu. Heals always; the key-item SMOKE
@@ -50,14 +50,16 @@ export function usableInBattle(id: string, keys: readonly string[] = ['SMOKE BAL
  *  the map's heat stage so this module stays pure. */
 export function usableOutOfBattle(id: string, heatStage = 0): boolean {
   const kind = itemDef(id).kind;
-  if (kind === 'heal' || kind === 'candy') return true; // SIDE.7: candy is a PARTY-picker item like a heal
+  if (kind === 'heal' || kind === 'candy' || kind === 'cure') return true; // SIDE.7: candy is a PARTY-picker item like a heal; F43-FB: so is the TONIC
   return kind === 'key' && id === 'SMOKE BALL' && heatStage > 0;
 }
 
-/** Sellable from the shop: heals and balls, never key/quest items. */
+/** Sellable from the shop: heals and balls, never key/quest items. F43
+ *  BALL.2: price 0 means unbuyable AND unsellable — the MAZTER BALL is a
+ *  ball that can never be turned into coins. */
 export function canSell(id: string): boolean {
-  const kind = itemDef(id).kind;
-  return kind === 'heal' || kind === 'ball';
+  const def = itemDef(id);
+  return (def.kind === 'heal' || def.kind === 'ball' || def.kind === 'cure') && def.price > 0;
 }
 
 /**

@@ -683,3 +683,43 @@ describe('FLW.2 PARTY HP readout colour', () => {
     expect(text).toHaveBeenCalledWith(G.party[0].hp + '/' + max, 16, 38, BG_PAL.green[1]);
   });
 });
+
+// ── FB review: PACK scrolls past 5 distinct items (F43-FB — a CH7+ carry
+// can hold 6+ distinct items; the old hard slice(0,5) let TONIC sit past
+// row 5 and never render) ───────────────────────────────────────────────
+describe('FB review: PACK window scrolls past 5 distinct items', () => {
+  function frame(): void {
+    menuUpdate();
+    keys.pressed.clear();
+  }
+  function tap(k: string): void {
+    keys.pressed.add(k);
+    frame();
+  }
+
+  beforeEach(() => {
+    resetQuest();
+    keys.down.clear();
+    keys.pressed.clear();
+  });
+
+  it('with 7 distinct items and the cursor on the 7th, the 7th row renders and the 1st scrolls out of view', () => {
+    for (let i = 1; i <= 7; i++) quest.items.push('ITEM' + i);
+    openMenu();
+    tap('a'); // PACK (sel 0)
+    for (let i = 0; i < 6; i++) tap('down'); // cursor to the 7th entry (index 6)
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('ITEM7 x1', expect.any(Number), expect.any(Number), BG_PAL.green[0]);
+    expect(text).not.toHaveBeenCalledWith('ITEM1 x1', expect.any(Number), expect.any(Number), expect.any(String));
+  });
+
+  it('with 5 or fewer entries, every row still renders (off stays 0 — no regression on the common case)', () => {
+    quest.items.push('SODA');
+    openMenu();
+    tap('a'); // PACK
+    vi.mocked(text).mockClear();
+    menuDraw(BG_PAL.green);
+    expect(text).toHaveBeenCalledWith('SODA x1', 16, 32, BG_PAL.green[0]);
+  });
+});

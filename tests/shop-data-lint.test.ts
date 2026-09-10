@@ -30,6 +30,12 @@ describe('shop data lints', () => {
     expect(SHOPS.hqStall.stock).toContain('SODA');
   });
 
+  it('F43-FB A4: every shop that stocks SODA also stocks TONIC', () => {
+    for (const [shopId, shop] of Object.entries(SHOPS)) {
+      if (shop.stock.includes('SODA')) expect(shop.stock, `${shopId} stocks SODA but not TONIC`).toContain('TONIC');
+    }
+  });
+
   it('RNK.3: every gated id is real gear, appears in its own stock, and gates within RANKS', () => {
     for (const [shopId, shop] of Object.entries(SHOPS)) {
       if (!shop.gate) continue;

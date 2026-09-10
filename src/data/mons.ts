@@ -378,6 +378,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     moves: [
       { lv: 1, move: 'tackle' },
       { lv: 5, move: 'confuse' },
+      { lv: 9, move: 'hypno' }, // F43 STA.0 (PLAN A7)
       { lv: 13, move: 'psybeam' },
       { lv: 21, move: 'dreameat' },
     ],
@@ -401,6 +402,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     moves: [
       { lv: 1, move: 'tackle' },
       { lv: 1, move: 'confuse' },
+      { lv: 1, move: 'hypno' }, // F43 STA.0 (PLAN A7)
       { lv: 13, move: 'psybeam' },
       { lv: 21, move: 'dreameat' },
     ],

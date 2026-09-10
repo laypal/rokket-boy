@@ -8,7 +8,8 @@ export const BALL_ITEM = 'ROKKET BALL';
 /** CH5.0 §1: the key item that lifts the LAVENDAR TOWER's fog (systems/fog.ts). */
 export const SCOPE_ITEM = 'SILF SCOPE';
 
-export type ItemKind = 'heal' | 'ball' | 'key' | 'quest' | 'gear' | 'candy';
+/** F43-FB A4: 'cure' — a PARTY-picker item like a heal that clears a status (TONIC). */
+export type ItemKind = 'heal' | 'ball' | 'key' | 'quest' | 'gear' | 'candy' | 'cure';
 
 /** Perk surfaces a piece of gear (or a rank) may touch — never XP (spec
  *  2026-08-10 §1). Lives here so data stays the leaf: perks.ts imports this,
@@ -32,6 +33,10 @@ export interface ItemDef {
 export const ITEMS: Record<string, ItemDef> = {
   [BALL_ITEM]: { id: BALL_ITEM, kind: 'ball', price: 200, desc: 'SWIPES WILD MONS.' },
   SODA: { id: 'SODA', kind: 'heal', price: 60, heal: 20, desc: 'RESTORES 20 HP.' },
+  // F43-FB A4 (Lyall, 2026-09-10): the one status cure besides the bunk —
+  // sold beside SODA, used from PARTY or the battle ITEM menu on a mon that
+  // carries PSN/PAR/SLP; refused (not consumed) on a healthy one.
+  TONIC: { id: 'TONIC', kind: 'cure', price: 100, desc: 'CURES A STATUS.' },
   'SMOKE BALL': { id: 'SMOKE BALL', kind: 'key', price: 0, desc: 'GUARANTEED FLEE.' },
   'CASE OF COINS': { id: 'CASE OF COINS', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
   // CH5 LAVENDAR TOWER — the SCOPE lifts the fog (a 2F pickup), the CHARM is
@@ -55,6 +60,10 @@ export const ITEMS: Record<string, ItemDef> = {
   // digits (shop.ts SHOP_STACK_ROW_CAP, the FLW.3 lint) — 999 is the ceiling
   // that column can show. Flagged in the CH7 build assumptions.
   'PRO BALL': { id: 'PRO BALL', kind: 'ball', price: 999, desc: 'A 2.5X BALL.', ballMod: 2.5 },
+  // F43 BALL.2 — exactly one in the game, granted by the GRUNTDEX clerk at
+  // 15 lines once ch7Done (dialog/hq.ts). price: 0 = never bought, never
+  // sold (canSell excludes price-0 items).
+  'MAZTER BALL': { id: 'MAZTER BALL', kind: 'ball', price: 0, desc: 'NEVER MISSES.', ballMod: Infinity },
   // SIDE.7: the Gamez Corner jackpot prize — never stocked, never bought;
   // only the special machine's tile script grants it (dialog/corner.ts).
   'LEVEL CANDY': { id: 'LEVEL CANDY', kind: 'candy', price: 0, desc: 'UP ONE LEVEL.' },
