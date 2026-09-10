@@ -329,6 +329,17 @@ function tryWarp(): boolean {
   const p = G.player;
   const w = warpAt(G.map, p.x, p.y);
   if (!w) return false;
+  // F42 GATE.0: a chapter entrance the player hasn't earned yet refuses the
+  // transit — bump + toast, standing where they are. The arrival is still
+  // consumed (true), so nothing else reads this step.
+  const gate = G.map.gates?.[p.x + ',' + p.y];
+  if (gate && !checkCond(gate.cond)) {
+    if (!sysMsgUp()) {
+      Audio2.sfx('bump');
+      sysMsgLines = gate.msg;
+    }
+    return true;
+  }
   performWarp(w);
   return true;
 }

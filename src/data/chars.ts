@@ -888,7 +888,7 @@ export const ARBOK_BACK = S(
 '...002221111111122200...');
 
 // SPR.C — WHEEZINK/GASTLEE/HAUNTOR/MYOWTH/MAROWL (CH5). Parody-original
-// silhouettes per docs/tasks/11-species-roster.md's sprite grammar.
+// silhouettes per docs/tasks/11-species-roster/sprite-grammar.md.
 // WHEEZINK — front, 28x28: two joined gas-bag heads (big + small), pained
 // faces, small vents.
 export const WHEEZINK_FRONT = S(

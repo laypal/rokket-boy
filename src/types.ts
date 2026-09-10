@@ -209,6 +209,12 @@ export interface MapDef {
   /** keyed `x,y` → the item ball on that `b` tile (SIDE.6 pickups) */
   items: Record<string, PickupDef>;
   warps: Record<string, WarpDef>;
+  /** F42 GATE.0: chapter-entrance gates, keyed by the warp tile ON THIS MAP.
+   *  `tryWarp` refuses the transit while `cond` fails — bump sfx + a toast,
+   *  the player stays on the tile. The door is SEEN, never hidden. Scripted
+   *  warps (`performWarp`) ignore gates by construction: cutscenes, the
+   *  whiteout recovery and the camera tour must always land. */
+  gates?: Record<string, { cond: Cond; msg: string[] }>;
   /** keys: `npc:<id>`, `at:<x>,<y>` (A facing the tile), `step:<x>,<y>`
    *  (fires on ARRIVING at the tile, no button — the goal-pad class),
    *  `tile:<char>`, `enter` */

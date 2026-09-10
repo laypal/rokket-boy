@@ -19,7 +19,7 @@ export const dockMap: MapDef = makeMap({
     '#wwwwwwwwwwwwwwww>w#',
     '#BBBBBBBBBBBBBBBB B#',
     '#                  #',
-    '#   X    s         #',
+    '#   X    s         s',
     'o                  o',
     '#   X       X      #',
     '#  P    s        P #',
@@ -38,6 +38,7 @@ export const dockMap: MapDef = makeMap({
   signs: {
     '9,5': [['S.S. ANN GALA', 'TONIGHT!', 'CREW ONLY ABOARD']],
     '8,8': [['POWER PLANT:', 'SOUTH DOOR.', 'STAFF ONLY.']], // CH7.0 §9: the quay road south — signposted (Lyall)
+    '19,5': [['SYLPHCO TOWER:', 'EAST OVER THE', 'QUAY.']], // F42: the third quay door, signposted like the other two
   },
   items: {},
   warps: {
@@ -45,6 +46,13 @@ export const dockMap: MapDef = makeMap({
     '9,9': ['plant1', 9, 10, 'up'], // CH7.0 §9: the quay road south to the POWER PLANT
     '0,6': ['outskirts', 19, 6, 'left'],
     '17,2': ['deck1', 2, 9, 'up'],
+  },
+  // F42 GATE.0: three chapter doors off one quay — gangway (CH4), SYLPHCO
+  // (CH6), the plant road (CH7). The road back west is never gated.
+  gates: {
+    '17,2': { cond: { flag: 'ch3Done' }, msg: ['THE S.S. ANN IS', 'THE JOB AFTER', 'THIS.'] },
+    '19,6': { cond: { flag: 'ch5Done' }, msg: ['SYLPHCO TOWER IS', 'THE JOB AFTER', 'THIS.'] },
+    '9,9': { cond: { flag: 'ch6Done' }, msg: ['THE POWER PLANT', 'IS THE JOB', 'AFTER THIS.'] },
   },
   scripts: dockScripts,
 });

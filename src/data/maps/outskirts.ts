@@ -16,7 +16,7 @@ export const outskirtsMap: MapDef = makeMap({
   pal: 'span',
   music: 'bridge',
   rows: [
-    '##########o##########',
+    '#########so##########',
     '#                   #',
     '#     s             #',
     '#    b    P     b   #',
@@ -24,12 +24,15 @@ export const outskirtsMap: MapDef = makeMap({
     '#  B             B  #',
     'o                   o',
     '#                   #',
-    '##########o##########',
+    '#########so##########',
   ],
   npcs: [
     { id: 'shill', char: 'grunt', x: 14, y: 6, dir: 'down' },
   ],
   signs: {
+    // F42: both gated roads off the hub, signposted at the door.
+    '9,0': [['NUGGET SPAN:', 'NORTH ROAD.', 'TOLL BRIDGE.']],
+    '9,8': [['LAVENDAR TOWER:', 'SOUTH ROAD.', 'QUIET UP THERE.']],
     '6,2': [['PRIZE BRIDGE ->', 'WIN A NUGGET!', 'ENTRY: YOUR EGO.']],
   },
   // SIDE.6: two pickups here (the leaf's escape hatch — bridge's 2-wide lane
@@ -47,6 +50,12 @@ export const outskirtsMap: MapDef = makeMap({
     '10,0': ['bridge', 6, 18, 'up'],
     '20,6': ['dock', 1, 6, 'right'],
     '10,8': ['lav1', 9, 10, 'up'],
+  },
+  // F42 GATE.0: the span north (CH3) and the tower south (CH5). The hub road
+  // east to the dock is never gated — scoping is the point.
+  gates: {
+    '10,0': { cond: { flag: 'ch2Done' }, msg: ['NUGGET SPAN IS', 'THE JOB AFTER', 'THIS.'] },
+    '10,8': { cond: { flag: 'ch4Done' }, msg: ['LAVENDAR TOWER', 'IS THE JOB', 'AFTER THIS.'] },
   },
   scripts: outskirtsScripts,
 });
