@@ -48,8 +48,8 @@ async function press(page: Page, key: string): Promise<void> {
 }
 
 // Open the pause menu and move the cursor onto STATUS. Pause-menu order
-// (src/systems/menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/SAVE(3)/
-// SOUND(4)/HELP(5)/CLOSE(6) — openMenu() always resets sel to 0, so 2 Downs
+// (src/systems/menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/MAP(3)/SAVE(4)/
+// SOUND(5)/HELP(6)/CLOSE(7) — openMenu() always resets sel to 0, so 2 Downs
 // from the default PACK cursor lands on STATUS every time this is called.
 async function openStatus(page: Page): Promise<void> {
   await press(page, 'Enter');

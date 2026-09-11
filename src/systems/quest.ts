@@ -2,13 +2,15 @@
 // rank ladder and chapter state machine (§4.7). Chapter progress is derived
 // from flags via Cond — nothing here persists beyond what SaveV1 already
 // carries, so the state machine costs no save-shape bump.
-import type { Cond, Flags } from '../types';
+import type { Cond, Flags, MapId } from '../types';
 import type { JobContract } from './jobs';
+import type { RegionId } from '../data/region';
 import { RANK_REWARDS } from '../data/rankRewards';
 import { SPECIES } from '../data/mons';
 import { dexComplete } from './dex';
 import { dexCount } from './mon';
 import { mulberry32 } from '../engine/rng';
+import type { Seen } from './seen';
 
 export interface QuestState {
   flags: Flags;
@@ -19,6 +21,8 @@ export interface QuestState {
   items: string[];              // PACK contents
   rank: string;                 // §4.7 ladder; stub until 1e's rank system
   job: JobContract | null;      // SIDE.1: the one active job-board contract
+  visited: Set<MapId>;          // F42 MAP.0: every map landed on — the MAP's discovery set (SaveV5)
+  seen: Partial<Record<MapId, Seen>>; // F44 WM.1: per-map seen bitmaps (SaveV5.seen)
 }
 
 function freshFlags(): Flags {
@@ -92,6 +96,8 @@ export const quest: QuestState = {
   items: [],
   rank: 'GRUNT',
   job: null,
+  visited: new Set(),
+  seen: {},
 };
 
 export function resetQuest(): void {
@@ -103,6 +109,8 @@ export function resetQuest(): void {
   quest.items = [];
   quest.rank = 'GRUNT';
   quest.job = null;
+  quest.visited = new Set();
+  quest.seen = {};
 }
 
 /** SIDE.4: who owns what, for the `dexComplete` Cond. The dex is derived
@@ -200,12 +208,15 @@ export interface ChapterStep {
 
 export interface ChapterDef {
   id: ChapterId;
+  /** F42 MAP.0: where the job happens — the MAP flashes this rect while
+   *  the chapter has an unmet step (one field per chapter, lint-pinned). */
+  region: RegionId;
   steps: ChapterStep[];
 }
 
 export const CHAPTERS: ChapterDef[] = [
   {
-    id: 'ch1',
+    id: 'ch1', region: 'hq',
     steps: [
       { objective: 'SEE THE BOSS', done: { flag: 'briefed' } },
       { objective: 'BEAT THE GUARD', done: { flag: 'guardBeaten' } },
@@ -215,7 +226,7 @@ export const CHAPTERS: ChapterDef[] = [
     ],
   },
   {
-    id: 'ch2',
+    id: 'ch2', region: 'moon',
     steps: [
       { objective: 'RAID MT. MOON', done: { flag: 'fossilsTaken' } },
       { objective: 'BEAT BRAD', done: { flag: 'bradBeaten' } },
@@ -226,7 +237,7 @@ export const CHAPTERS: ChapterDef[] = [
   // gauntlet's "done"; KIRA's win sets ch3Done AND promotes on the spot
   // (she is the recruiter — no separate report-to-boss step this chapter).
   {
-    id: 'ch3',
+    id: 'ch3', region: 'span',
     steps: [
       { objective: 'WORK THE SPAN', done: { flag: 'spanLass' } },
       { objective: 'BEAT KIRA', done: { flag: 'ch3Done' } },
@@ -235,7 +246,7 @@ export const CHAPTERS: ChapterDef[] = [
   // CH4 (S.S. ANN): suit up, crack the safe, then win the gangway back from
   // the chief — ss_chief2's onWin sets ch4Done and promotes to LIEUTENANT.
   {
-    id: 'ch4',
+    id: 'ch4', region: 'ann',
     steps: [
       { objective: 'SUIT UP', done: { flag: 'ch4Suit' } },
       { objective: 'CRACK THE SAFE', done: { flag: 'ch4Safe' } },
@@ -246,7 +257,7 @@ export const CHAPTERS: ChapterDef[] = [
   // stairs until it's in the PACK), so these always fall in order. Myowth's
   // join is a scene between the mask and the hand-in, not an objective.
   {
-    id: 'ch5',
+    id: 'ch5', region: 'lav',
     steps: [
       { objective: 'FIND THE SCOPE', done: { hasItem: 'SILF SCOPE' } },
       { objective: 'CALM THE SPIRIT', done: { flag: 'ch5Spirit' } },
@@ -259,7 +270,7 @@ export const CHAPTERS: ChapterDef[] = [
   // CARD KEY is the only way through the doors, and the bodyguards block
   // the chest. The hand-in promotes to EXECUTIVE (CH6.0 assumption 1).
   {
-    id: 'ch6',
+    id: 'ch6', region: 'syl',
     steps: [
       { objective: 'TALK TO DJAMES', done: { flag: 'ch6Rules' } },
       { objective: 'FIND THE CARD KEY', done: { hasItem: 'CARD KEY' } },
@@ -274,7 +285,7 @@ export const CHAPTERS: ChapterDef[] = [
   // pays 1200c and does NOT promote (assumption 1). Objective 1 names the
   // place — Lyall, 2026-09-09: the player must KNOW where to go.
   {
-    id: 'ch7',
+    id: 'ch7', region: 'plant',
     steps: [
       { objective: 'GO TO ANN DOCK', done: { flag: 'ch7Rules' } },
       { objective: 'FIND THE BOOTS', done: { hasItem: 'RUBBER BOOTS' } },
@@ -288,7 +299,7 @@ export const CHAPTERS: ChapterDef[] = [
   // reported and holds it until the clerk pays — CH8's card decides whether
   // it stays ahead of CH8 or drops behind it in this array.
   {
-    id: 'dex15',
+    id: 'dex15', region: 'hq',
     steps: [
       { objective: 'CATCH 15 LINES', done: { any: [{ dexAtLeast: 15 }, { flag: 'sureBall' }] } },
       { objective: 'SEE THE DEX CLERK', done: { flag: 'sureBall' } },
@@ -303,6 +314,15 @@ export function currentObjective(): string {
     for (const step of ch.steps)
       if (!checkCond(step.done)) return step.objective;
   return 'AWAIT ORDERS.';
+}
+
+/** F42 MAP.0: the region of the chapter that owns the current objective —
+ *  the same first-unmet walk currentObjective() does, so the MAP's flashing
+ *  target and the STATUS line can never disagree. null between jobs. */
+export function currentTargetRegion(): RegionId | null {
+  for (const ch of CHAPTERS)
+    if (ch.steps.some((step) => !checkCond(step.done))) return ch.region;
+  return null;
 }
 
 /** H:MM (GB convention) for the STATUS play-time line. */

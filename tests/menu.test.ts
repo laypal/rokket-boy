@@ -13,7 +13,9 @@ vi.mock('../src/engine/renderer', () => ({
   drawWindow: vi.fn(),
   rect: vi.fn(), // MNU.1 — partyDraw's xp mini-bars
   text: vi.fn(),
-  ctx: { drawImage: vi.fn() }, // MNU.3 — monDetail.ts's front-sprite draw
+  // MNU.3 — monDetail.ts's front-sprite draw; save/clip et al are F44's
+  // mapScreen world field, which clips the scrolling parchment.
+  ctx: { drawImage: vi.fn(), save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), rect: vi.fn(), clip: vi.fn() },
   decode: vi.fn(() => ({})), // MNU.3 — same
   W: 160,
   H: 144,
@@ -44,8 +46,11 @@ import {
   PARTY_WIN,
   PARTY_FOOTER_Y,
   ITEM_PICKER_CAP,
+  MENU_WIN_H,
 } from '../src/systems/menu';
 import { isRankLadderOpen, closeRankLadder } from '../src/systems/rankLadder';
+import { isMapScreenOpen, closeMapScreen, mapCursor } from '../src/systems/mapScreen';
+import { MAPS } from '../src/data/maps';
 import { text } from '../src/engine/renderer';
 import { G } from '../src/state';
 import { quest, resetQuest, currentObjective, RANKS } from '../src/systems/quest';
@@ -80,7 +85,7 @@ describe('menuHelp', () => {
     expect(menuHelp('NOPE')).toBe('');
   });
   it('every known blurb fits the help bar (≤17 chars)', () => {
-    for (const item of ['PACK', 'PARTY', 'STATUS', 'SAVE', 'SOUND', 'HELP', 'CLOSE']) {
+    for (const item of ['PACK', 'PARTY', 'STATUS', 'MAP', 'SAVE', 'SOUND', 'HELP', 'CLOSE']) {
       expect(menuHelp(item).length, `${item}: "${menuHelp(item)}"`).toBeLessThanOrEqual(17);
     }
   });
@@ -721,5 +726,50 @@ describe('FB review: PACK window scrolls past 5 distinct items', () => {
     vi.mocked(text).mockClear();
     menuDraw(BG_PAL.green);
     expect(text).toHaveBeenCalledWith('SODA x1', 16, 32, BG_PAL.green[0]);
+  });
+});
+
+// ── F42 MAP.1: the eighth START row + its sub-screen wiring ────────────────
+describe('F42 MAP.1: the MAP row', () => {
+  function frame(): void {
+    menuUpdate();
+    keys.pressed.clear();
+  }
+  function tap(k: string): void {
+    keys.pressed.add(k);
+    frame();
+  }
+  beforeEach(() => {
+    resetQuest();
+    keys.down.clear();
+    keys.pressed.clear();
+    G.map = MAPS.hq;
+    quest.visited = new Set(['hq']);
+    openMenu();
+  });
+  afterEach(() => {
+    if (isMapScreenOpen()) closeMapScreen();
+  });
+
+  it('sits between STATUS and SAVE, and the window grew to fit eight rows (A4)', () => {
+    expect(G.menu!.items).toEqual(['PACK', 'PARTY', 'STATUS', 'MAP', 'SAVE', 'SOUND', 'HELP', 'CLOSE']);
+    expect(MENU_WIN_H).toBe(8 + 7 * 13 + 8 + 8); // last row's glyph line + drawWindow's chrome = 115
+    expect(MENU_WIN_H).toBeLessThan(128); // clear of the help bar
+    expect(menuHelp('MAP')).toBe('WHERE TO GO.');
+  });
+
+  it('A on MAP opens the screen on the player\'s region; its B lands back on the column', () => {
+    tap('down');
+    tap('down');
+    tap('down'); // STATUS → MAP
+    tap('a');
+    expect(G.menu!.sub).toBe('map');
+    expect(isMapScreenOpen()).toBe(true);
+    expect(mapCursor()).toBe('hq');
+    menuDraw(BG_PAL.hq); // draws without throwing under the mocks
+    tap('b');
+    expect(isMapScreenOpen()).toBe(false);
+    expect(G.menu!.sub).toBeNull();
+    expect(G.state).toBe('menu');
   });
 });

@@ -15,6 +15,7 @@ import { quest } from './quest';
 import { MAPS } from '../data/maps';
 import { SPECIES } from '../data/mons';
 import { maxHp, LEVEL_CAP } from './mon';
+import { seenFromB64, seenToB64 } from './seen';
 
 export interface SaveV1 {
   version: 1;
@@ -67,6 +68,16 @@ export type SaveV3 = Omit<SaveV2, 'version'> & {
 export type SaveV4 = Omit<SaveV3, 'version'> & {
   version: 4;
   pickups: string[];
+};
+
+/** V5 (F42 MAP.0): every map landed on (`quest.visited`) — the start-menu
+ *  MAP's discovery set. A v≤4 blob seeds it with the map it was saved on;
+ *  the rest of the black fills in on the next walk-through (PLAN §0 A5). */
+export type SaveV5 = Omit<SaveV4, 'version'> & {
+  version: 5;
+  visited: MapId[];
+  /** F44 WM.1: per-map seen bitmaps, base64, only maps that have one. */
+  seen: Partial<Record<MapId, string>>;
 };
 
 export interface SaveStorage {
@@ -126,7 +137,7 @@ export function sessionOnlyWarning(): boolean {
   return true;
 }
 
-export function snapshot(): SaveV4 {
+export function snapshot(): SaveV5 {
   // §4.8 (1f.4): serialize each populated map's HEAT runtime. `guardPositions`
   // is NOT emitted here — it needs moving guards (1f.6); the field stays
   // optional. Empty G.heatState → {}, so calm saves are byte-identical to 1f.2.
@@ -137,7 +148,7 @@ export function snapshot(): SaveV4 {
     heat[id] = { stage: h.stage, decayAt: h.decayAt, lockdownAt: h.lockdownAt };
   }
   return {
-    version: 4,
+    version: 5,
     flags: { ...quest.flags },
     party: G.party.map((m) => ({ ...m, moves: [...m.moves] })),
     box: G.box.map((m) => ({ ...m, moves: [...m.moves] })),
@@ -153,6 +164,10 @@ export function snapshot(): SaveV4 {
     heat,
     job: quest.job ? { ...quest.job } : null,
     pickups: [...quest.pickups],
+    visited: [...quest.visited],
+    seen: Object.fromEntries(
+      Object.entries(quest.seen).filter(([, s]) => s).map(([id, s]) => [id, seenToB64(s!)]),
+    ),
   };
 }
 
@@ -183,7 +198,7 @@ export function writeSave(): void {
   }
 }
 
-export function readSave(): SaveV4 | null {
+export function readSave(): SaveV5 | null {
   try {
     const raw = store().read();
     if (!raw) return null;
@@ -256,10 +271,10 @@ function migrateMon(raw: unknown): MonInstance | null {
  *  repair to their default. Party/box elements are validated individually
  *  (invalid ones dropped); an empty repaired party rejects the save. flags
  *  must be a plain object; vars/heat repair to {} when they aren't. */
-export function migrate(raw: unknown): SaveV4 | null {
+export function migrate(raw: unknown): SaveV5 | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const s = raw as Partial<SaveV1> & Partial<SaveV2> & Partial<SaveV3> & Partial<SaveV4>;
-  if (s.version !== 1 && s.version !== 2 && s.version !== 3 && s.version !== 4) return null;
+  const s = raw as Partial<SaveV1> & Partial<SaveV2> & Partial<SaveV3> & Partial<SaveV4> & Partial<SaveV5>;
+  if (s.version !== 1 && s.version !== 2 && s.version !== 3 && s.version !== 4 && s.version !== 5) return null;
   if (!Array.isArray(s.party) || s.party.length < 1) return null;
   if (typeof s.mapId !== 'string' || !(s.mapId in MAPS)) return null;
   if (typeof s.x !== 'number' || !Number.isFinite(s.x)) return null;
@@ -277,8 +292,28 @@ export function migrate(raw: unknown): SaveV4 | null {
   const pickups = Array.isArray(s.pickups)
     ? s.pickups.filter((p): p is string => typeof p === 'string')
     : legacyFlags.gotSmoke === true ? ['hq_smoke'] : [];
+  // v≤4 → v5: the save's own map is the one place it has provably been;
+  // unknown ids in a v5 array are dropped, and the current map is always
+  // present so the MAP never opens with the player's own region blacked out.
+  const visited = new Set<MapId>(
+    Array.isArray(s.visited) ? s.visited.filter((m): m is MapId => typeof m === 'string' && m in MAPS) : [],
+  );
+  visited.add(s.mapId);
+  // F44 WM.1: keep only blobs that decode to exactly their map's byte length
+  // — a bad/short blob must never invalidate the save (drop that map's field).
+  const seen: Partial<Record<MapId, string>> = {};
+  if (isPlainObject(s.seen)) {
+    for (const [id, blob] of Object.entries(s.seen)) {
+      // hasOwnProperty, not `in`: a hostile localStorage blob can carry
+      // inherited keys like __proto__/constructor that `in` would accept.
+      if (!Object.prototype.hasOwnProperty.call(MAPS, id) || typeof blob !== 'string') continue;
+      const m = MAPS[id as MapId];
+      const decoded = seenFromB64(blob, m.w, m.h);
+      if (seenToB64(decoded) === blob) seen[id as MapId] = blob;
+    }
+  }
   return {
-    version: 4,
+    version: 5,
     flags: s.flags as Flags,
     party: party.slice(0, 4),
     box: Array.isArray(s.box)
@@ -296,6 +331,8 @@ export function migrate(raw: unknown): SaveV4 | null {
     heat: isPlainObject(s.heat) ? (s.heat as SaveV3['heat']) : {},
     job: migrateJob(s.job),
     pickups,
+    visited: [...visited],
+    seen,
   };
 }
 
@@ -320,11 +357,17 @@ export function repairItemBalls(maps: Record<string, MapDef>, pickups: Set<strin
  *  per-map HEAT runtime is restored into G.heatState; `guardPositions` is
  *  ignored — world.ts (1f.6) re-derives guard placement, the timers are what
  *  must survive a reload. */
-export function applySave(save: SaveV4): void {
+export function applySave(save: SaveV5): void {
   quest.flags = { ...save.flags };
   quest.coins = save.coins;
   quest.eggs = new Set(save.eggs);
   quest.pickups = new Set(save.pickups);
+  quest.visited = new Set(save.visited);
+  quest.seen = {};
+  for (const [id, blob] of Object.entries(save.seen)) {
+    const m = MAPS[id as MapId];
+    quest.seen[id as MapId] = seenFromB64(blob, m.w, m.h);
+  }
   quest.vars = { ...save.vars };
   quest.items = [...save.items];
   quest.rank = save.rank;

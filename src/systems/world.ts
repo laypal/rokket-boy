@@ -10,11 +10,13 @@ import { CHARSETS } from '../data/chars';
 import { mirrorRows, stack, BTN_A, type SpriteRows } from '../data/sprites';
 import { ctx, decode, fill, drawWindow, text, W, H, TILE } from '../engine/renderer';
 import { startFade } from '../engine/renderer';
+import { TODO_BOB } from '../engine/easing';
 import { cameraFor } from './camera';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
 import { CHAR_FRAMES, ensurePlayerFrames } from '../engine/charFrames';
 import { quest, checkCond } from './quest';
+import { markSeen, newSeen } from './seen';
 import { openDialog, openChoice } from './dialog';
 import { runScript, type ScriptHooks } from './script';
 import { openMenu } from './menu';
@@ -181,10 +183,6 @@ export function sysMsgUp(): boolean {
   return sysMsgLines.length > 0;
 }
 
-// ONB.3 todo-marker bob — 32-frame cycle, 2px amplitude. Module constant,
-// never allocated per frame (QA.4).
-export const TODO_BOB = [0, 1, 2, 1] as const;
-
 // ── NPC-run cutscene (CH2.7) ─────────────────────────────────────────────
 const NPC_RUN_EVERY = 12; // frames per tile — 2× guard chase cadence: a RUN
 const NPC_RUN_MAX_STEPS = 40; // bounded — then snap adjacent, never hang
@@ -276,6 +274,13 @@ function addRustle(x: number, y: number): void {
 // dialog once the whiteout fade resolves at HQ (the pendingEnter idiom)
 let pendingCaught: string[][] | null = null;
 
+/** F44 WM.1: mark the lantern ring around the player on the current map. */
+function seeHere(): void {
+  const m = G.map;
+  const s = quest.seen[m.id] ?? (quest.seen[m.id] = newSeen(m.w, m.h));
+  markSeen(s, m.w, m.h, G.player.x, G.player.y);
+}
+
 // ── Warps ────────────────────────────────────────────────────────────────
 /** The landing half of a warp: map, player, state, name plate, music and the
  *  map's enter script queued. No fade, no autosave, no door sfx —
@@ -287,6 +292,7 @@ export function landAt(w: WarpDef): void {
   clearWorldFx(); // JCE.0: an fx is a tile on THIS map — never carry it over
   const [mapId, x, y, dir] = w;
   G.map = MAPS[mapId];
+  quest.visited.add(mapId); // F42 MAP.0: the MAP's discovery set — landing IS discovering
   dropDisguise(quest.flags, G.map); // CH4.1: the suit comes off anywhere it isn't declared
   const p = G.player;
   p.x = x;
@@ -294,6 +300,7 @@ export function landAt(w: WarpDef): void {
   p.dir = dir;
   p.moving = false;
   p.prog = 0;
+  seeHere(); // F44 WM.1
   G.state = 'world';
   G.mapNameT = 90;
   Audio2.play(G.map.music);
@@ -664,6 +671,7 @@ export function worldUpdate(): void {
       const [dx, dy] = DIRV[p.dir];
       p.x += dx;
       p.y += dy;
+      seeHere(); // F44 WM.1: the tile you arrived on, even if a warp fires next
       if (tryWarp()) return;
       // CH7.0 §2: a LIVE FLOOR tile bites the lead mon on arrival — before
       // the step: lookup so a mine on a live tile still shocks first. Boots

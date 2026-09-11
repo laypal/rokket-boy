@@ -11,7 +11,7 @@ import {
   type SaveStorage,
   type SaveV1,
   type SaveV2,
-  type SaveV4,
+  type SaveV5,
   type HeatSaveEntry,
   setSaveStorage,
   sessionOnlyWarning,
@@ -24,6 +24,7 @@ import {
   repairItemBalls,
 } from '../src/systems/save';
 import { SAVE_KEY } from '../src/systems/save';
+import { newSeen, markSeen, seenCount } from '../src/systems/seen';
 import { swapParty } from '../src/systems/menu';
 import type { JobContract } from '../src/systems/jobs';
 import { SPECIES } from '../src/data/mons';
@@ -75,7 +76,7 @@ describe('snapshot', () => {
     G.player.y = 4;
     G.playSeconds = 61.98;
     const s = snapshot();
-    expect(s.version).toBe(4);
+    expect(s.version).toBe(5);
     expect(s.heat).toEqual({});
     expect(s.flags.briefed).toBe(true);
     expect(s.coins).toBe(123);
@@ -182,8 +183,8 @@ describe('migrate', () => {
   it('rejects unknown versions (no downgrade guessing)', () => {
     // v2/v3/v4 are valid — the fixture moves one past the latest chain,
     // preserving the test's intent (no downgrade / future-version guessing).
-    const v5 = { ...snapshot(), version: 5 };
-    expect(migrate(v5)).toBeNull();
+    const v6 = { ...snapshot(), version: 6 };
+    expect(migrate(v6)).toBeNull();
   });
 
   it('rejects structural garbage', () => {
@@ -214,7 +215,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     };
     const out = migrate(v1);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(4);
+    expect(out!.version).toBe(5);
     expect(out!.heat).toEqual({});
     expect(out!.flags.briefed).toBe(true);
     expect(out!.party).toEqual(v1.party);
@@ -251,7 +252,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     const v2 = { ...snapshot(), heat, version: 2 } as unknown as SaveV2;
     const out = migrate(v2);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(4); // migrate always lands on the latest chain
+    expect(out!.version).toBe(5); // migrate always lands on the latest chain
     expect(out!.heat).toEqual(heat);
 
     // write/read round-trip through fakeStorage, driving the real V2 blob
@@ -270,7 +271,7 @@ describe('migrate — V2 chain (1f.2)', () => {
     expect(garbageHeat).not.toBeNull();
     expect(garbageHeat!.heat).toEqual({});
 
-    const missingHeat = { ...base } as Partial<SaveV4>;
+    const missingHeat = { ...base } as Partial<SaveV5>;
     delete missingHeat.heat;
     const out = migrate(missingHeat);
     expect(out).not.toBeNull();
@@ -280,7 +281,7 @@ describe('migrate — V2 chain (1f.2)', () => {
   it('rejects structural garbage and future versions', () => {
     expect(migrate(null)).toBeNull();
     expect(migrate({})).toBeNull();
-    expect(migrate({ ...snapshot(), version: 5 })).toBeNull();
+    expect(migrate({ ...snapshot(), version: 6 })).toBeNull();
   });
 });
 
@@ -292,7 +293,7 @@ describe('migrate — V3 chain (SIDE.1 job board)', () => {
     delete v2.job;
     const out = migrate(v2);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(4);
+    expect(out!.version).toBe(5);
     expect(out!.job).toBeNull();
   });
 
@@ -503,7 +504,7 @@ describe('migrate — V4 chain (SIDE.6 pickups)', () => {
     delete v3.pickups;
     const out = migrate(v3);
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(4);
+    expect(out!.version).toBe(5);
     expect(out!.pickups).toEqual([]);
   });
 
@@ -634,7 +635,7 @@ describe('migrate — deep validation + clamping (HRD.2)', () => {
     const job: JobContract = { kind: 'fetch', slot: 0, item: 'SODA', need: 2, payout: 170, base: 0 };
     const out = migrate({ ...base(), version: 1, heat: { corner: entry }, job });
     expect(out).not.toBeNull();
-    expect(out!.version).toBe(4);
+    expect(out!.version).toBe(5);
     expect(out!.heat).toEqual({ corner: entry });
     expect(out!.job).toEqual(job);
   });
@@ -708,5 +709,68 @@ describe('detectStorage falls back to memory when localStorage throws (HRD.8)', 
     expect(loaded!.coins).toBe(321); // round-tripped via memory, not localStorage
     expect(sessionOnlyWarning()).toBe(true); // detectStorage's catch sets persistent:false
     expect(sessionOnlyWarning()).toBe(false); // and warns exactly once
+  });
+});
+
+describe('migrate — V5 chain (F42 MAP.1 visited)', () => {
+  it('upgrades a V4 blob (no visited field) to V5 seeded with the map it was saved on', () => {
+    const v4 = { ...snapshot(), version: 4 as const, mapId: 'dock' } as Record<string, unknown>;
+    delete v4.visited;
+    const out = migrate(v4);
+    expect(out).not.toBeNull();
+    expect(out!.version).toBe(5);
+    expect(out!.visited).toEqual(['dock']);
+  });
+
+  it('keeps an explicit visited list, always adds the current map, drops unknown ids', () => {
+    const out = migrate({ ...snapshot(), mapId: 'corner', visited: ['hq', 'moon1', 'nowhere', 7, null] });
+    expect(out!.visited.sort()).toEqual(['corner', 'hq', 'moon1']);
+    for (const bad of ['yes', 7, { a: 1 }, null]) {
+      const lenient = migrate({ ...snapshot(), mapId: 'hq', visited: bad });
+      expect(lenient!.visited).toEqual(['hq']);
+    }
+  });
+
+  it('round-trips the discovery set through write/read/apply', () => {
+    quest.visited = new Set(['hq', 'corner', 'moon1']);
+    writeSave();
+    resetQuest();
+    expect(quest.visited.size).toBe(0);
+    const loaded = readSave();
+    applySave(loaded!);
+    expect([...quest.visited].sort()).toEqual(['corner', 'hq', 'moon1']);
+    MAPS.hq.grid[9][5] = 'b'; // applySave blanked the real HQ ball — restore module data
+  });
+
+  it('seen: snapshot serialises each map bitmap as base64 and apply restores it', () => {
+    quest.seen.hq = newSeen(MAPS.hq.w, MAPS.hq.h);
+    markSeen(quest.seen.hq, MAPS.hq.w, MAPS.hq.h, 9, 7);
+    const snap = snapshot();
+    expect(typeof snap.seen.hq).toBe('string');
+    expect(snap.seen.corner).toBeUndefined();
+    writeSave();
+    resetQuest();
+    applySave(readSave()!);
+    expect(seenCount(quest.seen.hq!)).toBe(37);
+    MAPS.hq.grid[9][5] = 'b'; // applySave blanked the real HQ ball — restore module data
+  });
+
+  it('seen: applySave drops bitmaps for maps the save does not carry', () => {
+    quest.seen.hq = newSeen(MAPS.hq.w, MAPS.hq.h);
+    markSeen(quest.seen.hq, MAPS.hq.w, MAPS.hq.h, 9, 7);
+    writeSave(); // snapshot at this point carries only quest.seen.hq
+    quest.seen.corner = newSeen(MAPS.corner.w, MAPS.corner.h);
+    applySave(readSave()!); // no resetQuest() — the saved blob must still win
+    expect(quest.seen.corner).toBeUndefined();
+    expect(seenCount(quest.seen.hq!)).toBe(37);
+    MAPS.hq.grid[9][5] = 'b'; // applySave blanked the real HQ ball — restore module data
+  });
+
+  it('seen: a v4 blob gets {}, unknown ids and wrong-length blobs drop', () => {
+    const v4 = { ...snapshot(), version: 4 as const } as Record<string, unknown>;
+    delete v4.seen; delete v4.visited;
+    expect(migrate(v4)!.seen).toEqual({});
+    const out = migrate({ ...snapshot(), seen: { hq: 'AAAA', nowhere: 'AAAA', corner: 7 } });
+    expect(Object.keys(out!.seen)).toEqual([]); // 'AAAA' is 3 bytes, hq needs 35 — dropped
   });
 });

@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   tileAt, isBlocked, warpAt, performWarp, worldUpdate, landAt,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
-  todoMarkersActive, TODO_BOB, npcTodo, shakeFramesLeft,
+  todoMarkersActive, npcTodo, shakeFramesLeft,
 } from '../src/systems/world';
+import { TODO_BOB } from '../src/engine/easing';
 import { playWorldFx, activeWorldFx, clearWorldFx } from '../src/systems/worldFx';
 import { MAPS } from '../src/data/maps';
 import { WALKABLE } from '../src/data/tiles';
@@ -13,6 +14,7 @@ import { setHeat, calmHeat, type HeatState } from '../src/systems/heat';
 import { tourActive, resetTour } from '../src/systems/tour';
 import { makeMon, maxHp } from '../src/systems/mon';
 import { SPECIES } from '../src/data/mons';
+import { seenCount, isSeen } from '../src/systems/seen';
 import type { MapDef, NpcDef, MapId, Dir } from '../src/types';
 
 beforeEach(() => resetQuest());
@@ -677,6 +679,14 @@ describe('drill map lockdown (SIDE.5 training exemption)', () => {
     expect(heatTick()).toBe(true);
     expect(quest.coins).toBe(90);
     expect(G.state).toBe('worldwait');
+    // drain the queued bust dialog so it can't leak into a later test
+    G.state = 'world';
+    G.fade = 0;
+    G.fadeDir = 0;
+    G.afterFade = null;
+    worldUpdate();
+    G.dialog = null;
+    G.state = 'world';
   });
 });
 
@@ -896,5 +906,39 @@ describe('JCE.4 lift pads: performWarp from a `W` tile queues a spark before the
     G.fade = 0;
     G.fadeDir = 0;
     G.state = 'world';
+  });
+});
+
+describe('F44 WM.1: seen bitmaps are written on landing and on every completed step', () => {
+  beforeEach(() => { resetQuest(); });
+
+  it('landAt marks the lantern ring on the destination map', () => {
+    landAt(['hq', 9, 7, 'down']);
+    const s = quest.seen.hq!;
+    expect(isSeen(s, MAPS.hq.w, 9, 7)).toBe(true);
+    expect(isSeen(s, MAPS.hq.w, 12, 7)).toBe(true);
+    expect(seenCount(s)).toBe(37);
+  });
+
+  it('a completed step marks the new tile\'s ring; a second map keeps its own bitmap', () => {
+    // a settled save (hq's onboarding gauntlet already done — see
+    // tour-content.test.ts's "returning save" convention) so landAt's
+    // queued enter script is a no-op and doesn't eat the movement tick.
+    quest.flags.introSeen = true;
+    quest.flags.introToured = true;
+    quest.flags.briefed = true;
+    landAt(['hq', 9, 7, 'down']);
+    worldUpdate(); // drains the (now no-op) enter script queued by landAt
+    const before = seenCount(quest.seen.hq!);
+    // walk one tile up: the player can stand on (9,6) in HQ (floor)
+    G.player.dir = 'up';
+    G.player.moving = true;
+    G.player.prog = 16; // one tick completes the step
+    worldUpdate();
+    expect(G.player.y).toBe(6);
+    expect(seenCount(quest.seen.hq!)).toBeGreaterThan(before);
+    landAt(['corner', 5, 5, 'down']);
+    expect(quest.seen.corner).toBeDefined();
+    expect(seenCount(quest.seen.hq!)).toBeGreaterThan(before); // untouched by the other map
   });
 });

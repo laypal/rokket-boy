@@ -19,13 +19,14 @@ import { ALERT_IDX, type Palette } from '../data/palettes';
 import { listInput, flash, tickFlash } from './ui/listScreen';
 import { isRankLadderOpen, openRankLadder, rankLadderUpdate, rankLadderDraw } from './rankLadder';
 import { detailPage, monDetailDraw, pageIndex } from './monDetail';
+import { isMapScreenOpen, openMapScreen, mapScreenUpdate, mapScreenDraw } from './mapScreen';
 
 export function openMenu(): void {
   Audio2.sfx('confirm');
   G.menu = {
     sel: 0,
     sub: null,
-    items: ['PACK', 'PARTY', 'STATUS', 'SAVE', 'SOUND', 'HELP', 'CLOSE'],
+    items: ['PACK', 'PARTY', 'STATUS', 'MAP', 'SAVE', 'SOUND', 'HELP', 'CLOSE'], // F42 A4: MAP between STATUS and SAVE
     openFrame: G.frame,
   };
   G.state = 'menu';
@@ -33,12 +34,18 @@ export function openMenu(): void {
 
 let saveMsg: string[] = [];
 
+// F42 A4: eight rows at 8 + i*13 — the last glyph line ends at 8+7·13+8 =
+// 107, plus drawWindow's 8px of chrome = 115 (was 102 for seven rows),
+// still clear of the 128 help bar. Exported for the geometry pin.
+export const MENU_WIN_H = 115;
+
 // QOL.10: START menu footer blurb, one line per entry — shown while the
 // menu is open and no sub-screen has been entered yet (m.sub null).
 const MENU_HELP: Record<string, string> = {
   PACK: 'ITEMS YOU CARRY.',
   PARTY: 'YOUR MONS. HEAL.',
   STATUS: 'RANK+JOB READOUT.',
+  MAP: 'WHERE TO GO.',
   SAVE: 'RECORD PROGRESS.',
   SOUND: 'VOLUME + MUTE.',
   HELP: 'CONTROLS CHEAT.',
@@ -118,6 +125,13 @@ export function menuUpdate(): void {
       packUpdate();
       return;
     }
+    if (m.sub === 'map') {
+      // F42 MAP.1: the map owns input (cursor + its own B); once it has
+      // closed itself we fall back to the menu column on this same frame.
+      mapScreenUpdate();
+      if (!isMapScreenOpen()) m.sub = null;
+      return;
+    }
     if (m.sub === 'status') {
       // RNK.2: while the ladder is open it owns input — status nav pauses,
       // and its own B/start closes it back to STATUS, not out of the menu.
@@ -163,6 +177,7 @@ export function menuUpdate(): void {
       if (m.sub === 'party') pn = { mode: 'list', monSel: 0, itemSel: 0, msg: null, msgT: 0, heal: null, moveSrc: null };
       if (m.sub === 'pack') packNav = { sel: 0, msg: null, msgT: 0 };
       if (m.sub === 'status') statusNav = { sel: 0 };
+      if (m.sub === 'map') openMapScreen();
       if (m.sub === 'save') {
         writeSave();
         Audio2.sfx('save'); // JCE.1
@@ -228,7 +243,7 @@ export function menuDraw(pal: Palette): void {
   // openFrame is old so the offset is already 0.
   const p = tween(G.frame - m.openFrame, msToFrames(DUR.menuOpen), EASE.decelerate);
   const dx = Math.round(lerp(72, 0, p));
-  drawWindow(88 + dx, 0, 72, 102, pal);
+  drawWindow(88 + dx, 0, 72, MENU_WIN_H, pal);
   m.items.forEach((it, i) => {
     text(it, 104 + dx, 8 + i * 13, pal[0]);
     if (i === m.sel) text('>', 94 + dx, 8 + i * 13, pal[0]);
@@ -248,6 +263,8 @@ export function menuDraw(pal: Palette): void {
   }
   if (m.sub === 'party') {
     partyDraw(pal);
+  } else if (m.sub === 'map') {
+    mapScreenDraw(pal);
   } else if (m.sub === 'pack') {
     const p = packNav!;
     const entries = packCounts(quest.items);

@@ -63,13 +63,14 @@ async function press(page: Page, key: string): Promise<void> {
 }
 
 // Open the pause menu and select SAVE. Pause-menu order (src/systems/
-// menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/SAVE(3)/SOUND(4)/HELP(5)/
-// CLOSE(6) — 3 Downs from the default PACK cursor lands on SAVE. Selecting
-// it calls writeSave() immediately and opens a "SAVED!" sub-window.
+// menu.ts openMenu): PACK(0)/PARTY(1)/STATUS(2)/MAP(3)/SAVE(4)/SOUND(5)/HELP(6)/
+// CLOSE(7) — 4 Downs from the default PACK cursor lands on SAVE (F42 MAP.1
+// added the MAP row). Selecting it calls writeSave() immediately and opens
+// a "SAVED!" sub-window.
 async function saveViaMenu(page: Page): Promise<void> {
   await press(page, 'Enter');
   await page.waitForFunction(() => window.__debug.G.state === 'menu', undefined, { timeout: 5_000 });
-  for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
+  for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
   await press(page, 'z'); // SAVE -> writeSave() + "SAVED!" window
 }
 
@@ -100,7 +101,7 @@ test('manual SAVE writes a current-version save', async ({ page }) => {
 
   const save = await readSaveFromStorage(page);
   expect(save).not.toBeNull();
-  expect(save!.version).toBe(4); // SaveV2 since 1f.2; SaveV3 since SIDE.1; SaveV4 since SIDE.6
+  expect(save!.version).toBe(5); // SaveV2 since 1f.2; SaveV3 since SIDE.1; SaveV4 since SIDE.6; SaveV5 since F42 MAP.1
   expect(save!.coins).toBe(321);
   expect(save!.party.length).toBe(1);
   expect(save!.party[0].species).toBe('koffink');

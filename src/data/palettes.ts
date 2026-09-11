@@ -33,6 +33,7 @@ export const BG_PAL: Record<string, Palette> = {
   lavendar: ['#0c0814', '#3a2458', '#7a58a8', '#e0d0f0', ALERT], // CH5.0 §11 — LAVENDAR TOWER, purple; shade 0 is the fog
   sylph: ['#0a1418', '#1e4a58', '#4a9aa8', '#d8f0f0', ALERT],    // CH6.0 §12 — SYLPHCO TOWER, a cold corporate teal
   plant: ['#0c0a04', '#5a4c10', '#c8b020', '#f8f0c0', ALERT],    // CH7.0 §2/§9 — KANTOO POWER PLANT, electric yellow; `~` vents and `spark` recolour through it
+  parchment: ['#5a3418', '#a86a34', '#e0b070', '#f4dcb0', ALERT], // F44 — the MAP's own paper: ink, sepia, tan, cream
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent

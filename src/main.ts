@@ -9,6 +9,7 @@ import { registerState, startLoop } from './engine/loop';
 import { worldUpdate, worldDraw } from './systems/world';
 import { dialogUpdate, drawDialogBox } from './systems/dialog';
 import { menuUpdate, menuDraw } from './systems/menu';
+import { mapCursor, mapMode, mapDetailMap } from './systems/mapScreen';
 import { battleUpdate, startBattle, battleTrace } from './systems/battle';
 import { battleDraw } from './systems/battleDraw';
 import { lockerUpdate, lockerDraw, openLocker } from './systems/locker';
@@ -141,6 +142,15 @@ if (import.meta.env.DEV) {
     openCardFlip: (seed?: number) => openCardFlip(() => {}, seed),
     // drives the REAL rankUp contract (interpreter + worldHooks), not a shortcut
     rankUp: () => runScript([{ rankUp: true }], worldHooks),
+    // F42 MAP.1: the MAP screen's cursor region (null while it is closed) —
+    // read-only, so e2e can assert a cursor step through real key presses.
+    mapCursor,
+    // F44 WM.3: which half of the MAP is up — 'world' (the scrolling
+    // parchment) or 'detail' (one map drilled into); null while it is closed.
+    mapMode,
+    // F44 WM.3: the map id the detail view is showing, null in world mode —
+    // read-only, so e2e can assert an A-press drilled into the right map.
+    mapDetailMap,
     // 1f.8: drives the REAL heat hook (interpreter + worldHooks), not a direct
     // G.heatState mutation. advanceTime only bumps playSeconds — the running
     // loop's next worldUpdate tick applies decay/expiry (heat.ts is pure and
@@ -335,6 +345,10 @@ if (import.meta.env.DEV) {
       ] as const) quest.flags[f] = true;
       quest.rank = 'LIEUTENANT';
       if (quest.coins < 300) quest.coins = 300;
+      // F42 MAP.1 playtest: CH5's first step is `hasItem: 'SILF SCOPE'` — a
+      // seed that skips it must grant the item, or the objective walk (STATUS
+      // line, MAP target) stays parked on CH5.
+      if (!quest.items.includes('SILF SCOPE')) quest.items.push('SILF SCOPE');
       runScript([{ warp: ['syl1', 9, 10, 'up'] }], worldHooks);
       console.error('[__debug.ch6] CH1–5 done, LIEUTENANT, inside SYLPHCO 1F — DJames on the lift pad at (3,4)');
     },
@@ -354,6 +368,9 @@ if (import.meta.env.DEV) {
       quest.rank = 'EXECUTIVE';
       if (quest.coins < 300) quest.coins = 300;
       if (!quest.items.includes('PRO BALL')) quest.items.push('PRO BALL', 'PRO BALL', 'PRO BALL');
+      // the item-gated steps of CH5/CH6 (see ch6 above) — without these the
+      // MAP flashed LAVENDAR and STATUS read FIND THE SCOPE on a CH7 seed
+      for (const it of ['SILF SCOPE', 'CARD KEY']) if (!quest.items.includes(it)) quest.items.push(it);
       runScript([{ warp: ['plant1', 9, 10, 'up'] }], worldHooks);
       console.error('[__debug.ch7] CH1–6 done, EXECUTIVE, 3 PRO BALLs, inside POWER PLANT 1F — Myowth beside the door at (8,10)');
     },

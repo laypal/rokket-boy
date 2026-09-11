@@ -135,3 +135,8 @@ export function progress(elapsed: number, duration: number): number {
 export function tween(elapsed: number, duration: number, ease: Easing = EASE.standard): number {
   return ease(progress(elapsed, duration));
 }
+
+/** ONB.3 todo-marker bob — 32-frame cycle, 2px amplitude, indexed
+ *  `TODO_BOB[(frame >> 3) & 3]`. Module constant, never allocated per frame
+ *  (QA.4). Shared by the world's `!` markers and the MAP's target flash. */
+export const TODO_BOB = [0, 1, 2, 1] as const;

@@ -8,7 +8,9 @@ import { vi } from 'vitest';
 const keys = { down: new Set<string>(), pressed: new Set<string>() };
 
 vi.mock('../src/engine/renderer', () => ({
-  ctx: { drawImage: vi.fn() },
+  // save/clip et al are F44's mapScreen world field, which clips the
+  // scrolling parchment.
+  ctx: { drawImage: vi.fn(), save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), rect: vi.fn(), clip: vi.fn() },
   decode: vi.fn(() => ({})),
   fill: vi.fn(),
   rect: vi.fn(),
