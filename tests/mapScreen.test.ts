@@ -19,7 +19,7 @@ import {
   mapScreenUpdate, mapScreenDraw, MAP_NAME_CAP, FIELD, mapDetailMap,
   tileClass, seenEdge,
 } from '../src/systems/mapScreen';
-import { newSeen, markSeen, seenCount } from '../src/systems/seen';
+import { newSeen, markSeen, seenCount, isSeen } from '../src/systems/seen';
 import { TILES, WALKABLE } from '../src/data/tiles';
 import { REGIONS, regionById, type RegionId } from '../src/data/region';
 import { WORLD_TILES, FOG_CHAR, MINI } from '../src/data/worldMap';
@@ -27,7 +27,7 @@ import { rect, text, ctx } from '../src/engine/renderer';
 import { Audio2 } from '../src/engine/audio';
 import { G } from '../src/state';
 import { MAPS } from '../src/data/maps';
-import { quest, resetQuest } from '../src/systems/quest';
+import { quest, resetQuest, npcGone } from '../src/systems/quest';
 import { BG_PAL } from '../src/data/palettes';
 import type { MapId } from '../src/types';
 
@@ -174,7 +174,7 @@ describe('tileClass — the symbolic legend, lint-pinned to tiles.ts', () => {
   });
 
   it('the spot checks that pin the glyph choices', () => {
-    expect(tileClass('#')).toBe('wall'); expect(tileClass('=')).toBe('wall');
+    expect(tileClass('#')).toBe('wall'); expect(tileClass('=')).toBe('wall'); expect(tileClass('&')).toBe('wall'); // & = cave rock wall (F46 ART.4)
     expect(tileClass(' ')).toBe('floor'); expect(tileClass(',')).toBe('floor'); expect(tileClass('_')).toBe('floor');
     expect(tileClass('w')).toBe('water'); expect(tileClass('.')).toBe('void');
     expect(tileClass('~')).toBe('floor'); // RUBBLE is walkable, not water
@@ -209,6 +209,65 @@ describe('the detail screen', () => {
     markSeen(quest.seen.dock, MAPS.dock.w, MAPS.dock.h, 8, 6);
     if (isMapScreenOpen()) closeMapScreen();
     openMapScreen(); frame('a'); // cursor starts on dock (the player's region) → detail
+  });
+
+  it('MAP.2: every live NPC on a seen tile draws a person glyph; unseen and gone NPCs draw nothing', () => {
+    const s = quest.seen.dock!;
+    markSeen(s, MAPS.dock.w, MAPS.dock.h, 4, 6); // Jessika's tile (todoIf notFlag ch4Suit → `!` on a fresh save)
+    mapScreenDraw(BG_PAL.hq);
+    const imgs = vi.mocked(ctx.drawImage).mock.calls.map((c) => (c[0] as unknown as { _id: string })._id);
+    const live = MAPS.dock.npcs.filter((p) => !npcGone(p));
+    const seenNpcs = live.filter((p) => isSeen(s, MAPS.dock.w, p.x, p.y)).length;
+    expect(seenNpcs).toBe(1); expect(live.length).toBeGreaterThan(1); // the sailor at (12,5) is outside the rings; the chief is goneIf
+    expect(imgs.filter((id) => id === MINI.npc._id).length).toBe(1);
+    expect(imgs.filter((id) => id === MINI.todo._id).length).toBe(1);
+    expect(imgs).not.toContain(MINI.fight._id); // nobody on the dock battles
+  });
+
+  it('MAP.2: a heat guard draws the fight glyph; a scripted trainer does too until its goneIf hides it', () => {
+    closeMapScreen();
+    G.map = MAPS.hqDrill; G.player.x = 5; G.player.y = 5;
+    quest.visited = new Set<MapId>(['hqDrill']); // the region opens on its FIRST visited map
+    quest.seen.hqDrill = newSeen(MAPS.hqDrill.w, MAPS.hqDrill.h);
+    markSeen(quest.seen.hqDrill, MAPS.hqDrill.w, MAPS.hqDrill.h, 7, 4); // the drill guard's own tile
+    openMapScreen(); frame('a');
+    vi.mocked(ctx.drawImage).mockClear(); mapScreenDraw(BG_PAL.hq);
+    let imgs = vi.mocked(ctx.drawImage).mock.calls.map((c) => (c[0] as unknown as { _id: string })._id);
+    expect(imgs.filter((id) => id === MINI.fight._id).length).toBe(1);
+    expect(imgs).not.toContain(MINI.npc._id);
+    // the bridge camper battles through his script (a `battle` step), then goneIf hides him
+    closeMapScreen();
+    G.map = MAPS.bridge; G.player.x = 5; G.player.y = 16;
+    quest.visited = new Set<MapId>(['bridge']);
+    quest.seen.bridge = newSeen(MAPS.bridge.w, MAPS.bridge.h);
+    markSeen(quest.seen.bridge, MAPS.bridge.w, MAPS.bridge.h, 5, 15);
+    openMapScreen(); frame('a');
+    vi.mocked(ctx.drawImage).mockClear(); mapScreenDraw(BG_PAL.hq);
+    imgs = vi.mocked(ctx.drawImage).mock.calls.map((c) => (c[0] as unknown as { _id: string })._id);
+    expect(imgs.filter((id) => id === MINI.fight._id).length).toBeGreaterThanOrEqual(1);
+    quest.flags.spanCamper = true;
+    vi.mocked(ctx.drawImage).mockClear(); mapScreenDraw(BG_PAL.hq);
+    imgs = vi.mocked(ctx.drawImage).mock.calls.map((c) => (c[0] as unknown as { _id: string })._id);
+    const fightsBefore = MAPS.bridge.npcs.filter((p) => isSeen(quest.seen.bridge!, MAPS.bridge.w, p.x, p.y) && p.id !== 'camper').length;
+    expect(imgs.filter((id) => id === MINI.fight._id).length).toBe(fightsBefore); // beaten → gone → nothing, not "plain"
+  });
+
+  it('MAP.2: a todo NPC carries the `!` in the tile above; it clears when the todoIf no longer holds', () => {
+    closeMapScreen();
+    G.map = MAPS.hq; G.player.x = 7; G.player.y = 5;
+    quest.visited = new Set<MapId>(['hq']);
+    quest.seen.hq = newSeen(MAPS.hq.w, MAPS.hq.h);
+    markSeen(quest.seen.hq, MAPS.hq.w, MAPS.hq.h, 7, 3); // Giovanni's tile
+    openMapScreen(); frame('a');
+    vi.mocked(ctx.drawImage).mockClear(); mapScreenDraw(BG_PAL.hq);
+    const calls = vi.mocked(ctx.drawImage).mock.calls;
+    const todo = calls.filter((c) => (c[0] as unknown as { _id: string })._id === MINI.todo._id);
+    const gio = calls.find((c) => (c[0] as unknown as { _id: string })._id === MINI.npc._id)!;
+    expect(todo.length).toBe(1);
+    expect(todo[0][1]).toBe(gio[1]); expect(todo[0][2]).toBe((gio[2] as number) - 8); // one tile up, same column
+    quest.flags.briefed = true; // CH1 briefing taken, nothing else pending → no `!`
+    vi.mocked(ctx.drawImage).mockClear(); mapScreenDraw(BG_PAL.hq);
+    expect(vi.mocked(ctx.drawImage).mock.calls.some((c) => (c[0] as unknown as { _id: string })._id === MINI.todo._id)).toBe(false);
   });
 
   it('opens on the player\'s own map and draws only seen tiles: 37 base rects at 8px, the grunt over the player', () => {

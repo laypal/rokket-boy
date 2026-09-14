@@ -4,7 +4,7 @@
 import { G, DIRV } from '../state';
 import type { Dir, MapDef, NpcDef, ScriptStep, WarpDef } from '../types';
 import { MAPS } from '../data/maps';
-import { TILES, WALKABLE } from '../data/tiles';
+import { TILES, WALKABLE, RUBBLE_KICK } from '../data/tiles';
 import { BG_PAL, OBJ_PAL } from '../data/palettes';
 import { CHARSETS } from '../data/chars';
 import { mirrorRows, stack, BTN_A, type SpriteRows } from '../data/sprites';
@@ -15,7 +15,7 @@ import { cameraFor } from './camera';
 import { Input } from '../engine/input';
 import { Audio2 } from '../engine/audio';
 import { CHAR_FRAMES, ensurePlayerFrames } from '../engine/charFrames';
-import { quest, checkCond } from './quest';
+import { quest, checkCond, npcGone, npcTodo } from './quest';
 import { markSeen, newSeen } from './seen';
 import { openDialog, openChoice } from './dialog';
 import { runScript, type ScriptHooks } from './script';
@@ -50,13 +50,6 @@ export function tileAt(map: MapDef, x: number, y: number): string {
 }
 export function setTile(map: MapDef, x: number, y: number, ch: string): void {
   map.grid[y][x] = ch;
-}
-export function npcGone(n: NpcDef): boolean {
-  return n.goneIf ? checkCond(n.goneIf) : false;
-}
-/** ONB.3: does this NPC wear the `!` right now? A gone NPC never does. */
-export function npcTodo(n: NpcDef): boolean {
-  return !!n.todoIf && !npcGone(n) && checkCond(n.todoIf);
 }
 export function npcAt(map: MapDef, x: number, y: number): NpcDef | null {
   for (const n of map.npcs) {
@@ -260,15 +253,26 @@ let hurtT = 0;
 export function hurtFramesLeft(): number {
   return hurtT;
 }
-// CH2.9 grass rustle — draw-only: a `~` tile jitters briefly when the player
-// steps onto it or starts walking off it. Module-local, never saved, and it
-// never touches the encounter roll (which stays keyed to step completion).
-const RUSTLE_FRAMES = 12;
-let rustles: { x: number; y: number; t: number }[] = [];
-function addRustle(x: number, y: number): void {
+// CH2.9 / JCE.9 rubble rustle — draw-only: when the player steps onto or
+// walks off a `~` tile its debris is kicked in the walk direction (2 px,
+// then 1 px, then settled — RUBBLE_KICK frames, ART.2) over one tile of
+// walking. Module-local, never saved, and it never touches the encounter
+// roll (which stays keyed to step completion).
+const RUSTLE_FRAMES = 16;
+let rustles: { x: number; y: number; t: number; dir: Dir }[] = [];
+function addRustle(x: number, y: number, dir: Dir): void {
   if (tileAt(G.map, x, y) !== ENCOUNTER_TILE) return;
   rustles = rustles.filter((r) => r.x !== x || r.y !== y);
-  rustles.push({ x, y, t: RUSTLE_FRAMES });
+  rustles.push({ x, y, t: RUSTLE_FRAMES, dir });
+}
+/** The live rustle on a tile (tests); undefined once it has settled. */
+export function rustleAt(x: number, y: number): { t: number; dir: Dir } | undefined {
+  return rustles.find((r) => r.x === x && r.y === y);
+}
+/** Which frame a rustling `~` shows: kicked 2 px for the first 6 frames,
+ *  1 px for the next 5, then the base tile while the timer runs out. */
+export function rustleFrame(r: { t: number; dir: Dir }): SpriteRows | undefined {
+  return r.t > 10 ? RUBBLE_KICK[r.dir][0] : r.t > 5 ? RUBBLE_KICK[r.dir][1] : undefined;
 }
 // 1f.14 caught explainer — queued at the lockdown bust, opened as a real
 // dialog once the whiteout fade resolves at HQ (the pendingEnter idiom)
@@ -698,7 +702,7 @@ export function worldUpdate(): void {
       }
       // CH2.9: arriving on grass rustles it — recorded BEFORE the roll so a
       // battle exit (which resumes on this exact tile) still shows the tail
-      addRustle(p.x, p.y);
+      addRustle(p.x, p.y, p.dir);
       // CH2.1 wild roll — fires ONLY here, on a completed WALK step: warp
       // arrivals returned above, scripts can't move the player, and standing
       // still never re-rolls. Position is untouched by the battle, so every
@@ -745,7 +749,7 @@ function tryMove(d: Dir): void {
   p.moving = true;
   p.prog = 0;
   sysMsgLines = []; // walking away is an answer too — the toast never eats a later A
-  addRustle(p.x, p.y); // CH2.9: the tile being walked OFF stirs as you leave
+  addRustle(p.x, p.y, d); // CH2.9: the tile being walked OFF is kicked as you leave
 }
 
 // ── Render ───────────────────────────────────────────────────────────────
@@ -787,13 +791,12 @@ export function worldDraw(): void {
     for (const r of rustles) r.t--;
     rustles = rustles.filter((r) => r.t > 0);
   }
-  const rustleJx = ((G.frame >> 2) & 1) === 1 ? 1 : -1;
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const frames = TILES[map.grid[y][x]] || TILES[' '];
-      const spr = frames[animF % frames.length];
-      const jx = rustles.some((r) => r.x === x && r.y === y) ? rustleJx : 0;
-      ctx.drawImage(decode(spr, pal), x * TILE - camX + jx, y * TILE - camY);
+      const r = rustles.length ? rustles.find((q) => q.x === x && q.y === y) : undefined;
+      const spr = (r && rustleFrame(r)) ?? frames[animF % frames.length];
+      ctx.drawImage(decode(spr, pal), x * TILE - camX, y * TILE - camY);
     }
   }
   // sprites (NPCs + player), y-sorted

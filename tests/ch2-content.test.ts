@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { runScript, type ScriptHooks } from '../src/systems/script';
 import { quest, resetQuest } from '../src/systems/quest';
-import { npcGone } from '../src/systems/world';
+import { npcGone } from '../src/systems/quest';
 import { moonDigScripts } from '../src/data/dialog/moonDig';
 import { moon1Scripts } from '../src/data/dialog/moon1';
 import { hqScripts } from '../src/data/dialog/hq';

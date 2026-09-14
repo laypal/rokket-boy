@@ -32,6 +32,16 @@ describe('map lints', () => {
     }
   });
 
+  it('every registered tile frame is 16x16 and uses only shade chars 0-3 or `.` (F46 ART.4 gate)', () => {
+    for (const [ch, frames] of Object.entries(TILES)) {
+      expect(frames.length, `tile "${ch}" has no frames`).toBeGreaterThan(0);
+      for (const [i, frame] of frames.entries()) {
+        expect(frame.length, `tile "${ch}" frame ${i} row count`).toBe(16);
+        for (const row of frame) expect(row, `tile "${ch}" frame ${i}`).toMatch(/^[0-3.]{16}$/);
+      }
+    }
+  });
+
   it('rubble shimmers: `~` carries two rectangular 16×16 frames (QOL.3)', () => {
     const frames = TILES['~'];
     expect(frames).toHaveLength(2);

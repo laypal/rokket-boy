@@ -2,7 +2,7 @@
 // rank ladder and chapter state machine (§4.7). Chapter progress is derived
 // from flags via Cond — nothing here persists beyond what SaveV1 already
 // carries, so the state machine costs no save-shape bump.
-import type { Cond, Flags, MapId } from '../types';
+import type { Cond, Flags, MapDef, MapId, NpcDef } from '../types';
 import type { JobContract } from './jobs';
 import type { RegionId } from '../data/region';
 import { RANK_REWARDS } from '../data/rankRewards';
@@ -141,6 +141,24 @@ export function varRoll(n: number, p: number): boolean {
   return mulberry32(0x51de7 + n * 7919)() < p;
 }
 
+/** Hidden + non-blocking when its goneIf holds. Lives here (not world.ts) so
+ *  the MAP screen can read it — menu sub-screens never import world.ts. */
+export function npcGone(n: NpcDef): boolean {
+  return n.goneIf ? checkCond(n.goneIf) : false;
+}
+/** ONB.3: does this NPC wear the `!` right now? A gone NPC never does. */
+export function npcTodo(n: NpcDef): boolean {
+  return !!n.todoIf && !npcGone(n) && checkCond(n.todoIf);
+}
+/** MAP.2: does talking to (or being seen by) this NPC start a battle? A heat
+ *  guard always does; a scripted trainer has a `battle` step somewhere in its
+ *  script. Derived, never a second data flag — a beaten trainer is `goneIf`
+ *  and draws nothing, so "beaten → plain" needs no extra state. */
+export function npcFights(m: MapDef, n: NpcDef): boolean {
+  if (n.heatGuard) return true;
+  const steps = m.scripts['npc:' + n.id]; // the world's talk key
+  return !!steps && JSON.stringify(steps).includes('"battle"');
+}
 export function checkCond(c: Cond): boolean {
   if ('flag' in c) return quest.flags[c.flag];
   if ('notFlag' in c) return !quest.flags[c.notFlag];

@@ -5,9 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import { SPECIES } from '../src/data/mons';
+import { BODY_DARK, HEADS } from '../src/data/chars';
 import { OBJ_PAL } from '../src/data/palettes';
 import {
-  formatSprite, paletteFor, parsePalette, parseSprite, pngToRows, replaceSprite, rowsToPng, validateRows,
+  formatSprite, paletteFor, parsePalette, parseSprite, pngToRows, replaceSprite, rowsToPng, toGpl, validateRows,
 } from '../scripts/sprite-io-lib.mjs';
 
 const CHARS = readFileSync(new URL('../src/data/chars.ts', import.meta.url), 'utf8');
@@ -63,7 +64,7 @@ describe('sprite-io: validator (the spriter agent step 4, as a function)', () =>
     bad[5] = '.'.repeat(27);
     bad[6] = '.'.repeat(27) + '9';
     expect(validateRows(bad)).toEqual(['row 5: width 27 (want 28)', 'row 6: bad char "9"']);
-    expect(validateRows(bad.slice(0, 10))).toContain('10 rows (want 28, 20 or 16)');
+    expect(validateRows(bad.slice(0, 10))).toContain('10 rows (want 28, 20, 16 or 8)');
   });
 });
 
@@ -88,6 +89,27 @@ describe('sprite-io: chars.ts / palettes.ts text parsing', () => {
     }
     expect(validateRows(parseSprite(TILES, 'T.WALL'))).toEqual([]);
     expect(parseSprite(replaceSprite(TILES, 'T.WALL', parseSprite(TILES, 'T.FLOOR')), 'T.WALL')).toEqual(parseSprite(TILES, 'T.FLOOR'));
+  });
+  it('TOOL.3: dotted paths reach nested charset frames and replace them indent-for-indent', () => {
+    expect(parseSprite(CHARS, 'BODY_DARK.d1')).toEqual([...BODY_DARK.d1]);
+    expect(parseSprite(CHARS, 'HEADS.grunt.u')).toEqual([...HEADS.grunt.u]);
+    expect(validateRows(parseSprite(CHARS, 'HEADS.grunt.u'))).toEqual([]); // 16×8 is a legal size
+    expect(() => parseSprite(CHARS, 'BODY_DARK.d9')).toThrow(/BODY_DARK\.d9/);
+    expect(() => parseSprite(CHARS, 'HEADS.nobody.d')).toThrow(/HEADS\.nobody\.d/);
+    for (const n of ['BODY_DARK.d0', 'BODY_DARK.s1', 'HEADS.grunt.s', 'MYOWTH_A']) {
+      expect(replaceSprite(CHARS, n, parseSprite(CHARS, n)), n).toBe(CHARS); // identity, CRLF + `S( // comment` head kept
+    }
+    const flipped = [...BODY_DARK.d0].map((r) => r.split('').reverse().join(''));
+    const out = replaceSprite(CHARS, 'BODY_DARK.d0', flipped);
+    expect(parseSprite(out, 'BODY_DARK.d0')).toEqual(flipped);
+    expect(parseSprite(out, 'BODY_DARK.d1')).toEqual([...BODY_DARK.d1]);
+    const eol = CHARS.includes('\r\n') ? '\r\n' : '\n'; // the checkout's own ending — CRLF here, LF on the CI runner
+    expect(out).toContain('d0: S( // down, standing' + eol + "  '" + flipped[0] + "'," + eol + "  '");
+  });
+  it('TOOL.3: toGpl writes a GIMP palette with the transparent slot first', () => {
+    expect(toGpl('x', ['#0c0c14', '#ffffff']).split('\n')).toEqual([
+      'GIMP Palette', 'Name: x', 'Columns: 0', '#', '255   0 255 transparent', ' 12  12  20 shade0', '255 255 255 shade1', '',
+    ]);
   });
   it('parsePalette returns OBJ_PAL entries', () => {
     expect(parsePalette(PALS, 'machopp')).toEqual(OBJ_PAL.machopp);

@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   tileAt, isBlocked, warpAt, performWarp, worldUpdate, landAt,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
-  todoMarkersActive, npcTodo, shakeFramesLeft,
+  todoMarkersActive, shakeFramesLeft,
 } from '../src/systems/world';
+import { npcTodo } from '../src/systems/quest';
 import { TODO_BOB } from '../src/engine/easing';
 import { playWorldFx, activeWorldFx, clearWorldFx } from '../src/systems/worldFx';
 import { MAPS } from '../src/data/maps';

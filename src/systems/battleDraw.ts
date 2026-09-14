@@ -3,6 +3,8 @@
 // already split off the FX/positioning half. This module owns presentation
 // only — battle.ts owns all state and calls battleDraw() each frame.
 import { G } from '../state';
+import type { MonSpecies } from '../types';
+import type { SpriteRows } from '../data/sprites';
 import { SPECIES } from '../data/mons';
 import { MOVES } from '../data/moves';
 import { PORTRAITS } from '../data/chars';
@@ -201,6 +203,13 @@ export function drawEvolveScene(b: LevelUpHost, pal: Palette): void {
   }
 }
 
+/** F46 ART.3: which front the foe shows this frame. Flips every 16 frames
+ *  when the species has a `front2`; holds frame 1 while an fx timeline owns
+ *  the sprite (moves, faint, throws), so the bob never fights an offset. */
+export function idleFrame(sp: MonSpecies, b: BattleState, frame: number): SpriteRows {
+  return sp.front2 && !b.fx && (frame >> 4) & 1 ? sp.front2 : sp.front;
+}
+
 export function battleDraw(): void {
   const b = G.battle!;
   const pal = BG_PAL.green;
@@ -232,7 +241,7 @@ export function battleDraw(): void {
   const portrait = b.enc.trainer ? PORTRAITS[b.enc.trainer] : undefined;
   if (b.phase === 'slide' && portrait) {
     ctx.drawImage(decode(portrait.rows, portrait.pal), pos.foe.x + 4, pos.foe.y + 4, 48, 48);
-  } else if (spriteShown(b, 'foe', b.foe.hp)) ctx.drawImage(decode(foeSp.front, foeSp.pal), pos.foe.x, pos.foe.y, 56, 56);
+  } else if (spriteShown(b, 'foe', b.foe.hp)) ctx.drawImage(decode(idleFrame(foeSp, b, G.frame), foeSp.pal), pos.foe.x, pos.foe.y, 56, 56);
   if (spriteShown(b, 'me', me.hp)) ctx.drawImage(decode(meSp.back, meSp.pal), pos.me.x, pos.me.y, 48, 40);
   drawFxOverlay(b);
   drawFloat(b, pal);

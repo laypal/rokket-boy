@@ -7,17 +7,18 @@ import type { MonSpecies } from '../types';
 import {
   KOFFINK_FRONT, KOFFINK_BACK, VOLTORBB,
   RATIKATT_FRONT, RATIKATT_BACK, RATIKATE_FRONT, RATIKATE_BACK,
-  ZUBATT_FRONT, ZUBATT_BACK, GOLBATT_FRONT, GOLBATT_BACK,
+  ZUBATT_FRONT, ZUBATT_BACK, ZUBATT_FRONT2, GOLBATT_FRONT, GOLBATT_BACK, GOLBATT_FRONT2,
   GEODOOD_FRONT, GEODOOD_BACK, GRAVLR_FRONT, GRAVLR_BACK,
   EKANZZ_FRONT, EKANZZ_BACK, ARBOK_FRONT, ARBOK_BACK,
   WHEEZINK_FRONT, WHEEZINK_BACK, GASTLEE_FRONT, GASTLEE_BACK,
   HAUNTOR_FRONT, HAUNTOR_BACK, MYOWTH_FRONT, MYOWTH_BACK, MAROWL_FRONT,
-  DROWZEY_FRONT, DROWZEY_BACK, HYPNOZ_FRONT, HYPNOZ_BACK,
+  DROWZEY_FRONT, DROWZEY_BACK, DROWZEY_FRONT2, HYPNOZ_FRONT, HYPNOZ_BACK,
   MACHOPP_FRONT, MACHOPP_BACK, MACHOKE_FRONT, MACHOKE_BACK,
   MAGNEMYT_FRONT, MAGNEMYT_BACK, MAGNETUN_FRONT, MAGNETUN_BACK,
   ELECTROD_FRONT, ELECTROD_BACK, VOLTRAWK_FRONT, VOLTRAWK_BACK,
 } from './chars';
 import { OBJ_PAL } from './palettes';
+import { shiftRows } from './sprites';
 
 export const SPECIES: Record<string, MonSpecies> = {
   koffink: {
@@ -36,6 +37,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'wheezink', lv: 28 }, // SPR.C — completes the starter line
     front: KOFFINK_FRONT,
+    front2: shiftRows(KOFFINK_FRONT, 0, 1), // F46 ART.3 idle bob
     back: KOFFINK_BACK,
     pal: OBJ_PAL.koffink,
     catchRate: 0.45,
@@ -60,6 +62,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'electrod', lv: 30 }, // CH7.0 §10 (SPR.E)
     front: VOLTORBB,
+    front2: shiftRows(VOLTORBB, 0, 1), // F46 ART.3 idle bob
     back: VOLTORBB, // placeholder until the VOLTORBB back sprite card
     pal: OBJ_PAL.voltorbb,
     catchRate: 0.35,
@@ -127,6 +130,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'golbatt', lv: 18 }, // UX2.5: lowered from 24 (Lyall, 2026-08-05)
     front: ZUBATT_FRONT,
+    front2: ZUBATT_FRONT2, // F46 ART.3
     back: ZUBATT_BACK,
     pal: OBJ_PAL.zubatt,
     catchRate: 0.45,
@@ -149,6 +153,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 28, move: 'sludge' },
     ],
     front: GOLBATT_FRONT,
+    front2: GOLBATT_FRONT2, // F46 ART.3
     back: GOLBATT_BACK,
     pal: OBJ_PAL.zubatt,
     catchRate: 0.2,
@@ -260,6 +265,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 14, move: 'sludge' },
     ],
     front: WHEEZINK_FRONT,
+    front2: shiftRows(WHEEZINK_FRONT, 0, 1), // F46 ART.3 idle bob
     back: WHEEZINK_BACK,
     pal: OBJ_PAL.koffink, // reuses the KOFFINK/WHEEZINK line palette
     catchRate: 0.2,
@@ -283,6 +289,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'hauntor', lv: 25 },
     front: GASTLEE_FRONT,
+    front2: shiftRows(GASTLEE_FRONT, 0, 1), // F46 ART.3 idle bob
     back: GASTLEE_BACK,
     pal: OBJ_PAL.gastlee,
     catchRate: 0.4,
@@ -305,6 +312,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 20, move: 'shade' },
     ],
     front: HAUNTOR_FRONT,
+    front2: shiftRows(HAUNTOR_FRONT, 0, 1), // F46 ART.3 idle bob
     back: HAUNTOR_BACK,
     pal: OBJ_PAL.gastlee,
     catchRate: 0.2,
@@ -384,6 +392,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'hypnoz', lv: 26 },
     front: DROWZEY_FRONT,
+    front2: DROWZEY_FRONT2, // F46 ART.3
     back: DROWZEY_BACK,
     pal: OBJ_PAL.drowzey,
     catchRate: 0.35,
@@ -477,6 +486,7 @@ export const SPECIES: Record<string, MonSpecies> = {
     ],
     evolvesTo: { id: 'magnetun', lv: 30 },
     front: MAGNEMYT_FRONT,
+    front2: shiftRows(MAGNEMYT_FRONT, 0, 1), // F46 ART.3 idle bob
     back: MAGNEMYT_BACK,
     pal: OBJ_PAL.magnemyt,
     catchRate: 0.35,
@@ -523,6 +533,7 @@ export const SPECIES: Record<string, MonSpecies> = {
       { lv: 31, move: 'magnet' },
     ],
     front: ELECTROD_FRONT,
+    front2: shiftRows(ELECTROD_FRONT, -1, 0), // F46 ART.3 idle wobble (full height, one blank column left)
     back: ELECTROD_BACK,
     pal: OBJ_PAL.voltorbb, // same line as VOLTORBB
     catchRate: 0.15,

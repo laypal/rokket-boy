@@ -7,5 +7,6 @@ export declare function pngToRows(png: PNG, pal: readonly string[], scale?: numb
 export declare function parseSprite(src: string, name: string): string[];
 export declare function formatSprite(name: string, rows: readonly string[]): string;
 export declare function replaceSprite(src: string, name: string, rows: readonly string[]): string;
+export declare function toGpl(name: string, pal: readonly string[]): string;
 export declare function paletteFor(monsSrc: string, constName: string): string;
 export declare function parsePalette(src: string, name: string): string[];

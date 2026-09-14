@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Cond } from '../src/types';
 import { quest, resetQuest } from '../src/systems/quest';
-import { npcTodo } from '../src/systems/world';
+import { npcTodo } from '../src/systems/quest';
 import { MAPS } from '../src/data/maps';
 import { hqScripts } from '../src/data/dialog/hq';
 import { runScript, type ScriptHooks } from '../src/systems/script';

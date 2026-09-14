@@ -12,16 +12,16 @@ export const moonDigMap: MapDef = makeMap({
   pal: 'moon',
   music: 'cave2', // AUD.3: the dig site earns its own drone variant
   rows: [
-    '##################',
-    '#~   R   ~~   R  #',
-    '# > ~~ R   ~~b R #',
-    '#~   ~~   R  ~ R #',
-    '#~      $  ~R ~~R#',
-    '# ~~ R     ~ R ~~#',
-    '#~R   ~   R ~~  R#',
-    '#~R~  R  ~~ ~~ R~#',
-    '#  ~~  R ~  RR ~ #',
-    '##################',
+    '&&&&&&&&&&&&&&&&&&',
+    '&~   R   ~~   R  &',
+    '& > ~~ R   ~~b R &',
+    '&~   ~~   R  ~ R &',
+    '&~      $  ~R ~~R&',
+    '& ~~ R     ~ R ~~&',
+    '&~R   ~   R ~~  R&',
+    '&~R~  R  ~~ ~~ R~&',
+    '&  ~~  R ~  RR ~ &',
+    '&&&&&&&&&&&&&&&&&&',
   ],
   // BRAD (8,5) guards the chest's south face; goneIf(bradBeaten) — his
   // onWin text says he storms off, and the tile genuinely frees up (CH2.4).

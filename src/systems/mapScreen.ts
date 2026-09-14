@@ -16,7 +16,7 @@ import { BG_PAL } from '../data/palettes';
 import { MAPS } from '../data/maps';
 import { REGIONS, REGION_TILE, regionOf, regionById, regionDiscovered, type RegionDef, type RegionId } from '../data/region';
 import { WORLD_ROWS, WORLD_W, WORLD_H, WORLD_TILES, FOG_CHAR, MINI } from '../data/worldMap';
-import { quest, currentTargetRegion } from './quest';
+import { quest, currentTargetRegion, npcGone, npcTodo, npcFights } from './quest';
 import { isSeen, type Seen } from './seen';
 import { TODO_BOB } from '../engine/easing';
 
@@ -206,7 +206,7 @@ export type TileClass = 'wall' | 'floor' | 'water' | 'void' | 'furniture' | 'doo
  *  — the test walks TILES and WALKABLE, so a blocking tile can never read as
  *  paper and a walkable one can never read as an obstacle. */
 export function tileClass(ch: string): TileClass {
-  if (ch === '#' || ch === '=') return 'wall';
+  if (ch === '#' || ch === '=' || ch === '&') return 'wall';
   if (ch === 'w') return 'water'; // '~' is RUBBLE — walkable, so it draws as floor
   if (ch === '.') return 'void';
   if ('BXPILKMDCVptJQRT'.includes(ch)) return 'furniture';
@@ -281,6 +281,13 @@ function detailDraw(n: Nav): void {
       if (k === 'floor' || k === 'water') rect(X, Y, DETAIL_TILE, 1, pal[2]); // faint grid line
       if (k === 'door' || k === 'stairs' || k === 'sign' || k === 'chest' || k === 'pad') ctx.drawImage(decode(MINI[k], pal), X, Y);
     }
+  }
+  // MAP.2: live NPCs on seen tiles — plain, fighter, and the `!` above a todo
+  for (const p of m.npcs) {
+    if (npcGone(p) || !isSeen(s, m.w, p.x, p.y)) continue;
+    const X = FIELD.x + b.ox + p.x * DETAIL_TILE - n.scrollX, Y = FIELD.y + b.oy + p.y * DETAIL_TILE - n.scrollY;
+    ctx.drawImage(decode(npcFights(m, p) ? MINI.fight : MINI.npc, pal), X, Y);
+    if (npcTodo(p)) ctx.drawImage(decode(MINI.todo, pal), X, Y - DETAIL_TILE);
   }
   if (n.map === G.map.id && targetLit(G.frame)) {
     ctx.drawImage(decode(MINI.grunt, pal), FIELD.x + b.ox + G.player.x * DETAIL_TILE - n.scrollX, FIELD.y + b.oy + G.player.y * DETAIL_TILE - n.scrollY);

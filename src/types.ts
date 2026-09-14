@@ -290,6 +290,10 @@ export interface MonSpecies {
   moves: { lv: number; move: MoveId }[];  // sorted ascending by lv
   evolvesTo?: { id: string; lv: number };
   front: SpriteRows; // 28×28 battle sprite
+  /** F46 ART.3: optional second idle frame (28×28). The foe alternates
+   *  front/front2 every 16 frames while no fx timeline owns the sprite.
+   *  Floaters/breathers only; the back stays single-frame. */
+  front2?: SpriteRows;
   back: SpriteRows;  // 24×20 battle sprite
   pal: string[];
   catchRate: number; // 0..1 base SWIPE chance (plan §4.4)

@@ -15,6 +15,22 @@ export function mirrorRows(rows: SpriteRows): SpriteRows {
   return m;
 }
 
+/** F46 ART.3: idle frame 2 for a pure floater — the same silhouette moved
+ *  dx columns right / dy rows down (|d| ≤ 1). Throws if any ink would be
+ *  clipped, so a full-height sprite can't silently lose a row. */
+export function shiftRows(rows: SpriteRows, dx: number, dy: number): SpriteRows {
+  const w = rows[0].length;
+  const blank = '.'.repeat(w);
+  const out = rows.map((_, y) => {
+    const r = rows[y - dy] ?? blank;
+    return dx > 0 ? blank.slice(0, dx) + r.slice(0, w - dx) : r.slice(-dx) + blank.slice(0, -dx);
+  }) as SpriteRows;
+  const ink = (rs: string[]) => rs.reduce((n, r) => n + r.replace(/\./g, '').length, 0);
+  if (ink(out) !== ink(rows)) throw new Error(`shiftRows: ${rows._id} would clip ink at (${dx},${dy})`);
+  out._id = `${rows._id}s${dx},${dy}`;
+  return out;
+}
+
 export function stack(head: SpriteRows, body: SpriteRows): SpriteRows {
   const rows = head.concat(body) as SpriteRows;
   rows._id = head._id + '+' + body._id;

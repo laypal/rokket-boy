@@ -30,10 +30,13 @@ describe('decodePixels', () => {
     expect(px.every((p) => p.shade === 1 || p.shade === 2)).toBe(true);
   });
 
-  it('golden counts: PLANT tile has transparent corners', () => {
-    const px = decodePixels(T.PLANT);
+  it('golden counts: a sprite with transparent corners decodes only its ink', () => {
+    // F46 ART.4: PLANT lost its transparent corners (they showed the canvas
+    // fill on the map), so the fixture is inline now.
+    const rows = ['..00..', '.0330.', '033330', '033330', '.0330.', '..00..'];
+    const px = decodePixels(rows);
     // independent count of non-'.' chars in the source rows
-    const expected = T.PLANT.join('').replace(/\./g, '').length;
+    const expected = rows.join('').replace(/\./g, '').length;
     expect(px).toHaveLength(expected);
     expect(px.length).toBeLessThan(256);
     expect(px.some((p) => p.x === 0 && p.y === 0)).toBe(false); // corner transparent

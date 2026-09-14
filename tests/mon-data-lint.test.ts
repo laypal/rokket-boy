@@ -95,6 +95,19 @@ describe('species registry', () => {
     }
   });
 
+  // F46 ART.3: an idle frame 2 is the same box as the front, tagged for the
+  // decode cache, and actually a different picture.
+  it('every front2 is 28×28, tagged, and differs from front', () => {
+    for (const [key, sp] of Object.entries(SPECIES)) {
+      if (!sp.front2) continue;
+      expect(sp.front2.length, `${key} front2 rows`).toBe(28);
+      expect(sp.front2.every((r) => r.length === 28 && /^[0123.]+$/.test(r)), `${key} front2 rows are 28 wide, charset 0123.`).toBe(true);
+      expect(sp.front2._id, `${key} front2 is tagged`).toBeTruthy();
+      expect(sp.front2._id, `${key} front2 tag differs from front`).not.toBe(sp.front._id);
+      expect(sp.front2.join('\n'), `${key} front2 differs from front`).not.toBe(sp.front.join('\n'));
+    }
+  });
+
   it('every evolution target exists in the registry', () => {
     for (const [key, sp] of Object.entries(SPECIES)) {
       if (sp.evolvesTo) {

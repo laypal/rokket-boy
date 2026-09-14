@@ -1,10 +1,10 @@
 // TOOL.1 — shade strings ⇄ PNG, pure functions. The CLI is sprite-io.mjs;
 // tests/sprite-io.test.ts pins the round-trip on every shipped sprite.
 // Sprite grammar: rows of '0'..'3' (palette index) or '.' (transparent);
-// fronts 28×28, backs 24×20, tiles 16×16.
+// fronts 28×28, backs 24×20, tiles 16×16, charset heads/bodies 16×8 (TOOL.3).
 import { PNG } from 'pngjs';
 
-const SIZES = [[28, 28], [24, 20], [16, 16]];
+const SIZES = [[28, 28], [24, 20], [16, 16], [16, 8]];
 
 const hex = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16));
 
@@ -12,7 +12,7 @@ const hex = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16));
 export function validateRows(rows) {
   const out = [];
   const want = SIZES.find(([, h]) => h === rows.length);
-  if (!want) out.push(`${rows.length} rows (want 28, 20 or 16)`);
+  if (!want) out.push(`${rows.length} rows (want 28, 20, 16 or 8)`);
   rows.forEach((r, y) => {
     if (want && r.length !== want[0]) out.push(`row ${y}: width ${r.length} (want ${want[0]})`);
     const bad = /[^0123.]/.exec(r);
@@ -45,7 +45,7 @@ export function pngToRows(png, pal, scale = 1) {
   }
   const w = png.width / scale, h = png.height / scale;
   if (!SIZES.some(([sw, sh]) => sw === w && sh === h)) {
-    throw new Error(`sprite is ${w}×${h}; want 28×28 (front), 24×20 (back) or 16×16 (tile)`);
+    throw new Error(`sprite is ${w}×${h}; want 28×28 (front), 24×20 (back), 16×16 (tile) or 16×8 (charset)`);
   }
   const rgb = pal.map(hex);
   const rows = [];
@@ -69,26 +69,48 @@ export function pngToRows(png, pal, scale = 1) {
 // Matches ONLY a well-formed block — quoted rows, commas, whitespace — so a
 // comment, a stray ')' or any other token inside makes the whole constant
 // unmatched (parse throws) rather than a truncated replace (Codex, 2026-08-30).
-// `export const NAME = S(` in chars.ts; `T.NAME = S(` in tiles.ts (pass 'T.WALL').
-const spriteRe = (name) => new RegExp(`(?:export const |^)${name.replace('.', '\\.')} = S\\(((?:\\s*'[0123.]*'\\s*,?)*)\\s*\\)`, 'm');
-
-/** Rows of `export const NAME = S('...', ...)` (chars.ts) or `T.NAME = S(...)` (tiles.ts). */
-export function parseSprite(src, name) {
-  const m = spriteRe(name).exec(src);
+// The one comment allowed is on the `S(` line itself (`d0: S( // down`).
+// Names: `NAME` (`export const NAME = S(` in chars.ts), `T.NAME` (tiles.ts)
+// or a dotted path into a nested object — `BODY_DARK.d0`, `HEADS.grunt.d`
+// (TOOL.3): each segment is found in order, the last must own the S( block.
+function locate(src, name) {
+  const segs = name.startsWith('T.') ? [name] : name.split('.');
+  let at = 0;
+  for (const seg of segs.slice(0, -1)) {
+    const m = new RegExp(`(?:export const |^\\s*)${seg}\\s*[:=]`, 'm').exec(src.slice(at));
+    if (!m) throw new Error(`no sprite constant ${name}`);
+    at += m.index + m[0].length;
+  }
+  const last = segs.at(-1).replace('.', '\\.');
+  const re = new RegExp(`((?:export const |^[ \\t]*)${last}\\s*[:=]\\s*S\\((?:[ \\t]*//[^\\r\\n]*)?)((?:\\s*'[0123.]*'\\s*,?)*)\\s*\\)`, 'm');
+  const m = re.exec(src.slice(at));
   if (!m) throw new Error(`no sprite constant ${name}`);
-  return [...m[1].matchAll(/'([0123.]*)'/g)].map((x) => x[1]);
+  return { start: at + m.index, end: at + m.index + m[0].length, head: m[1], body: m[2] };
+}
+
+/** Rows of NAME's S(...) block — see locate() for the name forms. */
+export function parseSprite(src, name) {
+  return [...locate(src, name).body.matchAll(/'([0123.]*)'/g)].map((x) => x[1]);
 }
 
 export function formatSprite(name, rows, eol = '\n') {
   return `export const ${name} = S(${eol}${rows.map((r) => `'${r}'`).join(`,${eol}`)});`;
 }
 
-/** Replace NAME's rows in place; the rest of the source is untouched. */
+/** Replace NAME's rows in place. The head (`export const X = S(`, `d0: S( // …`),
+ *  the row indent and the file's line endings are kept, so the diff is rows only. */
 export function replaceSprite(src, name, rows) {
-  parseSprite(src, name); // throws on a missing constant
-  const eol = src.includes('\r\n') ? '\r\n' : '\n'; // keep the file's line endings
-  return src.replace(spriteRe(name), (block) =>
-    (block.startsWith('export') ? formatSprite(name, rows, eol) : formatSprite(name, rows, eol).replace('export const ', '')).slice(0, -1));
+  const { start, end, head, body } = locate(src, name);
+  const eol = src.includes('\r\n') ? '\r\n' : '\n';
+  const indent = /\n([ \t]*)'/.exec(body)?.[1] ?? '';
+  return src.slice(0, start) + head + eol + indent + rows.map((r) => `'${r}'`).join(`,${eol}${indent}`) + ')' + src.slice(end);
+}
+
+/** GIMP palette text Aseprite loads: index 0 is the transparent slot (magenta,
+ *  never drawn — build.lua marks it the transparent index), then the shades. */
+export function toGpl(name, pal) {
+  const line = (h, label) => hex(h).map((v) => String(v).padStart(3)).join(' ') + ' ' + label;
+  return ['GIMP Palette', `Name: ${name}`, 'Columns: 0', '#', line('#ff00ff', 'transparent'), ...pal.map((h, i) => line(h, `shade${i}`))].join('\n') + '\n';
 }
 
 /** The OBJ_PAL key of the species whose `front:`/`back:` is CONST, from
