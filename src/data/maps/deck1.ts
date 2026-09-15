@@ -18,7 +18,7 @@ export const deck1Map: MapDef = makeMap({
   watch: true,
   rows: [
     '########################',
-    '#wwwwwwwwwwwwwwwwwwwwww#',
+    '#SSSSSSSSSSSSSSSSSSSSSS#',
     '#BBBBBBBBBBBBBBBBBBBBBB#',
     '#      I      I        #',
     '#  ,,,,,,,,,,,,,,,,    #',

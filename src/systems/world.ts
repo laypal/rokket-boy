@@ -7,7 +7,7 @@ import { MAPS } from '../data/maps';
 import { TILES, WALKABLE, RUBBLE_KICK } from '../data/tiles';
 import { BG_PAL, OBJ_PAL } from '../data/palettes';
 import { CHARSETS } from '../data/chars';
-import { mirrorRows, stack, BTN_A, type SpriteRows } from '../data/sprites';
+import { mirrorRows, stack, cycleFrame, BTN_A, type SpriteRows } from '../data/sprites';
 import { ctx, decode, fill, drawWindow, text, W, H, TILE } from '../engine/renderer';
 import { startFade } from '../engine/renderer';
 import { TODO_BOB } from '../engine/easing';
@@ -785,7 +785,6 @@ export function worldDraw(): void {
   const y0 = Math.max(0, Math.floor(camY / TILE));
   const x1 = Math.min(map.w - 1, Math.ceil((camX + W) / TILE));
   const y1 = Math.min(map.h - 1, Math.ceil((camY + H) / TILE));
-  const animF = (G.frame >> 5) & 1;
   // CH2.9: tick rustle timers here — draw-only state ages with the draw
   if (rustles.length) {
     for (const r of rustles) r.t--;
@@ -795,7 +794,7 @@ export function worldDraw(): void {
     for (let x = x0; x <= x1; x++) {
       const frames = TILES[map.grid[y][x]] || TILES[' '];
       const r = rustles.length ? rustles.find((q) => q.x === x && q.y === y) : undefined;
-      const spr = (r && rustleFrame(r)) ?? frames[animF % frames.length];
+      const spr = (r && rustleFrame(r)) ?? cycleFrame(frames, G.frame);
       ctx.drawImage(decode(spr, pal), x * TILE - camX, y * TILE - camY);
     }
   }

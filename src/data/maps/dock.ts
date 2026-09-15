@@ -15,8 +15,8 @@ export const dockMap: MapDef = makeMap({
   disguise: 'sailor',
   rows: [
     '####################',
-    '#wwwwwwwwwwwwwwwwww#',
-    '#wwwwwwwwwwwwwwww>w#',
+    '#SSSSSSSSSSSSSSSSSS#',
+    '#SSSSSSSSSSSSSSSS>S#',
     '#BBBBBBBBBBBBBBBB B#',
     '#                  #',
     '#   X    s         s',

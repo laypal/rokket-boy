@@ -35,6 +35,7 @@ vi.mock('../src/engine/charFrames', () => ({
     djames: { right: [{}, {}, {}, {}] },
   },
 }));
+vi.mock('../src/systems/introSky', () => ({ drawIntroSky: vi.fn() })); // F46 ART.6: clips a canvas
 vi.mock('../src/systems/world', () => ({
   performWarp: vi.fn(),
   landAt: vi.fn(),
@@ -42,7 +43,7 @@ vi.mock('../src/systems/world', () => ({
 }));
 
 import { G } from '../src/state';
-import { introUpdate, INTRO_CARDS, HOLD_FRAMES, titleUpdate } from '../src/systems/scenes';
+import { introUpdate, INTRO_CARDS, HOLD_FRAMES, SLIDE_FRAMES, titleUpdate } from '../src/systems/scenes';
 import { landAt, worldDraw } from '../src/systems/world';
 import { rect, W, H } from '../src/engine/renderer';
 import { MAPS } from '../src/data/maps';
@@ -50,7 +51,7 @@ import { BG_PAL } from '../src/data/palettes';
 import { Audio2 } from '../src/engine/audio';
 
 const MAX_CHARS = 17; // plan §5, same budget as every dialog page
-const MAX_LINES = 5;  // introUpdate draws at 34 + i*14, so five fit above the prompts
+const MAX_LINES = 5;  // 12px pitch + 4px margins: five lines are 64px, which fits above OR on the prompt floor
 
 /** One introUpdate() frame with the given key registered as freshly pressed. */
 function tap(k: string): void {
@@ -185,9 +186,40 @@ describe('intro card machine (ONB.8)', () => {
     // rect per frame (the floor), not zero.
     for (let i = 0; i < HOLD_FRAMES; i++) introUpdate(); // introT 0..HOLD_FRAMES-1: floor only
     expect(rect).toHaveBeenCalledTimes(HOLD_FRAMES);
-    expect(rect).not.toHaveBeenCalledWith(0, 28, expect.anything(), expect.anything(), expect.anything());
+    expect(rect).not.toHaveBeenCalledWith(0, 116 - (2 * 12 + 4), expect.anything(), expect.anything(), expect.anything()); // card 0 sits its band on the prompt floor
     introUpdate(); // introT === HOLD_FRAMES: the words band lands too
     expect(rect).toHaveBeenCalledTimes(HOLD_FRAMES + 2);
+  });
+
+  it('sits the world beat band on the prompt floor and the tower/HQ band at the top (Lyall, 2026-09-15)', () => {
+    G.introPage = 1; G.introT = SLIDE_FRAMES; // corner, three lines, band: 'bottom', slid in
+    introUpdate();
+    expect(rect).toHaveBeenCalledWith(0, 116 - (3 * 12 + 4), W, 3 * 12 + 4, BG_PAL.night[0]);
+    G.introPage = 5; G.introT = SLIDE_FRAMES; vi.clearAllMocks(); // the top tower card, three lines
+    introUpdate();
+    expect(rect).toHaveBeenCalledWith(0, 28, W, 3 * 12 + 4, BG_PAL.night[0]);
+  });
+
+  it('slides the band in from the nearest edge over SLIDE_FRAMES, after the hold on a hold card (ART.6-FB)', () => {
+    const bandY = (): number => (rect as ReturnType<typeof vi.fn>).mock.calls.find((c) => c[1] !== 116)![1] as number; // the prompt floor is the rect at y 116
+    G.introPage = 1; G.introT = 0; introUpdate(); // bottom band: starts under the prompt floor
+    expect(bandY()).toBe(H);
+    G.introT = SLIDE_FRAMES >> 1; vi.clearAllMocks(); introUpdate();
+    expect(bandY()).toBeGreaterThan(116 - 40); expect(bandY()).toBeLessThan(H);
+    G.introPage = 3; G.introT = HOLD_FRAMES; vi.clearAllMocks(); introUpdate(); // top band on a hold card: above the screen as the hold ends
+    expect(bandY()).toBe(-(2 * 12 + 4));
+    G.introT = HOLD_FRAMES + SLIDE_FRAMES; vi.clearAllMocks(); introUpdate();
+    expect(bandY()).toBe(28);
+  });
+
+  it('never slides mid-beat: the tower climb and the second HQ card keep the band put (Lyall)', () => {
+    const bandY = (): number => (rect as ReturnType<typeof vi.fn>).mock.calls.find((c) => c[1] !== 116)![1] as number;
+    for (const page of [4, 5, 7]) {
+      G.introPage = page; G.introT = 0; vi.clearAllMocks(); introUpdate();
+      expect(bandY(), `card ${page}`).toBe(28);
+    }
+    G.introPage = 6; G.introT = HOLD_FRAMES; vi.clearAllMocks(); introUpdate(); // HQ's first card slides after its hold
+    expect(bandY()).toBe(-(2 * 12 + 4));
   });
 
   it('paints the prompt floor at y 116 in night[0] every frame, on every card', () => {

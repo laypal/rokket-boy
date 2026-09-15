@@ -17,7 +17,7 @@ import { shopUpdate, shopDraw, openShop } from './systems/shop';
 import { jobsUpdate, jobsDraw, openJobs } from './systems/jobsScreen';
 import { cardFlipUpdate, cardFlipDraw, openCardFlip } from './systems/cardFlipScreen';
 import { levelUpUpdate, levelUpDraw, useLevelCandy } from './systems/levelUpScene';
-import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered, endIntro } from './systems/scenes';
+import { bootUpdate, titleUpdate, introUpdate, endUpdate, rankCardUpdate, markPowered, endIntro, startIntro } from './systems/scenes';
 import { install as installDiagnostics, rokketApi } from './engine/diagnostics';
 import { quest, setDexMons, setPartySize } from './systems/quest';
 import { runScript } from './systems/script';
@@ -248,6 +248,9 @@ if (import.meta.env.DEV) {
     // flags the real path sets (hq.ts:313-327) before handing over through
     // endIntro's own fade+landAt — not a second definition of "intro done".
     // No-op outside the intro state.
+    // F46 ART.6: run the cold open from card `page` through the REAL
+    // startIntro (state, page, track) — 3 is the first tower card.
+    intro: (page = 0) => startIntro(page),
     skipIntro: () => {
       if (G.state !== 'intro') {
         console.error(`[__debug.skipIntro] no-op — G.state is '${G.state}', not 'intro'`);

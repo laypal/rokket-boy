@@ -49,10 +49,12 @@ describe('tower map', () => {
   it('puts the roof and the one lit window where the camera ends (row 5/6)', () => {
     // 2c ends with the camera at the top of the map: rows 0-4 are sky so the
     // roof (row 5) and the lit top floor (row 6) sit BELOW the text band.
-    expect(MAPS.tower.grid[5].join('')).toBe('..AAAAAA..');
-    expect(MAPS.tower.grid[6].join('')).toBe('..FFlFFF..');
-    expect(MAPS.tower.grid[27].join('')).toBe('..FFppFF..'); // R sign
-    expect(MAPS.tower.grid[28].join('')).toBe('..FFooFF..'); // door
+    // F46 ART.6: a stepped penthouse (roof + mast over columns 3-6, ROOF
+    // shoulders either side), edge pilasters G/H, the ROKKET marquee U/Y.
+    expect(MAPS.tower.grid[5].join('')).toBe('...AAZA...');
+    expect(MAPS.tower.grid[6].join('')).toBe('..AGlFHA..');
+    expect(MAPS.tower.grid[27].join('')).toBe('..GFUYFH..'); // ROKKET sign
+    expect(MAPS.tower.grid[28].join('')).toBe('..GloolH..'); // door, lit lobby
   });
 });
 

@@ -11,7 +11,10 @@ import { CHAR_FRAMES } from '../engine/charFrames';
 import { quest } from './quest';
 import { hasSave, readSave, applySave } from './save';
 import { performWarp, landAt, worldDraw } from './world';
+import { cameraFor } from './camera';
+import { drawIntroSky } from './introSky';
 import { MAPS } from '../data/maps';
+import { EASE, lerp, tween } from '../engine/easing';
 
 let powered = false;
 export function markPowered(): void {
@@ -41,9 +44,11 @@ const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b
 // §4.6 load surface: CONTINUE/NEW GAME window, shown only when a save exists.
 let titleSel: number | null = null;
 
-function startIntro(): void {
+/** Exported for `__debug.intro(page)` (F46 ART.6) — the real entry, from
+ *  any card, so the tower cards can be watched without sitting through beat 1. */
+export function startIntro(page = 0): void {
   G.state = 'intro';
-  G.introPage = 0;
+  G.introPage = page;
   G.introT = 0;
   G.cutscene = null;
   Audio2.play('intro');
@@ -166,6 +171,8 @@ export function titleUpdate(): void {
 // `showPlayer`: the player sprite stands at (9,7) on every map, which is a
 // stray figure in a cave and the actual recruit in HQ. Only HQ shows it.
 export const HOLD_FRAMES = 18;
+/** frames the words band takes to slide in (ART.6-FB) */
+export const SLIDE_FRAMES = 30;
 
 export interface IntroCard {
   map: MapId;
@@ -176,16 +183,18 @@ export interface IntroCard {
   hold?: boolean;
   /** draw the player sprite (HQ only — see above) */
   showPlayer?: boolean;
+  /** words band on the prompt floor instead of the top (the world beat) */
+  band?: 'bottom';
 }
 
 export const INTRO_CARDS: IntroCard[] = [
   // beat 1 — the world
-  { map: 'moon1',  cam: [144, 80],          frames: 114, hold: true,
+  { map: 'moon1',  cam: [144, 80],          frames: 114, hold: true, band: 'bottom',
     lines: ['THIS IS KANTOO.', 'IT RUNS ON MONS.'] },
-  { map: 'corner', cam: [144, 80],          frames: 132,
+  { map: 'corner', cam: [144, 80],          frames: 132, band: 'bottom',
     lines: ['EVERYONE CATCHES', 'THEM, TRAINS THEM', 'AND FIGHTS THEM.'] },
-  { map: 'bridge', cam: [96, 160],          frames: 144,
-    lines: ['WIN ENOUGH FIGHTS', 'AND YOU GET A', 'BADGE.', '', 'YOU WANTED PAY.'] },
+  { map: 'bridge', cam: [96, 160],          frames: 144, band: 'bottom',
+    lines: ['WIN ENOUGH FIGHTS', 'AND YOU GET A', 'BADGE.', 'YOU WANTED PAY.'] },
   // beat 2 — the tower. 2a holds at street level (any target y ≥ 400 pins
   // the camera to the map bottom: door on screen y 112, sign above it);
   // 2b and 2c are one climb at a constant 168px per card, ending with the
@@ -216,12 +225,16 @@ export function introUpdate(): void {
   const [x0, y0] = card.cam;
   const x1 = card.cam.length === 4 ? card.cam[2] : x0;
   const y1 = card.cam.length === 4 ? card.cam[3] : y0;
+  const camY = y0 + (y1 - y0) * t;
   G.cutscene = {
     camX: x0 + (x1 - x0) * t,
-    camY: y0 + (y1 - y0) * t,
+    camY,
     hidePlayer: !card.showPlayer,
   };
   worldDraw();
+  // F46 ART.6: clouds behind the tower, birds across the last tower card.
+  // The sky wants the camera the renderer actually used, not the target.
+  if (card.map === 'tower') drawIntroSky(G.introT, cameraFor(G.map, x0, camY)[1], INTRO_CARDS[G.introPage + 1]?.map !== 'tower');
 
   // The words need a floor to sit on: over a lit cave or a magenta casino,
   // pale text alone is unreadable. A solid night-palette band is the GB
@@ -230,9 +243,26 @@ export function introUpdate(): void {
   const night = BG_PAL.night;
   const holding = card.hold === true && G.introT < HOLD_FRAMES;
   if (!holding) {
-    const bandH = card.lines.length * 14 + 6; // 6px above the first line and below the last
-    rect(0, 28, W, bandH, night[0]);
-    card.lines.forEach((l, i) => textC(l, 34 + i * 14, night[3]));
+    // Lyall (2026-09-15): the band was eating the backdrop on the three-
+    // and five-line cards. Tighter now (12px pitch, 4px margins) and the
+    // world beat sits its band on the prompt floor so the scene above is
+    // one uninterrupted block; the tower and HQ keep it at the top (the
+    // roof and Giovanni are placed under it). And it SLIDES in from the
+    // nearest edge over SLIDE_FRAMES (ease-in-out: the first frames barely
+    // move, so the figure under it is seen a beat longer) so the backdrop and whoever
+    // stands on it are seen bare before the words cover them: a bottom band
+    // rises out of the prompt floor (drawn after it, same colour, so the
+    // floor masks it), a top band drops in from above the screen. Lyall's
+    // rule: the three world cards slide, then only the FIRST card of a beat
+    // (the hold cards) — the tower climb and HQ's second card keep the band
+    // where it is, so the words hold still while the camera pans.
+    const bandH = card.lines.length * 12 + 4;
+    const yEnd = card.band === 'bottom' ? 116 - bandH : 28;
+    const yStart = card.band === 'bottom' ? H : -bandH;
+    const slides = card.hold === true || card.band === 'bottom';
+    const bandY = slides ? Math.round(lerp(yStart, yEnd, tween(G.introT - (card.hold ? HOLD_FRAMES : 0), SLIDE_FRAMES, EASE.onScreen))) : yEnd;
+    rect(0, bandY, W, bandH, night[0]);
+    card.lines.forEach((l, i) => textC(l, bandY + 4 + i * 12, night[3]));
   }
   // ONB.8-FB: the prompts drew night[2] straight onto the backdrop, which
   // the bridge card's light teal (BG_PAL.span) nearly swallowed. Same idiom

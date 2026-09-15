@@ -31,6 +31,21 @@ export function shiftRows(rows: SpriteRows, dx: number, dy: number): SpriteRows 
   return out;
 }
 
+/** F46 ART.5: the same rows rotated dx columns left, wrapping — a scrolling
+ *  tile's frames (the sea) come from here, so four frames cost no bytes. */
+export function rotateRows(rows: SpriteRows, dx: number): SpriteRows {
+  const out = rows.map((r) => r.slice(dx) + r.slice(0, dx)) as SpriteRows;
+  out._id = `${rows._id}r${dx}`;
+  return out;
+}
+
+/** The shared tile-animation cycle: a step every 32 frames, round the
+ *  tile's frame list however long it is (2 for the TERM/SLOT shimmer, 4
+ *  for the sea). */
+export function cycleFrame(frames: SpriteRows[], frame: number): SpriteRows {
+  return frames[(frame >> 5) % frames.length];
+}
+
 export function stack(head: SpriteRows, body: SpriteRows): SpriteRows {
   const rows = head.concat(body) as SpriteRows;
   rows._id = head._id + '+' + body._id;

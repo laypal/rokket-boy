@@ -157,7 +157,7 @@ describe('tileClass — the symbolic legend, lint-pinned to tiles.ts', () => {
   // The only chars allowed to read as paper despite blocking: the building
   // facade set, which appears ONLY on `tower` — the cutscene backdrop map the
   // player never walks, and which therefore never reaches the drill-in.
-  const OK_AS_FLOOR = new Set(['F', 'l', 'k', 'A']);
+  const OK_AS_FLOOR = new Set(['F', 'l', 'k', 'A', 'G', 'H', 'Z', 'U', 'Y']); // G/H/Z/U/Y: F46 ART.6 facade set
 
   it('every blocking tile in the table reads as something other than floor', () => {
     for (const ch of Object.keys(TILES)) {

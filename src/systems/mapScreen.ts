@@ -207,7 +207,7 @@ export type TileClass = 'wall' | 'floor' | 'water' | 'void' | 'furniture' | 'doo
  *  paper and a walkable one can never read as an obstacle. */
 export function tileClass(ch: string): TileClass {
   if (ch === '#' || ch === '=' || ch === '&') return 'wall';
-  if (ch === 'w') return 'water'; // '~' is RUBBLE — walkable, so it draws as floor
+  if (ch === 'w' || ch === 'S') return 'water'; // '~' is RUBBLE — walkable, so it draws as floor; S = the sea (F46 ART.5)
   if (ch === '.') return 'void';
   if ('BXPILKMDCVptJQRT'.includes(ch)) return 'furniture';
   if (ch === 'o' || ch === 'd') return 'door';
