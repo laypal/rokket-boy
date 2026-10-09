@@ -201,7 +201,9 @@ describe('CH7.0 §8 objectives', () => {
       quest.flags[f] = true;
       expect(currentObjective(), f).toBe('REPORT TO BOSS');
       quest.flags.ch7Done = true;
-      expect(currentObjective()).toBe('CATCH 15 LINES'); // F43-FB A1: the MAZTER BALL side quest takes the line after CH7
+      expect(currentObjective()).toBe('GO PAST THE SPAN'); // CH8.0 assumption 6: the main job owns the line; dex15 shows between jobs
+      for (const g of ['ch8Rules', 'ch8Poached', 'ch8Warden', 'ch8Done'] as const) quest.flags[g] = true;
+      expect(currentObjective()).toBe('CATCH 15 LINES'); // F43-FB A1: the MAZTER BALL side quest, now behind CH8
       quest.flags.sureBall = true;
       expect(currentObjective()).toBe('AWAIT ORDERS.');
     }

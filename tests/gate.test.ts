@@ -11,7 +11,7 @@ const MAX_CHARS = 17; // the toast shares the dialog box budget (§5)
 const MAX_LINES = 3;
 
 /** Every chapter area's FIRST map — each must be entered through a gate. */
-const CHAPTER_ENTRANCES: MapId[] = ['moon1', 'bridge', 'deck1', 'lav1', 'syl1', 'plant1'];
+const CHAPTER_ENTRANCES: MapId[] = ['moon1', 'bridge', 'deck1', 'lav1', 'syl1', 'plant1', 'safari1'];
 
 describe('gate data (F42 GATE.0)', () => {
   it('every gate key is a real warp tile on its own map', () => {
@@ -48,6 +48,7 @@ describe('gate data (F42 GATE.0)', () => {
     // (8,8) were already signposted by CH7.0.
     const SIGNS: [MapId, string][] = [
       ['corner', '19,6'],
+      ['bridge', '7,1'], // CH8: the ZOON door (6,0), sign on the rail beside it
       ['outskirts', '9,0'],
       ['outskirts', '9,8'],
       ['dock', '19,5'],

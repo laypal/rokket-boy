@@ -18,6 +18,8 @@ test-results/
 
 # Claude Code worktrees (parallel subagent trees)
 .claude/worktrees/
+# Sprite Studio reference drops (worktrees/general/references)
+worktrees/
 
 # superpowers brainstorm companion (mockups + screenshots, session-scoped)
 .superpowers/

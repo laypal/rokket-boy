@@ -26,7 +26,7 @@ import { openShop } from './shop';
 import { openJobs } from './jobsScreen';
 import { openCardFlip } from './cardFlipScreen';
 import { writeSave, sessionOnlyWarning } from './save';
-import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward, heatKey } from './heat';
+import { setHeat, calmHeat, tickHeat, visibleTiles, stepToward, heatKey, secondsToCalm } from './heat';
 import { disguiseCovers, toggleDisguise, dropDisguise } from './disguise';
 import { fogActive, fogVisible } from './fog';
 import { startTour, tourTick, tourDraw } from './tour';
@@ -34,6 +34,7 @@ import { sharedWhiteout } from './recovery';
 import { stepEncounter, wildEncounter, ENCOUNTER_TILE } from './encounter';
 import { shockLead, BOOTS_ITEM } from './hazard';
 import { playWorldFx, clearWorldFx, drawWorldFx, alertPop, shakeOffset } from './worldFx';
+import { startSwarm, swarmTick, swarmDraw } from './swarm';
 import { makeMon, maxHp } from './mon';
 import { SPECIES } from '../data/mons';
 
@@ -41,7 +42,7 @@ import { SPECIES } from '../data/mons';
  *  single two-frame idle instead of a head/body charset, so the draw takes a
  *  different branch. A set, because the second entry is where a chain of
  *  name checks starts to rot. */
-export const MON_WALKERS = new Set(['myowth', 'zubatt']);
+export const MON_WALKERS = new Set(['myowth', 'zubatt', 'machopp']);
 
 // ── Map helpers (pure over an explicit map — unit-testable) ──────────────
 export function tileAt(map: MapDef, x: number, y: number): string {
@@ -234,6 +235,36 @@ function npcRunTick(): boolean {
 // 1f.10 vignette state — draw-only (juice rule: never gates logic)
 const ALERT_FRAMES = 30;
 let alertT = 0;
+// F48 HUX.2: world-frames the map has been hot with no posted guard here
+// watching or chasing the player; the ALERT countdown waits for 3 s of this
+const QUIET_FRAMES = 180;
+let quietFrames = 0;
+
+/** F48 HUX.2: the ALERT gauge's `CLEARS NNs` — seconds to full calm at stage
+ *  1–2, null until nobody has been watching for 3 s. Null at stage 3 (the
+ *  ALARM label owns the slot) and on floored maps, where heat never clears. */
+export function alertCountdown(): number | null {
+  const hs = G.heatState[heatKey(G.map)];
+  if (!hs || hs.stage === 0 || hs.stage === 3 || G.map.minStage || quietFrames < QUIET_FRAMES) return null;
+  return Math.ceil(secondsToCalm(hs, G.playSeconds));
+}
+
+/** F48 HUX.1: a `!` marker's screen y, clamped so a guard on the top tile
+ *  rows (cone range 3 above a centred player) never loses it off-screen. */
+export function markerY(tileY: number, camY: number, offset: number): number {
+  return Math.max(1, tileY * TILE - camY + offset);
+}
+
+/** Every `!` marker: a 1px pal[0] outline under the pal[3] glyph so it reads
+ *  over busy tile art (ONB.3 desk monitor; F48 the corner poster, where a
+ *  bare clamped sighting `!` vanished into the pale face). */
+function drawMarker(x: number, y: number, pal: string[]): void {
+  text('!', x - 1, y, pal[0]);
+  text('!', x + 1, y, pal[0]);
+  text('!', x, y - 1, pal[0]);
+  text('!', x, y + 1, pal[0]);
+  text('!', x, y, pal[3]);
+}
 // JCE.3 screen shake — screen-space (a camera offset), draw-only, aged in
 // the draw like every other juice counter here. Outside the worldFx queue by
 // design (PLAN D4): it has no tile.
@@ -369,6 +400,12 @@ const GAZE_CYCLE: Dir[] = ['down', 'right', 'up', 'left'];
 const GAZE_TURN_EVERY = 90; // frames per idle gaze direction
 const GAZE_CHECK_EVERY = 15; // frames between eye-contact checks at stage 1+
 
+/** 1f.12: the charset frame a guard shows — 0 standing; while running,
+ *  the two walk frames alternate on the 8-frame bob beat (1 then 2). */
+export function runFrame(running: boolean, frame: number): 0 | 1 | 2 {
+  return running ? (((frame >> 3) & 1) === 0 ? 1 : 2) : 0;
+}
+
 /** Per-guard session runtime — never saved (1f.2's guardPositions call). */
 interface GuardRt {
   cooldown: number; // world-frames of post-contact inertness left
@@ -477,7 +514,10 @@ export function heatTick(): boolean {
       if (lost > 0) pendingCaught.push(['DROPPED ' + lost, 'COINS ON THE', 'WAY OUT.']);
       pendingCaught.push(['THEY THREW YOU', 'BACK AT BASE.']);
       Audio2.sfx('hurt');
-      sharedWhiteout(lost, () => {});
+      // CH8-FB.4: the bust is a swarm — the map's own guards pour in on the
+      // player for ~1 s (swarmTick owns the frame), THEN the whiteout.
+      const g = G.map.npcs.find((n) => n.heatGuard) ?? { char: 'guard', pal: undefined as string | undefined };
+      startSwarm(g.char, g.pal, G.player.x, G.player.y, () => sharedWhiteout(lost, () => {}));
       return true;
     }
     if (ticked.state.stage === 0) delete G.heatState[hk]; // absent = calm
@@ -491,6 +531,13 @@ export function heatTick(): boolean {
     G.heatState[hk] = setHeat(G.heatState[hk] ?? calmHeat(), G.map.minStage, G.playSeconds);
   }
   const p = G.player;
+  const watched = G.map.npcs.some((n) => {
+    if (!n.heatGuard || npcGone(n)) return false;
+    const rt = guardRt.get(mapId + ':' + n.id);
+    return !!rt && (rt.tracking || rt.spotFlash > 0 || rt.mode === 'chase');
+  });
+  // counts only while hot: a script raise ({ heat: 2 } at a PONR) gets the same 3 s
+  quietFrames = watched || !(G.heatState[hk]?.stage) ? 0 : quietFrames + 1;
   for (const n of G.map.npcs) {
     if (!n.heatGuard || npcGone(n)) continue;
     const rt = guardRuntime(mapId, n);
@@ -644,6 +691,10 @@ export function interact(): void {
 
 // ── Movement ─────────────────────────────────────────────────────────────
 export function worldUpdate(): void {
+  // CH8-FB.4: the bust swarm owns the frame FIRST — the caught dialog below
+  // would otherwise open on the very next tick (no fade is running yet)
+  // and the swarm would play unseen behind it (playtester, 2026-09-16)
+  if (swarmTick()) return;
   if (pendingEnter && G.fade === 0 && G.fadeDir === 0) {
     const steps = pendingEnter;
     pendingEnter = null;
@@ -806,23 +857,30 @@ export function worldDraw(): void {
       y: n.y * TILE,
       draw: () => {
         const dir = n.faceDir || n.dir;
+        // 1f.11/1f.12 chase juice (draw-only): a chasing guard RUNS — the
+        // charset's own walk frames alternate on an 8-frame beat and the
+        // step frame bobs 1px, so the pursuit reads even in peripheral vision
+        const grt = n.heatGuard ? guardRt.get(map.id + ':' + n.id) : undefined;
+        const f = runFrame(grt?.mode === 'chase' && grt.cooldown === 0, G.frame);
+        const bob = f === 2 ? 1 : 0;
         let img: HTMLCanvasElement;
         if (MON_WALKERS.has(n.char)) img = CHAR_FRAMES[n.char].down[(G.frame >> 5) & 1];
         else if (n.pal) {
+          // same frame table as charFrames' buildSet: 1 = the step; 2 = the
+          // mirrored step facing up/down, the stand facing sideways
           const cs = CHARSETS[n.char];
+          const side = dir === 'left' || dir === 'right';
+          const stepping = f === 1 || (f === 2 && !side);
+          const axis = dir === 'up' ? 'u' : dir === 'down' ? 'd' : 's';
           img = decode(
             stackCache(
-              cs.head[dir === 'up' ? 'u' : dir === 'down' ? 'd' : 's'],
-              cs.body[dir === 'up' ? 'u0' : dir === 'down' ? 'd0' : 's0'],
-              dir === 'right',
+              cs.head[axis],
+              cs.body[`${axis}${stepping ? 1 : 0}`],
+              (dir === 'right') !== (f === 2 && !side),
             ),
             OBJ_PAL[n.pal],
           );
-        } else img = CHAR_FRAMES[n.char][dir][0];
-        // 1f.11 chase juice (draw-only): a chasing guard bobs 1px on an
-        // 8-frame beat so the pursuit reads even in peripheral vision
-        const grt = n.heatGuard ? guardRt.get(map.id + ':' + n.id) : undefined;
-        const bob = grt?.mode === 'chase' && grt.cooldown === 0 ? ((G.frame >> 3) & 1) : 0;
+        } else img = CHAR_FRAMES[n.char][dir][f];
         ctx.drawImage(img, n.x * TILE - camX, n.y * TILE - camY - 4 - bob);
       },
     });
@@ -852,22 +910,13 @@ export function worldDraw(): void {
     const bob = TODO_BOB[(G.frame >> 3) & 3];
     for (const n of map.npcs) {
       if (!npcTodo(n)) continue;
-      const mx = n.x * TILE - camX + 5;
-      const my = n.y * TILE - camY - 14 - bob;
-      // 1px pal[0] outline under the pal[3] glyph: the marker has to read
-      // over busy tile art too — Giovanni's sits on the desk-monitor
-      // highlight, where a bare light glyph vanished (playtester, ONB.3).
-      text('!', mx - 1, my, pal[0]);
-      text('!', mx + 1, my, pal[0]);
-      text('!', mx, my - 1, pal[0]);
-      text('!', mx, my + 1, pal[0]);
-      text('!', mx, my, pal[3]);
+      drawMarker(n.x * TILE - camX + 5, markerY(n.y, camY, -14 - bob), pal);
     }
   }
   // CH2.7 ambush `!` — same blink idiom as the guard flag below
   if (npcRunState && ((G.frame >> 3) & 1) === 1) {
     const rn = npcRunState.npc;
-    text('!', rn.x * TILE - camX + 5, rn.y * TILE - camY - 14, pal[3]);
+    drawMarker(rn.x * TILE - camX + 5, markerY(rn.y, camY, -14), pal);
   }
   // §4.8 sighting `!` — 8-frame blink through the startle AND the whole
   // chase (1f.11), so a hunting guard stays flagged
@@ -881,9 +930,10 @@ export function worldDraw(): void {
     const pop = rt.spotFlash > 0 ? alertPop(STARTLE_FRAMES - rt.spotFlash) : 0;
     const popping = rt.spotFlash > STARTLE_FRAMES - 8;
     if (flagged && (popping || ((G.frame >> 3) & 1) === 1)) {
-      text('!', n.x * TILE - camX + 5, n.y * TILE - camY - 14 + pop, pal[3]);
+      drawMarker(n.x * TILE - camX + 5, markerY(n.y, camY, -14 + pop), pal);
     }
   }
+  swarmDraw(camX, camY); // CH8-FB.4: the bust swarm, over every sprite
   // F38 JCE.0 world fx — world-space (scrolls with the map), over the
   // sprites and every `!`, under the fog like everything else at this depth
   drawWorldFx(camX, camY, pal);
@@ -921,6 +971,29 @@ export function worldDraw(): void {
     const lw = label.length * 8 + 16;
     drawWindow(W - lw, 0, lw, 20, pal);
     text(label, W - lw + 8, 6, pal[0]);
+  } else if (heat && heat.stage > 0 && G.mapNameT === 0) {
+    // CH8-FB.2 (Lyall): a persistent ALERT gauge in the same slot while the
+    // map is hot; it yields to the map-name plate for its first frames (an 11+
+    // char name reaches x 104, the gauge starts at 86: playtester, 2026-09-16).
+    // Three pips, one per stage, so "how many times have they
+    // seen me" is readable at a glance. F48 HUX.2: once nobody has been
+    // watching for 3 s a second line counts down to calm; the window grows
+    // left and down, line 1 keeps its x so the pips never jump.
+    const gw = 5 * 8 + 8 + 3 * 6 + 8;
+    const secs = alertCountdown();
+    const lw = secs === null ? gw : 10 * 8 + 16; // 'CLEARS 60s' at 8 px a glyph
+    drawWindow(W - lw, 0, lw, secs === null ? 20 : 30, pal);
+    text('ALERT', W - gw + 8, 6, pal[0]);
+    if (secs !== null) text('CLEARS ' + secs + 's', W - lw + 8, 16, pal[0]);
+    for (let i = 0; i < 3; i++) {
+      const px = W - gw + 8 + 5 * 8 + 4 + i * 6;
+      ctx.fillStyle = pal[0];
+      ctx.fillRect(px, 7, 4, 6);
+      if (i >= heat.stage) {
+        ctx.fillStyle = pal[3];
+        ctx.fillRect(px + 1, 8, 2, 4);
+      }
+    }
   }
   // map name plate briefly after entering
   if (G.mapNameT > 0) {

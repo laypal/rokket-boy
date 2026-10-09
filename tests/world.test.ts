@@ -2,9 +2,22 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   tileAt, isBlocked, warpAt, performWarp, worldUpdate, landAt,
   guardRuntime, clearMapGuardRuntime, heatTick, worldHooks,
-  todoMarkersActive, shakeFramesLeft,
+  todoMarkersActive, shakeFramesLeft, runFrame, markerY, alertCountdown,
 } from '../src/systems/world';
 import { npcTodo } from '../src/systems/quest';
+import { swarmTick } from '../src/systems/swarm';
+
+describe('runFrame (1f.12 chase run cycle)', () => {
+  it('a posted or recovering guard stands on frame 0 every frame', () => {
+    for (let f = 0; f < 32; f++) expect(runFrame(false, f)).toBe(0);
+  });
+  it('a running guard alternates the two walk frames on the 8-frame bob beat', () => {
+    const seen = Array.from({ length: 24 }, (_, f) => runFrame(true, f));
+    expect(seen.slice(0, 8)).toEqual(Array(8).fill(1));
+    expect(seen.slice(8, 16)).toEqual(Array(8).fill(2));
+    expect(seen.slice(16, 24)).toEqual(Array(8).fill(1));
+  });
+});
 import { TODO_BOB } from '../src/engine/easing';
 import { playWorldFx, activeWorldFx, clearWorldFx } from '../src/systems/worldFx';
 import { MAPS } from '../src/data/maps';
@@ -406,6 +419,12 @@ describe('heatTick (1f.6 world integration)', () => {
     G.heatState.corner = hs;
     G.playSeconds = 10;
     expect(heatTick()).toBe(true);
+    expect(quest.coins).toBe(100); // CH8-FB.4: the swarm runs first, the whiteout lands when it ends
+    // the queued caught dialog must NOT open while the swarm owns the frame
+    // (playtester, 2026-09-16: it did, and the swarm played unseen behind it)
+    worldUpdate();
+    expect(G.state).toBe('world');
+    while (swarmTick());
     expect(quest.coins).toBe(90);
     expect(G.state).toBe('worldwait');
     expect(G.heatState.corner).toBeUndefined();
@@ -678,6 +697,7 @@ describe('drill map lockdown (SIDE.5 training exemption)', () => {
     G.heatState.corner = { stage: 3, decayAt: 999, lockdownAt: 5 };
     G.playSeconds = 10;
     expect(heatTick()).toBe(true);
+    while (swarmTick()); // CH8-FB.4: the bust swarm, then the whiteout
     expect(quest.coins).toBe(90);
     expect(G.state).toBe('worldwait');
     // drain the queued bust dialog so it can't leak into a later test
@@ -941,5 +961,69 @@ describe('F44 WM.1: seen bitmaps are written on landing and on every completed s
     landAt(['corner', 5, 5, 'down']);
     expect(quest.seen.corner).toBeDefined();
     expect(seenCount(quest.seen.hq!)).toBeGreaterThan(before); // untouched by the other map
+  });
+});
+
+describe('markerY (F48 HUX.1 the `!` never leaves the screen)', () => {
+  it('passes an on-screen marker through unchanged', () => {
+    expect(markerY(5, 16, -14)).toBe(5 * 16 - 16 - 14);
+  });
+  it('clamps a guard on screen row 0 or 1 to y 1', () => {
+    expect(markerY(0, 0, -14)).toBe(1);
+    expect(markerY(1, 16, -14)).toBe(1);
+  });
+  it('applies the bob/pop offset before the clamp, so an edge marker holds still', () => {
+    for (const bob of [0, 1, 2]) expect(markerY(1, 16, -14 - bob)).toBe(1);
+  });
+});
+
+describe('alertCountdown (F48 HUX.2)', () => {
+  const guard: NpcDef = { id: 'gq', char: 'guard', x: 1, y: 1, dir: DOWN, heatGuard: { encounterId: 'guard_voltorbb' } };
+  beforeEach(() => {
+    resetQuest();
+    G.heatState = {};
+    G.state = 'world';
+    G.playSeconds = 0;
+    G.battle = null;
+    clearMapGuardRuntime('corner');
+    // a wall between guard and player: he sweeps but never sees
+    G.map = makeHeatMap(['#####', '# # #', '#####'], [guard]);
+    G.player.x = 3;
+    G.player.y = 1;
+    G.player.moving = false;
+  });
+  afterEach(() => {
+    G.map = MAPS.hq;
+  });
+
+  it('is null while calm', () => {
+    for (G.frame = 1; G.frame <= 200; G.frame++) heatTick();
+    expect(alertCountdown()).toBeNull();
+  });
+  it('appears 3 s (180 frames) after nobody is watching, as seconds to full calm', () => {
+    G.heatState.corner = setHeat(calmHeat(), 2, 0);
+    for (G.frame = 1; G.frame < 180; G.frame++) heatTick();
+    expect(alertCountdown()).toBeNull();
+    G.frame = 180;
+    heatTick();
+    expect(alertCountdown()).toBe(60);
+  });
+  it('hides while a guard is tracking and restarts the 3 s after he loses sight', () => {
+    G.heatState.corner = setHeat(calmHeat(), 1, 0);
+    for (G.frame = 1; G.frame <= 180; G.frame++) heatTick();
+    expect(alertCountdown()).toBe(30);
+    guardRuntime('corner', guard).spotFlash = 1;
+    heatTick();
+    expect(alertCountdown()).toBeNull();
+    for (let i = 0; i < 179; i++) heatTick();
+    expect(alertCountdown()).toBeNull();
+    heatTick();
+    expect(alertCountdown()).toBe(30);
+  });
+  it('is null on a floored (minStage) map, where heat never clears', () => {
+    G.map = { ...G.map, minStage: 1 };
+    G.heatState.corner = setHeat(calmHeat(), 2, 0);
+    for (G.frame = 1; G.frame <= 200; G.frame++) heatTick();
+    expect(alertCountdown()).toBeNull();
   });
 });

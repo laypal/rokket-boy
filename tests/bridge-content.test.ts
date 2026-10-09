@@ -126,8 +126,14 @@ describe('KIRA (step:6,1 / npc:kira)', () => {
     expect(log.says.length).toBe(1);
   });
 
-  it('step: and npc: share the exact same script object', () => {
-    expect(bridgeScripts['step:6,1']).toBe(bridgeScripts['npc:kira']);
+  it('step: is the npc: script gated off ch3Done — the same object underneath (CH8: (6,1) is the ZOON approach)', () => {
+    const step = bridgeScripts['step:6,1'];
+    expect(step).toHaveLength(1);
+    const wrap = step[0];
+    if (!('if' in wrap)) throw new Error('step:6,1 is not an if wrapper');
+    expect(wrap.if).toEqual({ notFlag: 'ch3Done' });
+    expect(wrap.then).toBe(bridgeScripts['npc:kira']);
+    expect(wrap.else).toBeUndefined();
   });
 });
 

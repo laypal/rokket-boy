@@ -238,4 +238,41 @@ export const TRACKS: Record<string, Track> = {
           G2 G2 G2 G2 G2 G2 G2 G2 D2 D2 D2 D2 D2 D2 D2 D2`,
     dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h.`,
   },
+  // CH8 — SAFARI ZOON, daylight outdoors loop: marimba lead over a hand-drum
+  // pulse, F major, unhurried (area loop, plan §11)
+  safari: {
+    bpm: 112,
+    p1: `F4 -  A4 -  C5 -  A4 -  G4 -  A#4 -  D5 -  A#4 -
+         F4 -  A4 -  C5 -  D5 -  C5 -  A4 -  G4 -  F4 -
+         C4 -  E4 -  G4 -  E4 -  D4 -  F4 -  A4 -  F4 -
+         F4 -  A4 -  C5 =  =  -  A#4 -  A4 -  G4 =  =  -`,
+    p2: `-  -  F3 =  -  -  F3 =  -  -  C4 =  -  -  -  -
+         -  -  A#3 =  -  -  A#3 =  -  -  D4 =  -  -  -  -
+         -  -  C3 =  -  -  C3 =  -  -  G3 =  -  -  -  -
+         F3 =  =  =  =  =  -  -  C4 =  =  =  =  =  -  -`,
+    tri: `F2 -  F2 -  C2 -  C2 -  A#1 -  A#1 -  D2 -  D2 -
+          F2 -  F2 -  C2 -  C2 -  A#1 -  A#1 -  D2 -  D2 -
+          C2 -  C2 -  G1 -  G1 -  F2 -  F2 -  A1 -  A1 -
+          F2 -  F2 -  C2 -  C2 -  F2 -  F2 -  F2 -  F2 -`,
+    dr: `k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h. k.h.k.h.k.h.k.h.`,
+  },
+  // CH8 — SAFARI ZOON gate bosses (WARDEN / EXEC PETRELLE), bespoke loop
+  // (EncounterDef.music: 'safariboss'). Same F-key motif as `safari` but
+  // minor and doubled — the park turned against you.
+  safariboss: {
+    bpm: 140,
+    p1: `F4 G#4 C5 G#4 G4 A#4 C#5 A#4 F4 G#4 C5 G#4 G4 A#4 C#5 A#4
+         F4 G#4 C5 C#5 C5 G#4 G4 F4 F4 G#4 C5 C#5 C5 G#4 G4 F4
+         C4 D#4 G4 D#4 C#4 F4 G#4 F4 C4 D#4 G4 D#4 C#4 F4 G#4 F4
+         F4 G#4 C5 G#4 F4 G#4 C5 G#4 A#4 C#5 F5 C#5 A#4 G#4 G4 F4`,
+    p2: `-  C4 -  C4 -  C4 -  C4 -  C4 -  C4 -  C4 -  C4
+         -  C#4 -  C#4 -  C#4 -  C#4 -  C#4 -  C#4 -  C#4 -  C#4
+         -  G4 -  G4 -  G4 -  G4 -  G4 -  G4 -  G4 -  G4
+         -  C4 -  C4 -  C#4 -  C#4 -  C4 -  C4 -  A#3 -  A#3`,
+    tri: `F2 F2 F2 F2 G#1 G#1 G#1 G#1 D#2 D#2 D#2 D#2 A#1 A#1 A#1 A#1
+          F2 F2 F2 F2 C#2 C#2 C#2 C#2 C2 C2 C2 C2 G#1 G#1 G#1 G#1
+          C2 C2 C2 C2 D#2 D#2 D#2 D#2 C#2 C#2 C#2 C#2 F2 F2 F2 F2
+          F2 F2 F2 F2 F2 F2 F2 F2 A#1 A#1 A#1 A#1 F2 F2 F2 F2`,
+    dr: `k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s. k.s.k.s.k.s.k.s.`,
+  },
 };

@@ -339,6 +339,79 @@ export const ENCOUNTERS: Record<string, EncounterDef> = {
   },
   // CH7.0 §6: the three posted TECHNICIANs, one payday each behind their own
   // flag — the syl_exec shape (setFlag + addCoins + sfx + sysMsg + one say).
+  // CH8.0 §3 — SAFARI ZOON. RANGERs are the posted heatGuards (contact
+  // fights, one payday each behind their own flag — the TECHNICIAN idiom,
+  // gated because a heatGuard re-engages). The two gate bosses carry the
+  // bespoke `safariboss` track (Lyall, assumption 9); ONLY safari_petrelle
+  // sets `betrayal` (ch8-contracts lint). The rangers and the WARDEN run the
+  // park's own SANDSHRÜ line (2026-09-22; MACHOPP stays for FIGHTING variety).
+  safari_ranger1: {
+    trainer: 'RANGER',
+    foe: { species: 'sandshru', lv: 26 },
+    winText: ['RANGER: The', 'WARDEN will hear', 'of this.'],
+    onWin: [{ if: { notFlag: 'safariRanger1' }, then: [{ fx: { id: 'poof', npc: 'ranger1' } }, { sfx: 'poof' }, { setFlag: 'safariRanger1' }, { addCoins: 200 }, { sfx: 'coin' }, { sysMsg: ['GOT 200 COINS!'] }] }],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_ranger2: {
+    trainer: 'RANGER',
+    foe: { species: 'machopp', lv: 27 },
+    winText: ['RANGER: Poacher!', "Don't think I", "won't remember."],
+    onWin: [{ if: { notFlag: 'safariRanger2' }, then: [{ fx: { id: 'poof', npc: 'ranger2' } }, { sfx: 'poof' }, { setFlag: 'safariRanger2' }, { addCoins: 200 }, { sfx: 'coin' }, { sysMsg: ['GOT 200 COINS!'] }] }],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_ranger3: {
+    trainer: 'RANGER',
+    foe: { species: 'sandslash', lv: 28 },
+    winText: ['RANGER: Get out', 'of my park.'],
+    onWin: [{ if: { notFlag: 'safariRanger3' }, then: [{ fx: { id: 'poof', npc: 'ranger3' } }, { sfx: 'poof' }, { setFlag: 'safariRanger3' }, { addCoins: 200 }, { sfx: 'coin' }, { sysMsg: ['GOT 200 COINS!'] }] }],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_ranger4: {
+    trainer: 'RANGER',
+    foe: { species: 'machopp', lv: 28 },
+    winText: ['RANGER: ...Fine.', 'The park is', 'yours. For now.'],
+    onWin: [{ if: { notFlag: 'safariRanger4' }, then: [{ fx: { id: 'poof', npc: 'ranger4' } }, { sfx: 'poof' }, { setFlag: 'safariRanger4' }, { addCoins: 200 }, { sfx: 'coin' }, { sysMsg: ['GOT 200 COINS!'] }] }],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_ranger5: {
+    trainer: 'RANGER',
+    foe: { species: 'sandshru', lv: 28 },
+    winText: ['RANGER: The pens', 'are not yours.', 'Nothing here is.'],
+    onWin: [{ if: { notFlag: 'safariRanger5' }, then: [{ fx: { id: 'poof', npc: 'ranger5' } }, { sfx: 'poof' }, { setFlag: 'safariRanger5' }, { addCoins: 200 }, { sfx: 'coin' }, { sysMsg: ['GOT 200 COINS!'] }] }],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_warden: {
+    trainer: 'WARDEN',
+    foe: { species: 'sandslash', lv: 30 },
+    music: 'safariboss',
+    winText: ['WARDEN: ...Go.', 'Carry it, then.', 'Carry it forever.'],
+    onWin: [
+      { setFlag: 'ch8Warden' },
+      { fx: { id: 'poof', at: [5, 10] } },
+      { sfx: 'poof' },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
+  safari_petrelle: {
+    trainer: 'EXEC PETRELLE',
+    foe: { species: 'hypnoz', lv: 30 },
+    music: 'safariboss',
+    winText: ['PETRELLE: You', 'have no idea what', 'you just did.'],
+    onWin: [
+      { setFlag: 'ch8Petrelle' },
+      { setFlag: 'betrayal' }, // THE campaign flag — the only setter in the game
+      { fx: { id: 'poof', at: [5, 10] } },
+      { sfx: 'poof' },
+    ],
+    onLose: [],
+    onFlee: [],
+  },
   plantTech1: {
     trainer: 'TECHNICIAN',
     foe: { species: 'magnemyt', lv: 27 },

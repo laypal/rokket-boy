@@ -7,6 +7,7 @@ import {
   setHeat,
   tickHeat,
   reduceHeat,
+  secondsToCalm,
   visibleTiles,
   stepToward,
   type HeatState,
@@ -279,5 +280,18 @@ describe('reduceHeat (1f.7 SMOKE BALL)', () => {
     reduceHeat(heat, 'corner', 5);
     expect(heat.corner).toBeUndefined();
     expect(Object.keys(heat)).toEqual([]);
+  });
+});
+
+describe('secondsToCalm (F48 HUX.2)', () => {
+  it('stage 1 counts the rest of its window', () => {
+    expect(secondsToCalm(setHeat(calmHeat(), 1, 0), DECAY_SECONDS - 12)).toBe(12);
+  });
+  it('stage 2 adds one full window for the stage below', () => {
+    expect(secondsToCalm(setHeat(calmHeat(), 2, 0), DECAY_SECONDS - 12)).toBe(12 + DECAY_SECONDS);
+  });
+  it('calm is 0, and it never goes negative past decayAt', () => {
+    expect(secondsToCalm(calmHeat(), 5)).toBe(0);
+    expect(secondsToCalm(setHeat(calmHeat(), 1, 0), DECAY_SECONDS + 4)).toBe(0);
   });
 });

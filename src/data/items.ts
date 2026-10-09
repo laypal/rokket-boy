@@ -53,6 +53,10 @@ export const ITEMS: Record<string, ItemDef> = {
   // behind the forced strip, CH7.0 §2), the CELL is the prize.
   'RUBBER BOOTS': { id: 'RUBBER BOOTS', kind: 'key', price: 0, desc: 'WALK LIVE FLOOR.' },
   'ENERGY CELL': { id: 'ENERGY CELL', kind: 'quest', price: 0, desc: 'THE HEIST PRIZE.' },
+  // CH8 SAFARI ZOON — the PASS opens the gate booth (Giovanni's briefing,
+  // once), the CRATE is the loyal branch's prize (PLAN part C §2/§8).
+  'SAFARI PASS': { id: 'SAFARI PASS', kind: 'key', price: 0, desc: 'PARK ENTRY.' },
+  'PRIZE CRATE': { id: 'PRIZE CRATE', kind: 'quest', price: 0, desc: 'A LIFE IN A BOX.' },
   // F43 BALL.0/1 — 2.5× the ROKKET BALL, thrown from the battle ITEM menu.
   // Three come with the CH7 briefing; the HQ vendor sells them at 2000c
   // only once ch7Done (shops.ts hqStallPro — Lyall, 2026-09-09).

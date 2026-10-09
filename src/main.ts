@@ -377,6 +377,35 @@ if (import.meta.env.DEV) {
       runScript([{ warp: ['plant1', 9, 10, 'up'] }], worldHooks);
       console.error('[__debug.ch7] CH1–6 done, EXECUTIVE, 3 PRO BALLs, inside POWER PLANT 1F — Myowth beside the door at (8,10)');
     },
+    // CH8: CH1–7 done, the CH8 briefing heard with the SAFARI PASS, and a
+    // fade-warp to the SAFARI ZOON gate (through the span's north rail).
+    // Pair with party(4, 30). ch8pens() adds the rules and lands at the pens.
+    ch8: () => {
+      for (const f of [
+        'briefed', 'guardBeaten', 'switchFound', 'lootTaken', 'missionDone',
+        'fossilsTaken', 'bradBeaten', 'ch2Done',
+        'spanCamper', 'spanPicnicker', 'spanHiker', 'spanYoungster', 'spanLass', 'ch3Done',
+        'introSeen', 'introToured', 'ch2Briefed', 'ch3Briefed', 'ch4Briefed',
+        'ch4Suit', 'ch4Safe', 'ch4Done', 'ch5Briefed',
+        'ch5Spirit', 'ch5Mask', 'ch5Myowth', 'ch5Done', 'ch6Briefed',
+        'ch6Rules', 'ch6Smoke', 'ch6Duo', 'ch6Ball', 'ch6Done', 'ch7Briefed',
+        'ch7Rules', 'ch7Cell', 'ch7Beaten', 'ch7Done', 'ch8Briefed',
+      ] as const) quest.flags[f] = true;
+      quest.rank = 'EXECUTIVE';
+      if (quest.coins < 300) quest.coins = 300;
+      for (const it of ['SILF SCOPE', 'CARD KEY', 'RUBBER BOOTS', 'SAFARI PASS']) if (!quest.items.includes(it)) quest.items.push(it);
+      runScript([{ warp: ['safari1', 5, 9, 'up'] }], worldHooks);
+      console.error('[__debug.ch8] CH1–7 done, EXECUTIVE, SAFARI PASS, at the SAFARI ZOON gate — the inside man at (5,5)');
+    },
+    ch8pens: () => {
+      (window as unknown as { __debug: { ch8: () => void } }).__debug.ch8();
+      quest.flags.ch8Rules = true;
+      // a fresh choice every call: neither branch chosen, no boss beaten, no crate
+      for (const f of ['ch8Poached', 'ch8Freed', 'ch8Warden', 'ch8Petrelle', 'betrayal', 'ch8Done'] as const) quest.flags[f] = false;
+      quest.items = quest.items.filter((i) => i !== 'PRIZE CRATE');
+      runScript([{ warp: ['safari3', 9, 10, 'up'] }], worldHooks);
+      console.error('[__debug.ch8pens] ...and at the PENS: crate at (4,5), lever at (15,7)');
+    },
   };
 }
 

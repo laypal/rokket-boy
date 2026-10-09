@@ -76,6 +76,13 @@ export function tickHeat(state: HeatState, now: number): { state: HeatState; loc
   return { state, locked: false };
 }
 
+/** F48 HUX.2: seconds until a record decays all the way to calm — the rest
+ *  of this window plus one full window per stage still below it. */
+export function secondsToCalm(state: HeatState, now: number): number {
+  if (state.stage === 0) return 0;
+  return Math.max(0, state.decayAt - now) + (state.stage - 1) * DECAY_SECONDS;
+}
+
 /** SMOKE BALL (§4.8, 1f.7): one stage off a map's heat, wherever it's used.
  *  Mutates the passed record (G.heatState in the game; a literal in tests) —
  *  battle.ts and menu.ts call this because neither may import world.ts (the

@@ -34,6 +34,7 @@ export const BG_PAL: Record<string, Palette> = {
   sylph: ['#0a1418', '#1e4a58', '#4a9aa8', '#d8f0f0', ALERT],    // CH6.0 §12 — SYLPHCO TOWER, a cold corporate teal
   plant: ['#0c0a04', '#5a4c10', '#c8b020', '#f8f0c0', ALERT],    // CH7.0 §2/§9 — KANTOO POWER PLANT, electric yellow; `~` vents and `spark` recolour through it
   parchment: ['#5a3418', '#a86a34', '#e0b070', '#f4dcb0', ALERT], // F44 — the MAP's own paper: ink, sepia, tan, cream
+  safari: ['#0a1408', '#2c5a1c', '#78b040', '#e8f4b0', ALERT],    // CH8.0 §7 — SAFARI ZOON, the first daylight green; `~` reads as tall grass through it
 };
 
 // ── Sprite (OBJ) palettes — GBC style, index 0 is outline, '.'=transparent
@@ -60,6 +61,8 @@ export const OBJ_PAL: Record<string, Palette> = {
   ratikatt:['#1c1408', '#8a5a28', '#c89858', '#f0dcb0'], // SPR.A — RATIKATT/RATIKATE line, dusty brown
   zubatt:  ['#140c1c', '#5c3878', '#8868a8', '#ded0f0'], // SPR.A — ZUBATT/GOLBATT line, cave purple
   geodood: ['#1c1408', '#6e5438', '#a8886a', '#e0c8a8'], // SPR.B — GEODOOD/GRAVLR line, rocky grey-brown
+  sandshru:['#1c1408', '#8a6a30', '#d0a850', '#f4e4b0'], // CH8 — SANDSHRÜ/SANDSLÄSH line, sandy ochre
+  grimurk: ['#140a14', '#4a3060', '#8868a0', '#d8c8e0'], // CH9 — GRIMURK/MÜK line, sludge violet
   ekanzz:  ['#140a1c', '#3a6e2c', '#6e3a8e', '#c8e0a8'], // SPR.B — EKANZZ/ARBÖK line, venom green-violet
   kira:    ['#0c0c14', '#8a3fa0', '#e8b088', '#f0f0f8'], // CH3.2 — AGENT KIRA, violet/plum accent
   medic:   ['#0c0c14', '#c81e3c', '#e8b088', '#f8f8f8'], // ONB.7 — bunk healer, grunt dark/red/skin + a lifted shade-3 so the cap reads clinic-white
@@ -88,6 +91,11 @@ export const OBJ_PAL: Record<string, Palette> = {
   hurt:    ['#0c0c14', '#ffffff', '#ff3050', '#ffffff', '#e0b840'],
   // CH7.0 §6 — plant TECHNICIANs: the guard charset in hi-vis yellow.
   plant:   ['#0c0c14', '#c8a020', '#e8b088', '#e8e8f0'],
+  // CH8.0 §3/§7 — RANGERs (and the WARDEN) are the guard charset in khaki;
+  // EXEC PETRELLE is the kira head + suit body in exec crimson until Lyall
+  // draws her (assumption 8, SSR.3).
+  safari:  ['#0c0c14', '#6a7a30', '#e8b088', '#e8e8d0'],
+  petrelle: ['#0c0c14', '#a02838', '#e8b088', '#f0f0f8'],
   // CH7.0 §10 (SPR.E) — MAGNEMYT/MAGNETUN line, steel grey-blue; VOLTRAWK,
   // electric gold. ELECTRÖD reuses OBJ_PAL.voltorbb (same line).
   magnemyt: ['#101418', '#4a5a78', '#9aa8c0', '#e8f0f8'],

@@ -7,7 +7,7 @@ import type { TypeId } from './data/typeChart';
 import type { HeatStage } from './systems/heat';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3' | 'syl1' | 'syl2' | 'syl3' | 'syl4' | 'syl5' | 'plant1' | 'plant2' | 'plant3';
+export type MapId = 'hq' | 'corner' | 'vault' | 'moon1' | 'moon2' | 'moonDig' | 'hqDrill' | 'outskirts' | 'bridge' | 'tower' | 'dock' | 'deck1' | 'deck2' | 'cabin' | 'lav1' | 'lav2' | 'lav3' | 'syl1' | 'syl2' | 'syl3' | 'syl4' | 'syl5' | 'plant1' | 'plant2' | 'plant3' | 'safari1' | 'safari2' | 'safari3';
 
 /** [target map, x, y, facing on arrival] */
 export type WarpDef = [MapId, number, number, Dir];
@@ -94,6 +94,21 @@ export interface Flags {
   plantTech2: boolean;
   plantTech3: boolean;
   sureBall: boolean;   // F43 BALL.2: the GRUNTDEX clerk paid the one MAZTER BALL (15 lines + ch7Done)
+  // CH8 (SAFARI ZOON) — contract in .paul/PLAN.md part C §1 (2026-09-15). No save bump.
+  ch8Briefed: boolean; // Giovanni's CH8 briefing heard — the SAFARI PASS handed over once
+  ch8Rules: boolean;   // the inside man at the gate booth taught the ranger rules
+  ch8Poached: boolean; // the PRIZE CRATE taken — the LOYAL point of no return (hides the lever)
+  ch8Freed: boolean;   // the PEN LEVER pulled — the BETRAYAL point of no return (hides the crate)
+  ch8Warden: boolean;  // the WARDEN fell on the exit lane (loyal branch boss)
+  ch8Petrelle: boolean; // EXEC PETRELLE fell on the exit lane (betrayal branch boss)
+  betrayal: boolean;   // THE campaign flag — set ONLY by safari_petrelle.onWin, read by CH10 (endings + dialogue); never cleared
+  ch8Done: boolean;    // handed in at HQ on either branch — 2500c loyal, 0c betrayal, no rank
+  safariRanger1: boolean; // once-only RANGER paydays; a beaten ranger is goneIf his flag (CH8-FB.1)
+  safariRanger2: boolean;
+  safariRanger3: boolean;
+  safariRanger4: boolean;
+  safariRanger5: boolean;
+  ch8PensEmpty: boolean; // CH8-FB.3: the residents poofed out after the lever — set AFTER the puffs
 }
 export type FlagName = keyof Flags;
 

@@ -130,6 +130,6 @@ export const bridgeScripts: Record<string, ScriptStep[]> = {
     },
   ],
 
-  'step:6,1': kiraScript,
+  'step:6,1': [{ if: { notFlag: 'ch3Done' }, then: kiraScript }], // CH8: (6,1) is the approach to the ZOON door — no replay after CH3
   'npc:kira': kiraScript,
 };

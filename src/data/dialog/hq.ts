@@ -16,12 +16,56 @@ export const hqScripts: Record<string, ScriptStep[]> = {
   // the 1e rule; no addCoins — the rank's pay is the reward, CH6.0 §10).
   'npc:giovanni': [
     {
+      // CH8.0 §6: outermost-first — the CH8 afterglow, then its two hand-ins
+      // (betrayal before loyal — betrayal is the PONR that never un-sets),
+      // then its briefing (replacing the CH7 afterglow line in that slot),
+      // then the untouched CH7/CH6 chain below.
+      if: { flag: 'ch8Done' },
+      then: [
+        {
+          if: { flag: 'betrayal' },
+          then: [{ say: [['GIOVANNI: Rest.', 'I am thinking.'], ['CINDABAR is', 'next.']] }],
+          else: [{ say: [['GIOVANNI: The', 'buyer paid.', 'Rest.'], ['CINDABAR is', 'next.']] }],
+        },
+      ],
+      else: [
+        {
+          if: { flag: 'ch8Petrelle' },
+          then: [
+            { say: [['GIOVANNI:', 'PETRELLE sits in', 'a FUCHSINA cell.'], ['The pens opened.', 'The prize ran.', 'A total loss.'], ['You saw nothing.', '...Someone', 'crossed me.'], ['I will find out', 'who.']] },
+            { setFlag: 'ch8Done' },
+            { endScreen: true },
+          ],
+          else: [
+            {
+              if: { all: [{ hasItem: 'PRIZE CRATE' }, { flag: 'ch8Warden' }] },
+              then: [
+                { say: [['GIOVANNI: The', 'crate. And the', 'WARDEN?'], ['Down. Good.', 'The buyer is', 'waiting.']] },
+                { setFlag: 'ch8Done' },
+                { addCoins: 2500 },
+                { sfx: 'coin' },
+                { music: 'victory' },
+                { endScreen: true },
+              ],
+              else: [
+    {
       // CH7.0 §8/§11: outermost-first — the CH7 afterglow, then its hand-in,
       // then its briefing (replacing the CH6 afterglow line in that slot),
       // then the untouched CH6 chain below.
       if: { flag: 'ch7Done' },
       then: [
-        { say: [['GIOVANNI: The', 'CELL runs the', 'whole base now.'], ['Rest. The next', 'one is bigger.']] },
+        { say: [['GIOVANNI:', 'EXECUTIVE. The', 'SAFARI ZOON.'], ['Past the NUGGET', 'SPAN. The WARDEN', 'keeps a prize.'], ['A buyer pays.', 'PETRELLE runs', 'the sale.'], ['She waits at the', 'gate. RANGERS', 'sweep the park.'], ["Don't be seen."]] },
+        {
+          if: { notFlag: 'ch8Briefed' },
+          then: [
+            { setFlag: 'ch8Briefed' },
+            { giveItem: 'SAFARI PASS' },
+            { sfx: 'item' },
+            { sysMsg: ['GOT SAFARI PASS!'] },
+          ],
+        },
+        { say: [['The rail at the', 'top of the SPAN.', "It's open."]] },
+        { sfx: 'job' },
       ],
       else: [
         {
@@ -255,6 +299,12 @@ export const hqScripts: Record<string, ScriptStep[]> = {
       },       // close hasItem(CELL) if object
     ],         // close ch7Done else
   },           // close ch7Done if object
+              ],       // close loyal-hand-in else
+            },         // close loyal-hand-in if object
+          ],           // close ch8Petrelle else
+        },             // close ch8Petrelle if object
+      ],               // close ch8Done else
+    },                 // close ch8Done if object
   ],
   // SIDE.5 (re-cut 2026-08-15 after Lyall's playtest): the sparring drill is
   // available from the FIRST talk — training must land BEFORE the guard

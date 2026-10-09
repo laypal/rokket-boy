@@ -65,6 +65,9 @@ export function decode(rows: SpriteRows, pal: Palette, flip?: boolean): HTMLCanv
  *  accent; mon-data-lint refuses any name this table + FONT_HEX can't draw. */
 const EXTRA_GLYPHS: Record<string, number[]> = {
   'Ö': [0x36, 0x00, 0x1c, 0x36, 0x63, 0x63, 0x36, 0x1c],
+  // CH8 roster (2026-09-22): SANDSHRÜ / SANDSLÄSH — same dots-gap-squat-letter shape.
+  'Ü': [0x36, 0x00, 0x63, 0x63, 0x63, 0x63, 0x36, 0x1c],
+  'Ä': [0x36, 0x00, 0x1c, 0x36, 0x63, 0x7f, 0x63, 0x63],
 };
 
 /** Pure glyph bitmap: 8 rows of bytes, LSB = leftmost pixel. Null outside

@@ -54,13 +54,13 @@ beforeEach(() => resetQuest());
 describe('placement (D5 — nothing else wears a marker)', () => {
   // CH4.2 adds one more: the dock's jessika wears the SAILOR SUIT hint
   // (todoIf: notFlag ch4Suit) — the no-softlock hint NPC for the whole ship.
-  it('todoIf is set on exactly giovanni/jessika/myowth/dexclerk on hq, plus jessika on the CH4 dock', () => {
+  it('todoIf is set on exactly giovanni/jessika/myowth/dexclerk on hq, plus jessika on the CH4 dock and the CH8 inside man', () => {
     const withTodo: { mapId: string; id: string }[] = [];
     for (const [mapId, map] of Object.entries(MAPS)) {
       for (const npc of map.npcs) if (npc.todoIf) withTodo.push({ mapId, id: npc.id });
     }
-    expect(withTodo.map((n) => n.id).sort()).toEqual(['dexclerk', 'giovanni', 'jessika', 'jessika', 'myowth']); // F43-FB A1: the clerk wears one once the MAZTER BALL is owed
-    expect(withTodo.filter((n) => n.mapId !== 'hq')).toEqual([{ mapId: 'dock', id: 'jessika' }]);
+    expect(withTodo.map((n) => n.id).sort()).toEqual(['dexclerk', 'giovanni', 'insider', 'jessika', 'jessika', 'myowth']); // F43-FB A1: the clerk wears one once the MAZTER BALL is owed
+    expect(withTodo.filter((n) => n.mapId !== 'hq')).toEqual([{ mapId: 'dock', id: 'jessika' }, { mapId: 'safari1', id: 'insider' }]);
   });
 });
 
@@ -220,8 +220,17 @@ describe('briefing text untouched (D4 ordering)', () => {
     // ch5Mask hand-in, ch4Done -> CH5 briefing); CH6.3 wrapped that in three
     // more (ch6Done afterglow, ch6Ball hand-in, ch5Done -> CH6 briefing); CH7.3
     // in three more (ch7Done afterglow, ENERGY CELL hand-in, ch6Done -> CH7
-    // briefing). Walk past all nine to reach the same `if ch4Done` node.
-    const outerCh7Done = hqScripts['npc:giovanni'][0];
+    // briefing); CH8's contracts commit in three more (ch8Done afterglow,
+    // ch8Petrelle hand-in, PRIZE CRATE hand-in — its else holds the old
+    // `if ch7Done`, now the CH8 briefing). Walk past all twelve to reach the
+    // same `if ch4Done` node.
+    const outerCh8Done = hqScripts['npc:giovanni'][0];
+    if (!('if' in outerCh8Done) || !outerCh8Done.else) throw new Error('unexpected giovanni script shape (ch8Done)');
+    const outerCh8Petrelle = outerCh8Done.else[0];
+    if (!('if' in outerCh8Petrelle) || !outerCh8Petrelle.else) throw new Error('unexpected giovanni script shape (ch8Petrelle)');
+    const outerCh8Crate = outerCh8Petrelle.else[0];
+    if (!('if' in outerCh8Crate) || !outerCh8Crate.else) throw new Error('unexpected giovanni script shape (PRIZE CRATE)');
+    const outerCh7Done = outerCh8Crate.else[0]; // ch7Done is now the CH8 briefing node
     if (!('if' in outerCh7Done) || !outerCh7Done.else) throw new Error('unexpected giovanni script shape (ch7Done)');
     const outerCh7Cell = outerCh7Done.else[0];
     if (!('if' in outerCh7Cell) || !outerCh7Cell.else) throw new Error('unexpected giovanni script shape (ENERGY CELL)');

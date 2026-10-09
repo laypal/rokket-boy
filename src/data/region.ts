@@ -7,7 +7,7 @@ import type { MapId } from '../types';
 
 export type RegionId =
   | 'hq' | 'corner' | 'moon' | 'edge' | 'span'
-  | 'lav' | 'dock' | 'ann' | 'syl' | 'plant';
+  | 'lav' | 'dock' | 'ann' | 'syl' | 'plant' | 'safari';
 
 export interface RegionDef {
   id: RegionId;
@@ -46,6 +46,9 @@ export const REGIONS: RegionDef[] = [
     anchors: { syl1: [240, 16], syl2: [264, 16], syl3: [240, 29], syl4: [264, 29], syl5: [240, 42] }, heal: true },
   { id: 'plant',  name: 'POWER PLANT',    world: { x: 30, y: 26, w: 6, h: 6 }, maps: ['plant1', 'plant2', 'plant3'],
     anchors: { plant1: [240, 208], plant2: [264, 208], plant3: [240, 221] } },
+  // CH8.0 §7: the woods north of the NUGGET SPAN — its "ROAD CLOSED" rail opens here.
+  { id: 'safari', name: 'SAFARI ZOON',    world: { x: 20, y: 1,  w: 8, h: 6 }, maps: ['safari1', 'safari2', 'safari3'],
+    anchors: { safari1: [160, 8], safari2: [184, 8], safari3: [160, 21] } },
 ];
 
 const BY_MAP: Partial<Record<MapId, RegionDef>> = {};

@@ -1,7 +1,7 @@
 // Build full 16×16 frame canvases per character.
 // Frames per direction: [stand, stepA, stepB] — stepB is stepA mirrored.
 import { decode } from './renderer';
-import { CHARSETS, MYOWTH_A, MYOWTH_B, ZUBATT_OW_A, ZUBATT_OW_B, composeCharset, wornGear, type Charset } from '../data/chars';
+import { CHARSETS, MYOWTH_A, MYOWTH_B, ZUBATT_OW_A, ZUBATT_OW_B, MACHOPP_OW_A, MACHOPP_OW_B, composeCharset, wornGear, type Charset } from '../data/chars';
 import { OBJ_PAL } from '../data/palettes';
 // (OBJ_PAL.player is the five-shade player palette — RNK.5c)
 import { mirrorRows, stack } from '../data/sprites';
@@ -42,6 +42,13 @@ export function buildCharFrames(): void {
     decode(ZUBATT_OW_A, OBJ_PAL.zubatt),
   ];
   CHAR_FRAMES.zubatt = { down: zubattDown, up: zubattDown, left: zubattDown, right: zubattDown };
+  // CH8-FB.3: the pen residents — a derived 16×16 idle beside MACHOPP_FRONT
+  const machoppDown = [
+    decode(MACHOPP_OW_A, OBJ_PAL.machopp),
+    decode(MACHOPP_OW_B, OBJ_PAL.machopp),
+    decode(MACHOPP_OW_A, OBJ_PAL.machopp),
+  ];
+  CHAR_FRAMES.machopp = { down: machoppDown, up: machoppDown, left: machoppDown, right: machoppDown };
   buildPlayerFrames([]); // CHAR_FRAMES.player always exists, gear or not
 }
 

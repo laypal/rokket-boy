@@ -180,12 +180,17 @@ describe('the Giovanni CH7 chain (hq.ts, CH7.0 §8/§11)', () => {
     expect(text).not.toContain('DOWN');
   });
 
-  it('ch7Done already: the afterglow line only, no re-payout', () => {
+  it('ch7Done already: the CH8 briefing takes the slot, the SAFARI PASS once, no re-payout', () => {
     quest.flags.ch6Done = true;
     quest.flags.ch7Done = true;
-    const { hooks, events } = eventHooks();
-    runScript(hqScripts['npc:giovanni'], hooks);
-    expect(events).toEqual(['say']);
-    expect(events.some((e) => e === 'endScreen')).toBe(false);
+    const first = eventHooks();
+    runScript(hqScripts['npc:giovanni'], first.hooks);
+    expect(first.events).toEqual(['say', 'sfx:item', 'sysMsg:GOT SAFARI PASS!', 'say', 'sfx:job']);
+    expect(quest.items.filter((i) => i === 'SAFARI PASS')).toHaveLength(1);
+    const second = eventHooks();
+    runScript(hqScripts['npc:giovanni'], second.hooks); // a second talk: the speech repeats, the pass does not
+    expect(second.events).toEqual(['say', 'say', 'sfx:job']);
+    expect(quest.items.filter((i) => i === 'SAFARI PASS')).toHaveLength(1);
+    expect([...first.events, ...second.events].some((e) => e === 'endScreen')).toBe(false);
   });
 });

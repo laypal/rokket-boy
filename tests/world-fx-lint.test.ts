@@ -36,8 +36,10 @@ function walk(steps: ScriptStep[], visit: (step: ScriptStep, before: ScriptStep[
   }
 }
 
-function hasFx(before: ScriptStep[], id: string, x: number, y: number): boolean {
-  return before.some((p) => 'fx' in p && p.fx.id === id && p.fx.at?.[0] === x && p.fx.at?.[1] === y);
+function hasFx(before: ScriptStep[], id: string, x: number, y: number, npcId?: string): boolean {
+  // JCE.6: an NPC that has walked (a chasing heatGuard) poofs at its LIVE
+  // tile via `npc:` — the spawn tile would be wrong by the time he falls
+  return before.some((p) => 'fx' in p && p.fx.id === id && ((p.fx.at?.[0] === x && p.fx.at?.[1] === y) || (npcId !== undefined && p.fx.npc === npcId)));
 }
 
 /** Every script in the game, labelled — map scripts (minus `enter`) and every encounter's three exits. */
@@ -98,7 +100,7 @@ describe('JCE.6: people leave in a puff', () => {
         for (const e of exits) {
           if (e.flag !== s.setFlag) continue;
           setters++;
-          expect(hasFx(before, 'poof', e.x, e.y), `${label}: sets ${e.flag} but ${e.map}/${e.id} at (${e.x},${e.y}) leaves without a poof`).toBe(true);
+          expect(hasFx(before, 'poof', e.x, e.y, e.id), `${label}: sets ${e.flag} but ${e.map}/${e.id} at (${e.x},${e.y}) leaves without a poof`).toBe(true);
         }
       });
     }

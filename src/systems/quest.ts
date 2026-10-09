@@ -84,6 +84,20 @@ function freshFlags(): Flags {
     plantTech2: false,
     plantTech3: false,
     sureBall: false,
+    ch8Briefed: false,
+    ch8Rules: false,
+    ch8Poached: false,
+    ch8Freed: false,
+    ch8Warden: false,
+    ch8Petrelle: false,
+    betrayal: false,
+    ch8Done: false,
+    safariRanger1: false,
+    safariRanger2: false,
+    safariRanger3: false,
+    safariRanger4: false,
+    safariRanger5: false,
+    ch8PensEmpty: false,
   };
 }
 
@@ -312,10 +326,26 @@ export const CHAPTERS: ChapterDef[] = [
       { objective: 'REPORT TO BOSS', done: { flag: 'ch7Done' } },
     ],
   },
+  // CH8 (SAFARI ZOON, .paul/PLAN.md part C §4): the first branching chapter
+  // with NO machine change — each boss step is auto-met on the OTHER branch
+  // (`any` of its own flag or the other branch's point of no return), so
+  // first-unmet shows the right boss name. `ch8Poached` and `ch8Freed` are
+  // mutually exclusive by construction (each interactable is gated on the
+  // other's flag). No rank; 2500c loyal, 0c betrayal.
+  {
+    id: 'ch8', region: 'safari',
+    steps: [
+      { objective: 'GO PAST THE SPAN', done: { flag: 'ch8Rules' } },
+      { objective: 'REACH THE PENS', done: { any: [{ flag: 'ch8Poached' }, { flag: 'ch8Freed' }] } },
+      { objective: 'BEAT THE WARDEN', done: { any: [{ flag: 'ch8Warden' }, { flag: 'ch8Freed' }] } },
+      { objective: 'BEAT PETRELLE', done: { any: [{ flag: 'ch8Petrelle' }, { flag: 'ch8Poached' }] } },
+      { objective: 'REPORT TO BOSS', done: { flag: 'ch8Done' } },
+    ],
+  },
   // F43-FB A1 (Lyall, 2026-09-10): the MAZTER BALL side quest. Announced in
   // the CH7 briefing and by the clerk, it takes the STATUS line once CH7 is
-  // reported and holds it until the clerk pays — CH8's card decides whether
-  // it stays ahead of CH8 or drops behind it in this array.
+  // reported — CH8.0 (2026-09-15, assumption 6) put it BEHIND ch8, so the
+  // main job owns the STATUS line and the MAP flash; it shows between jobs.
   {
     id: 'dex15', region: 'hq',
     steps: [

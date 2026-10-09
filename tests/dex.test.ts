@@ -20,7 +20,8 @@ const m = (species: string) => ({ species });
 // SPR.E: +3 lines. dexCount walks evolved -> pre-evolution only, so holding
 // VOLTORBB does NOT credit ELECTRÖD (it's the other direction, same as the
 // "base form alone" case below) — the fixture needs the evolved mon itself.
-const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke', 'magnetun', 'electrod', 'voltrawk'].map(m);
+// CH8 roster (2026-09-22): +2 lines, SANDSLÄSH credits SANDSHRÜ back.
+const COMPLETE = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'sandslash', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke', 'magnetun', 'electrod', 'voltrawk'].map(m);
 
 describe('dexComplete (SIDE.4)', () => {
   it('is false for an empty collection', () => {

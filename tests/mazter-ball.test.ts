@@ -113,9 +113,9 @@ describe('F43 BALL.2 the GRUNTDEX clerk grant', () => {
 
   // dex.test.ts's COMPLETE fixture, inlined (dropped its export — importing
   // another *.test.ts file is the double-registration bug above): 14 picks
-  // that credit all 22 species via mon.ts's evolved->pre-evolution line
-  // credit (dexComplete true).
-  const FULL_DEX = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke', 'magnetun', 'electrod', 'voltrawk'].map((species) => ({ species }));
+  // that credit all 24 species (22 + the CH8 SANDSHRÜ line, 2026-09-22) via
+  // mon.ts's evolved->pre-evolution line credit (dexComplete true).
+  const FULL_DEX = ['arbok', 'ratikate', 'golbatt', 'gravlr', 'sandslash', 'koffink', 'voltorbb', 'wheezink', 'hauntor', 'myowth', 'hypnoz', 'machoke', 'magnetun', 'electrod', 'voltrawk'].map((species) => ({ species }));
 
   function talk(): { sysMsgs: string[][]; said: string[][][] } {
     const { hooks, sysMsgs } = makeHooks();
@@ -199,6 +199,7 @@ describe('F43-FB.1 the dex15 objective machine', () => {
   it("'CATCH 15 LINES' at 14 lines, 'SEE THE DEX CLERK' at 15, 'AWAIT ORDERS.' once sureBall", () => {
     resetQuest();
     afterCh7();
+    for (const g of ['ch8Rules', 'ch8Poached', 'ch8Warden', 'ch8Done'] as const) quest.flags[g] = true; // CH8.0: dex15 sits behind ch8
     setDexMons(() => FIFTEEN.slice(0, 14));
     expect(currentObjective()).toBe('CATCH 15 LINES');
     setDexMons(() => FIFTEEN);
